@@ -1,9 +1,42 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { User } from "@shared/models/auth";
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
-async function fetchUser(): Promise<User | null> {
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+}
+
+interface AuthStore {
+  token: string | null;
+  user: AuthUser | null;
+  setAuth: (token: string, user: AuthUser) => void;
+  clearAuth: () => void;
+}
+
+export const useAuthStore = create<AuthStore>()(
+  persist(
+    (set) => ({
+      token: null,
+      user: null,
+      setAuth: (token, user) => set({ token, user }),
+      clearAuth: () => set({ token: null, user: null }),
+    }),
+    {
+      name: "maybach-auth",
+    }
+  )
+);
+
+async function fetchUser(token: string | null): Promise<AuthUser | null> {
+  if (!token) return null;
+  
   const response = await fetch("/api/auth/user", {
-    credentials: "include",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
   });
 
   if (response.status === 401) {
@@ -17,31 +50,71 @@ async function fetchUser(): Promise<User | null> {
   return response.json();
 }
 
-async function logout(): Promise<void> {
-  window.location.href = "/api/logout";
+export interface LoginCredentials {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  user: AuthUser;
+}
+
+async function loginRequest(credentials: LoginCredentials): Promise<LoginResponse> {
+  const response = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(credentials),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || "Erro ao fazer login");
+  }
+
+  return response.json();
 }
 
 export function useAuth() {
   const queryClient = useQueryClient();
-  const { data: user, isLoading } = useQuery<User | null>({
-    queryKey: ["/api/auth/user"],
-    queryFn: fetchUser,
+  const { token, user, setAuth, clearAuth } = useAuthStore();
+
+  const { isLoading, refetch } = useQuery<AuthUser | null>({
+    queryKey: ["/api/auth/user", token],
+    queryFn: () => fetchUser(token),
     retry: false,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
+    enabled: !!token,
   });
 
-  const logoutMutation = useMutation({
-    mutationFn: logout,
-    onSuccess: () => {
-      queryClient.setQueryData(["/api/auth/user"], null);
+  const loginMutation = useMutation({
+    mutationFn: loginRequest,
+    onSuccess: (data) => {
+      setAuth(data.token, data.user);
+      queryClient.setQueryData(["/api/auth/user", data.token], data.user);
     },
   });
 
-  return {
-    user,
-    isLoading,
-    isAuthenticated: !!user,
-    logout: logoutMutation.mutate,
-    isLoggingOut: logoutMutation.isPending,
+  const logout = () => {
+    clearAuth();
+    queryClient.clear();
   };
+
+  return {
+    user: token ? user : null,
+    token,
+    isLoading: !!token && isLoading,
+    isAuthenticated: !!token && !!user,
+    login: loginMutation.mutateAsync,
+    loginError: loginMutation.error?.message,
+    isLoggingIn: loginMutation.isPending,
+    logout,
+    refetch,
+  };
+}
+
+export function getAuthToken(): string | null {
+  return useAuthStore.getState().token;
 }

@@ -7,7 +7,6 @@ import {
   Tags,
   FolderTree,
   LogOut,
-  Store,
 } from "lucide-react";
 import {
   Sidebar,
@@ -21,7 +20,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -80,14 +79,14 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <Link href="/admin" className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary">
-            <Store className="h-5 w-5 text-primary-foreground" />
+            <Car className="h-5 w-5 text-primary-foreground" />
           </div>
           <div className="flex flex-col">
             <span className="text-lg font-semibold text-sidebar-foreground">
-              AutoGestão
+              MayBach
             </span>
             <span className="text-xs text-muted-foreground">
-              Sistema Administrativo
+              Painel Administrativo
             </span>
           </div>
         </Link>
@@ -140,14 +139,13 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-sidebar-border p-4">
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={user?.profileImageUrl || undefined} />
             <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-              {getInitials(user?.firstName)}
+              {getInitials(user?.name)}
             </AvatarFallback>
           </Avatar>
           <div className="flex flex-1 flex-col overflow-hidden">
             <span className="truncate text-sm font-medium text-sidebar-foreground">
-              {user?.firstName} {user?.lastName}
+              {user?.name}
             </span>
             <span className="truncate text-xs text-muted-foreground">
               {user?.email}

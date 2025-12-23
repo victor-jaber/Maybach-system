@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
+import { registerAuthRoutes, isAuthenticated, seedAdminUser } from "./auth";
 import {
   insertBrandSchema,
   insertCategorySchema,
@@ -14,9 +14,11 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Setup authentication
-  await setupAuth(app);
+  // Setup JWT authentication routes
   registerAuthRoutes(app);
+  
+  // Seed default admin user
+  await seedAdminUser();
 
   // Brands
   app.get("/api/brands", async (req, res) => {
