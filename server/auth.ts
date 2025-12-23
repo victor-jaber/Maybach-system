@@ -111,9 +111,14 @@ export function registerAuthRoutes(app: Express) {
     }
   });
   
-  // Register endpoint (admin only in production, open for initial setup)
-  app.post("/api/auth/register", async (req, res) => {
+  // Register endpoint (admin only - protected)
+  app.post("/api/auth/register", isAuthenticated, async (req, res) => {
     try {
+      // Only admins can create new users
+      if (req.user?.role !== "admin") {
+        return res.status(403).json({ message: "Acesso não autorizado" });
+      }
+      
       const parsed = registerSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ message: "Dados inválidos", errors: parsed.error.errors });
@@ -137,15 +142,7 @@ export function registerAuthRoutes(app: Express) {
         role: "admin",
       }).returning();
       
-      const token = generateToken({
-        id: newUser.id,
-        email: newUser.email!,
-        name: newUser.name,
-        role: newUser.role,
-      });
-      
       res.status(201).json({
-        token,
         user: {
           id: newUser.id,
           email: newUser.email,
