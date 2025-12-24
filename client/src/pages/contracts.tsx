@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { getAuthToken } from "@/hooks/use-auth";
 import type { ContractWithRelations, Customer, VehicleWithRelations } from "@shared/schema";
 import { formatCurrency, formatCurrencyInput, parseCurrencyToNumber } from "@/lib/currency";
 import { format } from "date-fns";
@@ -249,7 +250,7 @@ export default function ContractsPage() {
 
   const generatePdfMutation = useMutation({
     mutationFn: async (id: number) => {
-      const token = localStorage.getItem("auth_token");
+      const token = getAuthToken();
       const headers: Record<string, string> = {};
       if (token) {
         headers["Authorization"] = `Bearer ${token}`;
