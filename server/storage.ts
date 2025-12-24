@@ -753,67 +753,180 @@ export class DatabaseStorage implements IStorage {
     // Clear existing debts for fresh consultation
     await db.delete(vehicleDebts).where(eq(vehicleDebts.vehicleId, vehicleId));
 
-    // Generate demo/mock data (in production, this would call an external API)
-    const currentYear = new Date().getFullYear();
-    const mockDebts: InsertVehicleDebt[] = [];
+    const apiToken = process.env.INFOSIMPLES_API_TOKEN;
+    const debtsToInsert: InsertVehicleDebt[] = [];
 
-    // IPVA do ano corrente
-    mockDebts.push({
-      vehicleId,
-      debtType: "ipva",
-      description: `IPVA ${currentYear} - Cota Única`,
-      year: currentYear,
-      dueDate: new Date(currentYear, 0, 31), // 31 de janeiro
-      value: (Math.random() * 3000 + 1500).toFixed(2),
-      status: Math.random() > 0.5 ? "pending" : "paid",
-      reference: `${renavam}${currentYear}01`,
-      source: "demo",
-    });
+    // Try InfoSimples API if token is available
+    if (apiToken) {
+      try {
+        const response = await fetch("https://api.infosimples.com/api/v2/consultas/sefaz/sp/debitos-veiculo", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            placa: plate,
+            renavam: renavam,
+            token: apiToken,
+          }),
+        });
 
-    // Licenciamento
-    mockDebts.push({
-      vehicleId,
-      debtType: "licenciamento",
-      description: `Licenciamento Anual ${currentYear}`,
-      year: currentYear,
-      dueDate: new Date(currentYear, 3, 30), // Abril
-      value: "98.91",
-      status: Math.random() > 0.3 ? "pending" : "paid",
-      reference: `LIC${plate}${currentYear}`,
-      source: "demo",
-    });
+        const data = await response.json();
 
-    // Possível multa
-    if (Math.random() > 0.4) {
-      mockDebts.push({
+        if (data.code === 200 && data.data && data.data.length > 0) {
+          const vehicleData = data.data[0];
+
+          // Process IPVA debts
+          if (vehicleData.ipva && Array.isArray(vehicleData.ipva)) {
+            for (const ipva of vehicleData.ipva) {
+              if (ipva.saldo_devido && parseFloat(ipva.normalizado_saldo_devido || ipva.saldo_devido) > 0) {
+                debtsToInsert.push({
+                  vehicleId,
+                  debtType: "ipva",
+                  description: `IPVA ${ipva.competencia}`,
+                  year: parseInt(ipva.competencia) || new Date().getFullYear(),
+                  dueDate: null,
+                  value: ipva.normalizado_saldo_devido || ipva.saldo_devido?.toString() || "0",
+                  status: "pending",
+                  reference: ipva.boleto || null,
+                  source: "infosimples",
+                });
+              }
+            }
+          }
+
+          // Process IPVA não inscritos (pending IPVA)
+          if (vehicleData.ipva_nao_inscritos && Array.isArray(vehicleData.ipva_nao_inscritos)) {
+            for (const ipva of vehicleData.ipva_nao_inscritos) {
+              debtsToInsert.push({
+                vehicleId,
+                debtType: "ipva",
+                description: `IPVA ${ipva.exercicio} (Não Inscrito)`,
+                year: parseInt(ipva.exercicio) || new Date().getFullYear(),
+                dueDate: null,
+                value: ipva.normalizado_valor || ipva.valor?.toString() || "0",
+                status: "pending",
+                reference: null,
+                source: "infosimples",
+              });
+            }
+          }
+
+          // Process Licenciamento debts
+          if (vehicleData.licenciamentos && Array.isArray(vehicleData.licenciamentos)) {
+            for (const lic of vehicleData.licenciamentos) {
+              debtsToInsert.push({
+                vehicleId,
+                debtType: "licenciamento",
+                description: `Licenciamento ${lic.exercicio}`,
+                year: parseInt(lic.exercicio) || new Date().getFullYear(),
+                dueDate: null,
+                value: lic.normalizado_valor || lic.valor?.toString() || "0",
+                status: "pending",
+                reference: null,
+                source: "infosimples",
+              });
+            }
+          }
+
+          // Process Multas
+          if (vehicleData.multas && vehicleData.multas.lista && Array.isArray(vehicleData.multas.lista)) {
+            for (const multa of vehicleData.multas.lista) {
+              debtsToInsert.push({
+                vehicleId,
+                debtType: "multa",
+                description: multa.descricao || "Multa de Trânsito",
+                year: new Date().getFullYear(),
+                dueDate: multa.data_vencimento ? new Date(multa.data_vencimento) : null,
+                value: multa.normalizado_valor || multa.valor?.toString() || "0",
+                status: "pending",
+                reference: multa.auto_infracao || null,
+                source: "infosimples",
+              });
+            }
+          }
+
+          // Process Dívida Ativa
+          if (vehicleData.ipva_divida_ativa && Array.isArray(vehicleData.ipva_divida_ativa)) {
+            for (const divida of vehicleData.ipva_divida_ativa) {
+              debtsToInsert.push({
+                vehicleId,
+                debtType: "divida_ativa",
+                description: `Dívida Ativa IPVA ${divida.exercicio || ""}`,
+                year: parseInt(divida.exercicio) || new Date().getFullYear(),
+                dueDate: null,
+                value: divida.normalizado_valor || divida.valor?.toString() || "0",
+                status: "pending",
+                reference: null,
+                source: "infosimples",
+              });
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error calling InfoSimples API:", error);
+        // Fall back to demo data
+      }
+    }
+
+    // If no debts found from API or no API token, generate demo data
+    if (debtsToInsert.length === 0) {
+      const currentYear = new Date().getFullYear();
+
+      debtsToInsert.push({
         vehicleId,
-        debtType: "multa",
-        description: "Multa - Excesso de Velocidade",
+        debtType: "ipva",
+        description: `IPVA ${currentYear} - Cota Única`,
         year: currentYear,
-        dueDate: new Date(currentYear, Math.floor(Math.random() * 11), Math.floor(Math.random() * 28) + 1),
-        value: (Math.random() * 400 + 130.16).toFixed(2),
-        status: "pending",
-        reference: `MUL${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+        dueDate: new Date(currentYear, 0, 31),
+        value: (Math.random() * 3000 + 1500).toFixed(2),
+        status: Math.random() > 0.5 ? "pending" : "paid",
+        reference: `${renavam}${currentYear}01`,
+        source: "demo",
+      });
+
+      debtsToInsert.push({
+        vehicleId,
+        debtType: "licenciamento",
+        description: `Licenciamento Anual ${currentYear}`,
+        year: currentYear,
+        dueDate: new Date(currentYear, 3, 30),
+        value: "98.91",
+        status: Math.random() > 0.3 ? "pending" : "paid",
+        reference: `LIC${plate}${currentYear}`,
+        source: "demo",
+      });
+
+      if (Math.random() > 0.4) {
+        debtsToInsert.push({
+          vehicleId,
+          debtType: "multa",
+          description: "Multa - Excesso de Velocidade",
+          year: currentYear,
+          dueDate: new Date(currentYear, Math.floor(Math.random() * 11), Math.floor(Math.random() * 28) + 1),
+          value: (Math.random() * 400 + 130.16).toFixed(2),
+          status: "pending",
+          reference: `MUL${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+          source: "demo",
+        });
+      }
+
+      debtsToInsert.push({
+        vehicleId,
+        debtType: "seguro",
+        description: `Seguro Obrigatório ${currentYear}`,
+        year: currentYear,
+        dueDate: new Date(currentYear, 0, 31),
+        value: "16.00",
+        status: Math.random() > 0.2 ? "paid" : "pending",
+        reference: `SEG${renavam}${currentYear}`,
         source: "demo",
       });
     }
 
-    // DPVAT/Seguro Obrigatório
-    mockDebts.push({
-      vehicleId,
-      debtType: "seguro",
-      description: `Seguro Obrigatório ${currentYear}`,
-      year: currentYear,
-      dueDate: new Date(currentYear, 0, 31),
-      value: "16.00",
-      status: Math.random() > 0.2 ? "paid" : "pending",
-      reference: `SEG${renavam}${currentYear}`,
-      source: "demo",
-    });
-
     // Insert all debts
     const insertedDebts: VehicleDebt[] = [];
-    for (const debt of mockDebts) {
+    for (const debt of debtsToInsert) {
       const [inserted] = await db.insert(vehicleDebts).values(debt).returning();
       insertedDebts.push(inserted);
     }
