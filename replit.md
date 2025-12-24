@@ -1,17 +1,20 @@
-# AutoGestão - Sistema de Gestão para Concessionárias
+# MayBack Cars - Sistema de Gestão para Concessionárias
 
 ## Overview
-Sistema web completo para administração de lojas de veículos, desenvolvido com React, Express e PostgreSQL. Inclui área pública para catálogo de veículos e área administrativa para gestão completa de estoque, clientes e vendas.
+Sistema web completo para administração de lojas de veículos, desenvolvido com React, Express e PostgreSQL. Inclui área pública para catálogo de veículos e área administrativa para gestão completa de estoque, clientes, vendas, contratos e consulta de débitos.
 
 ## Current State
 O sistema está funcional com as seguintes funcionalidades:
 - Área pública de catálogo de veículos com filtros
-- Sistema de login via Replit Auth
+- Sistema de login com autenticação JWT
 - Dashboard administrativo com estatísticas
 - CRUD completo de veículos com dados brasileiros (Renavam, Placa, Chassi)
 - CRUD completo de clientes com informações detalhadas (CPF/CNPJ, RG, CNH, profissão, renda)
 - Registro de vendas com suporte a pagamento à vista e financiado
 - Gestão de marcas e categorias de veículos
+- Módulo de contratos com geração de PDF profissional
+- Relatórios e dashboards com gráficos interativos
+- Consulta de débitos veiculares (IPVA, multas, licenciamento)
 
 ## Project Architecture
 
@@ -28,13 +31,18 @@ O sistema está funcional com as seguintes funcionalidades:
 - **Database**: PostgreSQL com Drizzle ORM
 
 ### Database Schema (shared/schema.ts)
-- `users` - Usuários do sistema (via Replit Auth)
-- `sessions` - Sessões de autenticação
+- `users` - Usuários do sistema
 - `brands` - Marcas de veículos
 - `categories` - Categorias de veículos
 - `vehicles` - Cadastro de veículos
+- `vehicle_images` - Imagens dos veículos
 - `customers` - Cadastro de clientes
 - `sales` - Registro de vendas
+- `contracts` - Contratos de venda/entrada
+- `contract_installments` - Parcelas de contratos
+- `contract_files` - PDFs gerados dos contratos
+- `vehicle_debts` - Débitos veiculares (IPVA, multas, licenciamento)
+- `stores` - Configurações da loja
 
 ## Key Files
 - `client/src/App.tsx` - Rotas e layout principal
@@ -47,11 +55,24 @@ O sistema está funcional com as seguintes funcionalidades:
 O projeto usa o workflow "Start application" que executa `npm run dev` para iniciar o servidor Express com Vite.
 
 ## Recent Changes
+- 24/12/2024: Consulta de Débitos Veiculares
+  - Adicionada tabela vehicle_debts para armazenar débitos
+  - Implementada consulta de IPVA, multas, licenciamento e seguro
+  - Criada página para visualizar e gerenciar débitos por veículo
+  - Suporte para marcar débitos como pagos
+
+- 24/12/2024: Relatórios e Dashboard
+  - Implementado módulo de relatórios com gráficos interativos
+  - Vendas por período, marca, categoria
+  - Análise de margem de lucro por venda
+  - Filtros por período (7 dias a 1 ano)
+
 - 23/12/2024: Implementação inicial do sistema completo
   - Criado schema de dados para veículos, clientes e vendas
   - Implementadas todas as páginas administrativas
-  - Configurado sistema de autenticação via Replit Auth
+  - Configurado sistema de autenticação JWT
   - Criado catálogo público de veículos
+  - Módulo de contratos com geração de PDF
 
 ## User Preferences
 - Idioma: Português (Brasil)
