@@ -88,8 +88,6 @@ export default function LandingPage() {
           
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-px h-[60%] bg-gradient-to-b from-transparent via-[#C1A36A]/30 to-transparent hidden lg:block ml-8" />
           
-          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
-          
           <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8 lg:pl-16">
             <div className="max-w-2xl">
               <span className="inline-block text-xs font-medium tracking-[0.3em] uppercase text-[#C1A36A] mb-8 border border-[#C1A36A]/30 px-4 py-2">
