@@ -95,7 +95,7 @@ const customerFormSchema = z.object({
   cnh: z.string().optional().refine((val) => {
     if (!val || val.trim() === "") return true;
     return validateCNH(val);
-  }, "CNH inválida (11 dígitos)"),
+  }, "CNH inválida (9 a 11 dígitos)"),
   birthDate: z.string().optional().refine((val) => {
     if (!val || val.trim() === "") return true;
     return validateAge(val, 18);

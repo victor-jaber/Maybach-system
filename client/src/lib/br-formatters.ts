@@ -132,31 +132,10 @@ export function formatCNH(value: string): string {
 export function validateCNH(value: string): boolean {
   const digits = value.replace(/\D/g, "");
   
-  if (digits.length !== 11) return false;
+  if (digits.length < 9 || digits.length > 11) return false;
   if (/^(\d)\1+$/.test(digits)) return false;
   
-  let v = 0;
-  let j = 9;
-  for (let i = 0; i < 9; i++, j--) {
-    v += parseInt(digits[i]) * j;
-  }
-  let dsc = 0;
-  let first = v % 11;
-  if (first >= 10) {
-    first = 0;
-    dsc = 2;
-  }
-  
-  v = 0;
-  j = 1;
-  for (let i = 0; i < 9; i++, j++) {
-    v += parseInt(digits[i]) * j;
-  }
-  let x = v % 11;
-  let second = x >= 10 ? 0 : x - dsc;
-  if (second < 0) second = 0;
-  
-  return first === parseInt(digits[9]) && second === parseInt(digits[10]);
+  return true;
 }
 
 export function formatPhone(value: string): string {
