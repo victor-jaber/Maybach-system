@@ -616,22 +616,41 @@ export class DatabaseStorage implements IStorage {
     // Set end date to end of day to include all sales on that day
     end.setHours(23, 59, 59, 999);
 
-    const dateFormat = groupBy === "day" 
-      ? "YYYY-MM-DD"
-      : groupBy === "week"
-      ? "IYYY-IW"
-      : "YYYY-MM";
-
-    const result = await db.execute(sql`
-      SELECT 
-        TO_CHAR(sale_date, ${dateFormat}) as period,
-        COUNT(*)::int as count,
-        COALESCE(SUM(total_value), 0)::numeric as revenue
-      FROM sales
-      WHERE sale_date >= ${start} AND sale_date <= ${end}
-      GROUP BY TO_CHAR(sale_date, ${dateFormat})
-      ORDER BY period ASC
-    `);
+    let result;
+    if (groupBy === "day") {
+      result = await db.execute(sql`
+        SELECT 
+          TO_CHAR(sale_date, 'YYYY-MM-DD') as period,
+          COUNT(*)::int as count,
+          COALESCE(SUM(total_value), 0)::numeric as revenue
+        FROM sales
+        WHERE sale_date >= ${start} AND sale_date <= ${end}
+        GROUP BY TO_CHAR(sale_date, 'YYYY-MM-DD')
+        ORDER BY period ASC
+      `);
+    } else if (groupBy === "week") {
+      result = await db.execute(sql`
+        SELECT 
+          TO_CHAR(sale_date, 'IYYY-IW') as period,
+          COUNT(*)::int as count,
+          COALESCE(SUM(total_value), 0)::numeric as revenue
+        FROM sales
+        WHERE sale_date >= ${start} AND sale_date <= ${end}
+        GROUP BY TO_CHAR(sale_date, 'IYYY-IW')
+        ORDER BY period ASC
+      `);
+    } else {
+      result = await db.execute(sql`
+        SELECT 
+          TO_CHAR(sale_date, 'YYYY-MM') as period,
+          COUNT(*)::int as count,
+          COALESCE(SUM(total_value), 0)::numeric as revenue
+        FROM sales
+        WHERE sale_date >= ${start} AND sale_date <= ${end}
+        GROUP BY TO_CHAR(sale_date, 'YYYY-MM')
+        ORDER BY period ASC
+      `);
+    }
 
     return (result.rows as any[]).map(row => ({
       period: row.period,

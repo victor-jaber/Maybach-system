@@ -214,6 +214,14 @@ export async function registerRoutes(
 
   app.post("/api/vehicles", isAuthenticated, async (req, res) => {
     try {
+      // Sanitize price: remove R$, dots (thousand separators), and convert comma to period
+      if (req.body.price && typeof req.body.price === "string") {
+        req.body.price = req.body.price
+          .replace(/R\$\s*/g, "")
+          .replace(/\./g, "")
+          .replace(",", ".")
+          .trim();
+      }
       const parsed = insertVehicleApiSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
@@ -229,6 +237,14 @@ export async function registerRoutes(
   app.patch("/api/vehicles/:id", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
+      // Sanitize price if present
+      if (req.body.price && typeof req.body.price === "string") {
+        req.body.price = req.body.price
+          .replace(/R\$\s*/g, "")
+          .replace(/\./g, "")
+          .replace(",", ".")
+          .trim();
+      }
       const vehicle = await storage.updateVehicle(id, req.body);
       if (!vehicle) {
         return res.status(404).json({ message: "Vehicle not found" });
