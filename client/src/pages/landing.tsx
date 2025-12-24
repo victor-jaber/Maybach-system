@@ -1,6 +1,11 @@
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { Car, Phone, MapPin, Clock, ChevronRight, Star, Shield, Award, CheckCircle, Users, Wrench, CreditCard, ArrowRight, Quote } from "lucide-react";
+import { 
+  Car, Phone, MapPin, Clock, ChevronRight, Star, Shield, Award, 
+  CheckCircle, Users, Wrench, CreditCard, ArrowRight, Quote,
+  FileCheck, Truck, MessageCircle, Building2, Gauge, Sparkles,
+  Instagram, Facebook, Mail
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +43,9 @@ export default function LandingPage() {
             <a href="#benefits" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Vantagens
             </a>
+            <a href="#process" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+              Como Comprar
+            </a>
             <a href="#testimonials" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
               Depoimentos
             </a>
@@ -58,352 +66,449 @@ export default function LandingPage() {
       </header>
 
       <main>
-        <section className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#2E2B27] via-[#3a3632] to-[#2E2B27]" />
-          <div className="absolute inset-0 opacity-20" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23735C3F' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-          }} />
-          <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 sm:py-28 lg:px-8 lg:py-36">
-            <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-              <div>
-                <Badge className="mb-6 bg-primary/20 text-primary-foreground border-primary/30">
+        <section className="relative min-h-[90vh] flex items-center overflow-hidden">
+          <div className="absolute inset-0 bg-[#1a1816]">
+            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/50" />
+            <div 
+              className="absolute inset-0 opacity-40"
+              style={{
+                backgroundImage: `
+                  radial-gradient(ellipse 80% 50% at 80% 50%, rgba(115, 92, 63, 0.3) 0%, transparent 50%),
+                  radial-gradient(ellipse 60% 40% at 20% 80%, rgba(193, 163, 106, 0.15) 0%, transparent 40%)
+                `
+              }}
+            />
+            <div 
+              className="absolute inset-0 opacity-10"
+              style={{
+                backgroundImage: `
+                  linear-gradient(90deg, transparent 0%, transparent 50%, rgba(255,255,255,0.03) 50%, transparent 51%),
+                  linear-gradient(0deg, transparent 0%, transparent 50%, rgba(255,255,255,0.02) 50%, transparent 51%)
+                `,
+                backgroundSize: '100px 100px'
+              }}
+            />
+          </div>
+          
+          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
+          
+          <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+            <div className="max-w-3xl">
+              <div className="flex items-center gap-2 mb-6">
+                <div className="h-px w-12 bg-[#C1A36A]" />
+                <span className="text-sm font-medium tracking-widest uppercase text-[#C1A36A]">
                   Excelência em Veículos Premium
-                </Badge>
-                <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
-                  Realize o sonho do seu{" "}
-                  <span className="text-[#C1A36A]">
-                    carro ideal
-                  </span>
-                </h1>
-                <p className="mt-6 text-lg text-[#E2DED6] leading-relaxed">
-                  A MayBach Cars oferece os melhores veículos seminovos e usados do mercado, 
-                  com procedência garantida, preços justos e as melhores condições de financiamento.
-                  Sua satisfação é nossa prioridade.
-                </p>
-                <div className="mt-10 flex flex-wrap items-center gap-4">
-                  <Button size="lg" className="bg-[#5B9A4D] hover:bg-[#4a8340] text-white" asChild data-testid="button-see-catalog">
-                    <Link href="/catalog">
-                      Explorar Catálogo
-                      <ChevronRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                  <Button size="lg" variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20" asChild>
-                    <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer" data-testid="button-whatsapp">
-                      <Phone className="mr-2 h-4 w-4" />
-                      WhatsApp
-                    </a>
-                  </Button>
-                </div>
-                <div className="mt-10 flex flex-wrap items-center gap-6">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-[#C1A36A]" />
-                    <span className="text-sm text-[#E2DED6]">Garantia de Procedência</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-[#C1A36A]" />
-                    <span className="text-sm text-[#E2DED6]">Financiamento Facilitado</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-[#C1A36A]" />
-                    <span className="text-sm text-[#E2DED6]">Atendimento Premium</span>
-                  </div>
-                </div>
+                </span>
               </div>
-              <div className="relative hidden lg:block">
-                <div className="absolute -top-4 -right-4 w-72 h-72 bg-[#735C3F]/20 rounded-full blur-3xl" />
-                <div className="absolute -bottom-8 -left-8 w-64 h-64 bg-[#C1A36A]/10 rounded-full blur-2xl" />
-                <div className="relative bg-gradient-to-br from-[#3a3632]/90 to-[#2E2B27]/90 rounded-2xl p-8 border border-[#735C3F]/30 backdrop-blur">
-                  <img src={logoImage} alt="MayBach Cars" className="w-full max-w-[280px] mx-auto opacity-90" />
-                  <div className="mt-6 grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <div className="text-2xl font-bold text-white">500+</div>
-                      <div className="text-xs text-[#E2DED6]">Vendidos</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-white">14+</div>
-                      <div className="text-xs text-[#E2DED6]">Anos</div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-white">98%</div>
-                      <div className="text-xs text-[#E2DED6]">Satisfação</div>
-                    </div>
-                  </div>
+              
+              <h1 className="text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl leading-tight">
+                Encontre o carro{" "}
+                <span className="text-[#C1A36A] italic">perfeito</span>
+                <br />
+                para sua próxima jornada
+              </h1>
+              
+              <p className="mt-8 text-xl text-white/80 leading-relaxed max-w-2xl">
+                Na MayBach Cars, cada veículo conta uma história de qualidade e confiança.
+                Mais de 14 anos realizando sonhos com procedência garantida e condições únicas.
+              </p>
+              
+              <div className="mt-10 flex flex-wrap items-center gap-4">
+                <Button size="lg" className="bg-[#5B9A4D] text-white" asChild data-testid="button-see-catalog">
+                  <Link href="/catalog">
+                    <Car className="mr-2 h-5 w-5" />
+                    Ver Estoque Completo
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" className="bg-white/5 border-white/20 text-white backdrop-blur-sm" asChild data-testid="button-whatsapp-hero">
+                  <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="mr-2 h-5 w-5" />
+                    Falar com Especialista
+                  </a>
+                </Button>
+              </div>
+              
+              <div className="mt-16 grid grid-cols-3 gap-8 max-w-lg">
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-white">500+</div>
+                  <div className="text-sm text-white/60 mt-1">Veículos Vendidos</div>
+                </div>
+                <div className="text-center border-x border-white/10">
+                  <div className="text-4xl font-bold text-white">14+</div>
+                  <div className="text-sm text-white/60 mt-1">Anos no Mercado</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-4xl font-bold text-white">98%</div>
+                  <div className="text-sm text-white/60 mt-1">Clientes Satisfeitos</div>
                 </div>
               </div>
             </div>
           </div>
+          
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+            <a href="#vehicles" className="text-white/40 hover:text-white/60 transition-colors" data-testid="link-scroll-vehicles">
+              <ChevronRight className="h-8 w-8 rotate-90" />
+            </a>
+          </div>
         </section>
 
-        <section className="py-12 bg-card border-y">
+        <section id="vehicles" className="py-24 bg-background">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#735C3F]/10">
-                  <Star className="h-7 w-7 text-[#735C3F]" />
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12">
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <Sparkles className="h-5 w-5 text-[#C1A36A]" />
+                  <span className="text-sm font-medium tracking-widest uppercase text-[#735C3F]">
+                    Nosso Showroom
+                  </span>
                 </div>
-                <div>
-                  <h3 className="font-bold text-lg">+500 Veículos</h3>
-                  <p className="text-sm text-muted-foreground">Vendidos com sucesso</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#735C3F]/10">
-                  <Shield className="h-7 w-7 text-[#735C3F]" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg">Garantia Total</h3>
-                  <p className="text-sm text-muted-foreground">Procedência verificada</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#735C3F]/10">
-                  <CreditCard className="h-7 w-7 text-[#735C3F]" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg">Financiamento</h3>
-                  <p className="text-sm text-muted-foreground">As melhores taxas</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#735C3F]/10">
-                  <Award className="h-7 w-7 text-[#735C3F]" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg">14 Anos</h3>
-                  <p className="text-sm text-muted-foreground">De tradição no mercado</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {featuredVehicles.length > 0 && (
-          <section id="vehicles" className="py-20">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-12">
-                <Badge variant="outline" className="mb-4 border-[#735C3F]/30 text-[#735C3F]">
-                  Nosso Estoque
-                </Badge>
-                <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                <h2 className="text-4xl font-bold tracking-tight">
                   Veículos em Destaque
                 </h2>
-                <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-                  Selecionamos os melhores veículos para você. Cada um passou por rigorosa inspeção.
+                <p className="mt-3 text-lg text-muted-foreground max-w-xl">
+                  Cada veículo passa por uma rigorosa inspeção de mais de 100 itens antes de integrar nosso estoque premium.
                 </p>
               </div>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <Button variant="outline" className="border-[#735C3F] text-[#735C3F]" asChild data-testid="button-view-all-vehicles">
+                <Link href="/catalog">
+                  Ver Todos
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
+            
+            {featuredVehicles.length > 0 ? (
+              <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
                 {featuredVehicles.map((vehicle) => (
-                  <Card key={vehicle.id} className="overflow-hidden group" data-testid={`card-vehicle-${vehicle.id}`}>
-                    <div className="aspect-[16/10] bg-muted relative overflow-hidden">
+                  <Card key={vehicle.id} className="group overflow-hidden border-0 shadow-xl bg-card" data-testid={`card-vehicle-${vehicle.id}`}>
+                    <div className="aspect-[4/3] bg-muted relative overflow-hidden">
                       {vehicle.imageUrl ? (
                         <img
                           src={vehicle.imageUrl}
                           alt={`${vehicle.brand.name} ${vehicle.model}`}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center bg-gradient-to-br from-stone-100 to-stone-200 dark:from-stone-800 dark:to-stone-900">
-                          <Car className="h-16 w-16 text-muted-foreground/30" />
+                          <Car className="h-20 w-20 text-muted-foreground/20" />
                         </div>
                       )}
-                      <Badge className="absolute top-3 left-3 bg-[#735C3F] text-white">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <Badge className="absolute top-4 left-4 bg-[#735C3F] text-white border-0">
                         {vehicle.category.name}
                       </Badge>
-                    </div>
-                    <CardContent className="p-5">
-                      <div className="mb-3">
-                        <h3 className="font-bold text-lg truncate">
-                          {vehicle.brand.name} {vehicle.model}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {vehicle.year} • {formatMileage(vehicle.mileage)}
-                        </p>
-                      </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xl font-bold text-[#735C3F]">
-                          {formatCurrency(vehicle.price)}
-                        </span>
-                        <Button size="sm" className="bg-[#5B9A4D] hover:bg-[#4a8340] text-white" asChild>
+                      <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <Button size="sm" className="bg-[#5B9A4D] text-white" asChild data-testid={`button-vehicle-details-${vehicle.id}`}>
                           <Link href="/catalog">
-                            Detalhes
+                            Ver Detalhes
                             <ArrowRight className="ml-1 h-3 w-3" />
                           </Link>
                         </Button>
+                      </div>
+                    </div>
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between gap-2 mb-2">
+                        <h3 className="font-bold text-xl">
+                          {vehicle.brand.name} {vehicle.model}
+                        </h3>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground mb-4">
+                        <span className="flex items-center gap-1">
+                          <Gauge className="h-4 w-4" />
+                          {formatMileage(vehicle.mileage)}
+                        </span>
+                        <span>{vehicle.year}</span>
+                        {vehicle.fuel && <span>{vehicle.fuel}</span>}
+                      </div>
+                      <div className="pt-4 border-t flex items-center justify-between gap-2">
+                        <div>
+                          <div className="text-xs text-muted-foreground">A partir de</div>
+                          <span className="text-2xl font-bold text-[#735C3F]">
+                            {formatCurrency(vehicle.price)}
+                          </span>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
                 ))}
               </div>
-              {featuredVehicles.length === 0 && (
-                <div className="text-center py-12">
-                  <Car className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
-                  <p className="text-muted-foreground">
-                    Em breve novos veículos disponíveis
-                  </p>
-                </div>
-              )}
-              <div className="text-center mt-12">
-                <Button size="lg" variant="outline" className="border-[#735C3F] text-[#735C3F] hover:bg-[#735C3F]/10" asChild>
-                  <Link href="/catalog">
-                    Ver Catálogo Completo
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
+            ) : (
+              <div className="text-center py-20 bg-muted/30 rounded-2xl">
+                <Car className="mx-auto h-16 w-16 text-muted-foreground/20 mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Novos veículos em breve</h3>
+                <p className="text-muted-foreground">
+                  Estamos preparando uma seleção especial para você.
+                </p>
               </div>
-            </div>
-          </section>
-        )}
+            )}
+          </div>
+        </section>
 
-        <section id="benefits" className="py-20 bg-secondary">
+        <section id="benefits" className="py-24 bg-[#2E2B27]">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <Badge variant="outline" className="mb-4 border-[#735C3F]/30 text-[#735C3F]">
-                Por Que Nos Escolher
-              </Badge>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Vantagens MayBach Cars
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <div className="h-px w-8 bg-[#C1A36A]" />
+                <span className="text-sm font-medium tracking-widest uppercase text-[#C1A36A]">
+                  Diferenciais
+                </span>
+                <div className="h-px w-8 bg-[#C1A36A]" />
+              </div>
+              <h2 className="text-4xl font-bold tracking-tight text-white">
+                Por Que Escolher a MayBach Cars?
               </h2>
-              <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-                Oferecemos uma experiência completa na compra do seu veículo
+              <p className="mt-4 text-lg text-white/70 max-w-2xl mx-auto">
+                Cada etapa da sua experiência é pensada para oferecer confiança, transparência e satisfação total.
               </p>
             </div>
-            <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-              <Card className="border-0 shadow-lg bg-card">
-                <CardContent className="p-8">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#735C3F] mb-6">
-                    <Shield className="h-7 w-7 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-3">Procedência Garantida</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Todos os veículos passam por uma rigorosa verificação de histórico, 
-                    incluindo consulta de multas, sinistros e procedência.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-lg bg-card">
-                <CardContent className="p-8">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#735C3F] mb-6">
-                    <CreditCard className="h-7 w-7 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-3">Financiamento Facilitado</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Parcerias com os principais bancos do mercado para oferecer 
-                    as melhores taxas e condições de financiamento.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-lg bg-card">
-                <CardContent className="p-8">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#735C3F] mb-6">
-                    <Wrench className="h-7 w-7 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-3">Revisão Completa</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Cada veículo passa por uma inspeção técnica completa com mais de 
-                    100 itens verificados antes de ir para venda.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-lg bg-card">
-                <CardContent className="p-8">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#735C3F] mb-6">
-                    <Users className="h-7 w-7 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-3">Atendimento Premium</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Nossa equipe está pronta para oferecer um atendimento 
-                    personalizado e encontrar o veículo ideal para você.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-lg bg-card">
-                <CardContent className="p-8">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#735C3F] mb-6">
-                    <Award className="h-7 w-7 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-3">14 Anos de Tradição</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Mais de uma década no mercado automotivo, construindo 
-                    uma reputação sólida baseada em confiança e qualidade.
-                  </p>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-lg bg-card">
-                <CardContent className="p-8">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#735C3F] mb-6">
-                    <Car className="h-7 w-7 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-3">Estoque Diversificado</h3>
-                  <p className="text-muted-foreground leading-relaxed">
-                    Variedade de modelos, marcas e faixas de preço para 
-                    atender diferentes perfis e necessidades.
-                  </p>
-                </CardContent>
-              </Card>
+            
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              <div className="group p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5B9A4D] mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Shield className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">Garantia de Procedência</h3>
+                <p className="text-white/70 leading-relaxed">
+                  Todos os veículos passam por verificação completa de histórico: multas, sinistros, alienação fiduciária e leilão.
+                </p>
+              </div>
+              
+              <div className="group p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5B9A4D] mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <CreditCard className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">Financiamento Facilitado</h3>
+                <p className="text-white/70 leading-relaxed">
+                  Parcerias com os principais bancos para oferecer as melhores taxas. Entrada facilitada e até 60x para pagar.
+                </p>
+              </div>
+              
+              <div className="group p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5B9A4D] mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <FileCheck className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">Veículos Periciados</h3>
+                <p className="text-white/70 leading-relaxed">
+                  Inspeção técnica completa com mais de 100 itens verificados. Laudos disponíveis para consulta.
+                </p>
+              </div>
+              
+              <div className="group p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5B9A4D] mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Users className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">Atendimento Especializado</h3>
+                <p className="text-white/70 leading-relaxed">
+                  Equipe treinada para entender suas necessidades e encontrar o veículo ideal para seu perfil.
+                </p>
+              </div>
+              
+              <div className="group p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5B9A4D] mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Wrench className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">Pós-Venda Premium</h3>
+                <p className="text-white/70 leading-relaxed">
+                  Suporte contínuo após a compra. Estamos sempre disponíveis para ajudar com qualquer necessidade.
+                </p>
+              </div>
+              
+              <div className="group p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5B9A4D] mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Award className="h-8 w-8 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-3">14 Anos de Tradição</h3>
+                <p className="text-white/70 leading-relaxed">
+                  Mais de uma década construindo uma reputação sólida baseada em confiança, qualidade e transparência.
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
-        <section id="testimonials" className="py-20">
+        <section id="process" className="py-24 bg-card">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <Badge variant="outline" className="mb-4 border-[#735C3F]/30 text-[#735C3F]">
-                Depoimentos
-              </Badge>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                O Que Nossos Clientes Dizem
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <div className="h-px w-8 bg-[#735C3F]" />
+                <span className="text-sm font-medium tracking-widest uppercase text-[#735C3F]">
+                  Processo Simples
+                </span>
+                <div className="h-px w-8 bg-[#735C3F]" />
+              </div>
+              <h2 className="text-4xl font-bold tracking-tight">
+                Como Funciona a Compra
               </h2>
               <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-                A satisfação dos nossos clientes é o nosso maior orgulho
+                Do primeiro contato até a entrega das chaves, tornamos tudo simples e transparente.
               </p>
             </div>
+            
+            <div className="relative">
+              <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-[#735C3F] via-[#C1A36A] to-[#5B9A4D] -translate-y-1/2 rounded-full" />
+              
+              <div className="grid gap-8 lg:grid-cols-4 relative">
+                <div className="relative text-center">
+                  <div className="relative z-10 mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#735C3F] text-white text-2xl font-bold shadow-xl">
+                    1
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Escolha</h3>
+                  <p className="text-muted-foreground">
+                    Navegue pelo nosso catálogo online ou visite nossa loja para encontrar o veículo dos seus sonhos.
+                  </p>
+                </div>
+                
+                <div className="relative text-center">
+                  <div className="relative z-10 mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#8B7355] text-white text-2xl font-bold shadow-xl">
+                    2
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Simulação</h3>
+                  <p className="text-muted-foreground">
+                    Faça uma simulação de financiamento personalizada e encontre as melhores condições.
+                  </p>
+                </div>
+                
+                <div className="relative text-center">
+                  <div className="relative z-10 mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#C1A36A] text-white text-2xl font-bold shadow-xl">
+                    3
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Documentação</h3>
+                  <p className="text-muted-foreground">
+                    Nossa equipe cuida de toda a burocracia: transferência, despachante e documentação.
+                  </p>
+                </div>
+                
+                <div className="relative text-center">
+                  <div className="relative z-10 mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#5B9A4D] text-white text-2xl font-bold shadow-xl">
+                    4
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Entrega</h3>
+                  <p className="text-muted-foreground">
+                    Receba seu veículo revisado, higienizado e pronto para rodar. É só curtir!
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20 bg-gradient-to-br from-[#5B9A4D] to-[#4a8340]">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+              <div className="text-center lg:text-left">
+                <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                  Simule Seu Financiamento Agora
+                </h2>
+                <p className="mt-3 text-xl text-white/90 max-w-xl">
+                  Descubra as melhores condições para realizar seu sonho. Resposta em minutos!
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-4">
+                <Button size="lg" variant="outline" className="bg-white text-[#5B9A4D] border-white" asChild data-testid="button-simulate-whatsapp">
+                  <a href="https://wa.me/5511999999999?text=Olá! Gostaria de simular um financiamento." target="_blank" rel="noopener noreferrer">
+                    <MessageCircle className="mr-2 h-5 w-5" />
+                    Simular pelo WhatsApp
+                  </a>
+                </Button>
+                <Button size="lg" className="bg-white/10 border-white/30 text-white" asChild data-testid="button-call-now">
+                  <a href="tel:+551199999999">
+                    <Phone className="mr-2 h-5 w-5" />
+                    Ligar Agora
+                  </a>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="testimonials" className="py-24 bg-background">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-16">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <div className="h-px w-8 bg-[#735C3F]" />
+                <span className="text-sm font-medium tracking-widest uppercase text-[#735C3F]">
+                  Experiências Reais
+                </span>
+                <div className="h-px w-8 bg-[#735C3F]" />
+              </div>
+              <h2 className="text-4xl font-bold tracking-tight">
+                O Que Nossos Clientes Dizem
+              </h2>
+              <div className="mt-4 flex items-center justify-center gap-2">
+                <div className="flex">
+                  {[1,2,3,4,5].map(i => (
+                    <Star key={i} className="h-6 w-6 fill-[#C1A36A] text-[#C1A36A]" />
+                  ))}
+                </div>
+                <span className="text-lg font-semibold">4.9/5</span>
+                <span className="text-muted-foreground">baseado em 127 avaliações</span>
+              </div>
+            </div>
+            
             <div className="grid gap-8 md:grid-cols-3">
-              <Card className="relative">
+              <Card className="relative border-0 shadow-xl">
                 <CardContent className="p-8">
-                  <Quote className="h-10 w-10 text-[#735C3F]/20 mb-4" />
+                  <div className="flex mb-4">
+                    {[1,2,3,4,5].map(i => (
+                      <Star key={i} className="h-5 w-5 fill-[#C1A36A] text-[#C1A36A]" />
+                    ))}
+                  </div>
+                  <Quote className="h-8 w-8 text-[#735C3F]/20 mb-4" />
                   <p className="text-muted-foreground mb-6 leading-relaxed">
                     "Excelente atendimento! Encontrei o carro perfeito com um preço justo. 
-                    Recomendo a todos que buscam um seminovo de qualidade."
+                    A equipe foi super transparente em todo o processo. Recomendo muito!"
                   </p>
                   <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-[#735C3F]/10 flex items-center justify-center">
-                      <span className="font-bold text-[#735C3F]">RS</span>
+                    <div className="h-14 w-14 rounded-full bg-gradient-to-br from-[#735C3F] to-[#C1A36A] flex items-center justify-center">
+                      <span className="font-bold text-white text-lg">RS</span>
                     </div>
                     <div>
                       <div className="font-semibold">Roberto Silva</div>
-                      <div className="text-sm text-muted-foreground">Cliente desde 2022</div>
+                      <div className="text-sm text-muted-foreground">Comprou Honda Civic 2022</div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card className="relative">
+              
+              <Card className="relative border-0 shadow-xl">
                 <CardContent className="p-8">
-                  <Quote className="h-10 w-10 text-[#735C3F]/20 mb-4" />
+                  <div className="flex mb-4">
+                    {[1,2,3,4,5].map(i => (
+                      <Star key={i} className="h-5 w-5 fill-[#C1A36A] text-[#C1A36A]" />
+                    ))}
+                  </div>
+                  <Quote className="h-8 w-8 text-[#735C3F]/20 mb-4" />
                   <p className="text-muted-foreground mb-6 leading-relaxed">
-                    "Processo de compra muito tranquilo. A equipe foi super atenciosa 
-                    e me ajudou a conseguir um ótimo financiamento."
+                    "Processo de compra muito tranquilo. A equipe cuidou de toda documentação 
+                    e me ajudou a conseguir um ótimo financiamento. Super satisfeita!"
                   </p>
                   <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-[#735C3F]/10 flex items-center justify-center">
-                      <span className="font-bold text-[#735C3F]">MC</span>
+                    <div className="h-14 w-14 rounded-full bg-gradient-to-br from-[#735C3F] to-[#C1A36A] flex items-center justify-center">
+                      <span className="font-bold text-white text-lg">MC</span>
                     </div>
                     <div>
                       <div className="font-semibold">Maria Costa</div>
-                      <div className="text-sm text-muted-foreground">Cliente desde 2023</div>
+                      <div className="text-sm text-muted-foreground">Comprou Toyota Corolla 2023</div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card className="relative">
+              
+              <Card className="relative border-0 shadow-xl">
                 <CardContent className="p-8">
-                  <Quote className="h-10 w-10 text-[#735C3F]/20 mb-4" />
+                  <div className="flex mb-4">
+                    {[1,2,3,4,5].map(i => (
+                      <Star key={i} className="h-5 w-5 fill-[#C1A36A] text-[#C1A36A]" />
+                    ))}
+                  </div>
+                  <Quote className="h-8 w-8 text-[#735C3F]/20 mb-4" />
                   <p className="text-muted-foreground mb-6 leading-relaxed">
                     "Já é o segundo carro que compro na MayBach. Confiança total! 
                     Veículos sempre em perfeito estado e com toda documentação em dia."
                   </p>
                   <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-[#735C3F]/10 flex items-center justify-center">
-                      <span className="font-bold text-[#735C3F]">JO</span>
+                    <div className="h-14 w-14 rounded-full bg-gradient-to-br from-[#735C3F] to-[#C1A36A] flex items-center justify-center">
+                      <span className="font-bold text-white text-lg">JO</span>
                     </div>
                     <div>
                       <div className="font-semibold">João Oliveira</div>
@@ -416,118 +521,252 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="contact" className="py-20 bg-card">
+        <section className="py-16 bg-secondary">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <Badge variant="outline" className="mb-4 border-[#735C3F]/30 text-[#735C3F]">
-                Fale Conosco
-              </Badge>
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Estamos Prontos Para Ajudá-lo
-              </h2>
-              <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-                Entre em contato conosco e agende uma visita. Nossa equipe está pronta 
-                para encontrar o veículo perfeito para você.
-              </p>
+              <h3 className="text-lg font-medium text-muted-foreground mb-4">
+                Parceiros de Confiança
+              </h3>
+              <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
+                <div className="flex items-center gap-2 text-muted-foreground/60 hover:text-muted-foreground transition-colors">
+                  <Building2 className="h-8 w-8" />
+                  <span className="font-bold text-lg">Santander</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground/60 hover:text-muted-foreground transition-colors">
+                  <Building2 className="h-8 w-8" />
+                  <span className="font-bold text-lg">Bradesco</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground/60 hover:text-muted-foreground transition-colors">
+                  <Building2 className="h-8 w-8" />
+                  <span className="font-bold text-lg">Itaú</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground/60 hover:text-muted-foreground transition-colors">
+                  <Building2 className="h-8 w-8" />
+                  <span className="font-bold text-lg">BV</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground/60 hover:text-muted-foreground transition-colors">
+                  <Building2 className="h-8 w-8" />
+                  <span className="font-bold text-lg">Pan</span>
+                </div>
+              </div>
             </div>
-            <div className="grid gap-6 md:grid-cols-3 max-w-4xl mx-auto mb-12">
-              <Card className="text-center border-0 shadow-lg">
-                <CardContent className="pt-8 pb-6">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-[#735C3F]">
-                    <Phone className="h-6 w-6 text-white" />
-                  </div>
-                  <h3 className="font-bold text-lg mb-2">Telefone / WhatsApp</h3>
-                  <p className="text-muted-foreground">(11) 99999-9999</p>
-                  <p className="text-muted-foreground">(11) 3333-3333</p>
-                </CardContent>
-              </Card>
-              <Card className="text-center border-0 shadow-lg">
-                <CardContent className="pt-8 pb-6">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-[#735C3F]">
-                    <MapPin className="h-6 w-6 text-white" />
-                  </div>
-                  <h3 className="font-bold text-lg mb-2">Endereço</h3>
-                  <p className="text-muted-foreground">Av. Principal, 1234 - Centro</p>
-                  <p className="text-muted-foreground">São Paulo - SP</p>
-                </CardContent>
-              </Card>
-              <Card className="text-center border-0 shadow-lg">
-                <CardContent className="pt-8 pb-6">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-[#735C3F]">
-                    <Clock className="h-6 w-6 text-white" />
-                  </div>
-                  <h3 className="font-bold text-lg mb-2">Horário</h3>
-                  <p className="text-muted-foreground">Seg-Sex: 8h às 18h</p>
-                  <p className="text-muted-foreground">Sábado: 8h às 14h</p>
-                </CardContent>
-              </Card>
-            </div>
-            <div className="text-center">
-              <Button size="lg" className="bg-[#5B9A4D] hover:bg-[#4a8340] text-white" asChild>
-                <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer">
-                  <Phone className="mr-2 h-4 w-4" />
-                  Falar pelo WhatsApp
-                </a>
-              </Button>
+            
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="text-center p-6 rounded-xl bg-card">
+                <CheckCircle className="h-10 w-10 text-[#5B9A4D] mx-auto mb-3" />
+                <div className="text-2xl font-bold">100%</div>
+                <div className="text-sm text-muted-foreground">Documentação em Dia</div>
+              </div>
+              <div className="text-center p-6 rounded-xl bg-card">
+                <Shield className="h-10 w-10 text-[#5B9A4D] mx-auto mb-3" />
+                <div className="text-2xl font-bold">Garantia</div>
+                <div className="text-sm text-muted-foreground">Motor e Câmbio</div>
+              </div>
+              <div className="text-center p-6 rounded-xl bg-card">
+                <Truck className="h-10 w-10 text-[#5B9A4D] mx-auto mb-3" />
+                <div className="text-2xl font-bold">Entrega</div>
+                <div className="text-sm text-muted-foreground">Em Todo Brasil</div>
+              </div>
+              <div className="text-center p-6 rounded-xl bg-card">
+                <Star className="h-10 w-10 text-[#5B9A4D] mx-auto mb-3" />
+                <div className="text-2xl font-bold">4.9/5</div>
+                <div className="text-sm text-muted-foreground">Google Reviews</div>
+              </div>
             </div>
           </div>
         </section>
 
-        <section className="bg-gradient-to-r from-[#2E2B27] to-[#3a3632] py-16">
+        <section id="contact" className="py-24 bg-background">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex flex-wrap items-center justify-between gap-8">
+            <div className="grid gap-12 lg:grid-cols-2">
               <div>
-                <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-                  Pronto para encontrar seu próximo veículo?
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="h-px w-8 bg-[#735C3F]" />
+                  <span className="text-sm font-medium tracking-widest uppercase text-[#735C3F]">
+                    Visite-nos
+                  </span>
+                </div>
+                <h2 className="text-4xl font-bold tracking-tight mb-4">
+                  Estamos Prontos Para Atendê-lo
                 </h2>
-                <p className="mt-2 text-[#E2DED6]">
-                  Acesse nosso catálogo completo e encontre o carro ideal para você.
+                <p className="text-lg text-muted-foreground mb-8">
+                  Visite nosso showroom e conheça de perto nossa seleção de veículos. 
+                  Nossa equipe está pronta para oferecer a melhor experiência.
                 </p>
+                
+                <div className="space-y-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#735C3F]">
+                      <MapPin className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">Endereço</h3>
+                      <p className="text-muted-foreground">Av. Principal, 1234 - Centro</p>
+                      <p className="text-muted-foreground">São Paulo - SP, 01234-000</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#735C3F]">
+                      <Phone className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">Telefone / WhatsApp</h3>
+                      <p className="text-muted-foreground">(11) 99999-9999</p>
+                      <p className="text-muted-foreground">(11) 3333-3333</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#735C3F]">
+                      <Clock className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">Horário de Funcionamento</h3>
+                      <p className="text-muted-foreground">Segunda a Sexta: 8h às 18h</p>
+                      <p className="text-muted-foreground">Sábado: 8h às 14h</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#735C3F]">
+                      <Mail className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg">E-mail</h3>
+                      <p className="text-muted-foreground">contato@maybachcars.com.br</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="mt-8 flex gap-4">
+                  <Button size="lg" className="bg-[#5B9A4D] text-white" asChild data-testid="button-contact-whatsapp-section">
+                    <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer">
+                      <MessageCircle className="mr-2 h-4 w-4" />
+                      WhatsApp
+                    </a>
+                  </Button>
+                  <Button size="lg" variant="outline" asChild data-testid="button-view-map">
+                    <a href="https://maps.google.com" target="_blank" rel="noopener noreferrer">
+                      <MapPin className="mr-2 h-4 w-4" />
+                      Ver no Mapa
+                    </a>
+                  </Button>
+                </div>
               </div>
-              <Button size="lg" className="bg-[#5B9A4D] hover:bg-[#4a8340] text-white" asChild data-testid="button-catalog-cta">
+              
+              <div className="relative">
+                <div className="aspect-square rounded-2xl overflow-hidden bg-muted">
+                  <iframe 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3657.1975986698856!2d-46.6556756!3d-23.5504817!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjPCsDMzJzAxLjciUyA0NsKwMzknMjAuNCJX!5e0!3m2!1spt-BR!2sbr!4v1234567890"
+                    className="w-full h-full border-0"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    title="Localização MayBach Cars"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-gradient-to-br from-[#2E2B27] via-[#3a3632] to-[#2E2B27] py-20">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl mb-4">
+              Pronto para encontrar seu próximo veículo?
+            </h2>
+            <p className="text-xl text-white/80 mb-10 max-w-2xl mx-auto">
+              Acesse nosso catálogo completo e descubra o carro perfeito para você.
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <Button size="lg" className="bg-[#5B9A4D] text-white" asChild data-testid="button-catalog-cta">
                 <Link href="/catalog">
                   Ver Catálogo Completo
-                  <ChevronRight className="ml-2 h-4 w-4" />
+                  <ChevronRight className="ml-2 h-5 w-5" />
                 </Link>
+              </Button>
+              <Button size="lg" variant="outline" className="bg-white/5 border-white/20 text-white" asChild data-testid="button-contact-whatsapp">
+                <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer">
+                  <MessageCircle className="mr-2 h-5 w-5" />
+                  Fale Conosco
+                </a>
               </Button>
             </div>
           </div>
         </section>
       </main>
 
-      <footer className="border-t py-12 bg-background">
+      <footer className="bg-[#1a1816] text-white py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-8 md:grid-cols-4">
-            <div className="md:col-span-2">
-              <img src={logoImage} alt="MayBach Cars" className="h-12 w-auto mb-4" />
-              <p className="text-muted-foreground max-w-md">
-                Há mais de 14 anos realizando o sonho do carro próprio. 
-                Qualidade, confiança e as melhores condições do mercado.
+          <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-4">
+            <div className="lg:col-span-1">
+              <img src={logoImage} alt="MayBach Cars" className="h-14 w-auto mb-6 brightness-0 invert" />
+              <p className="text-white/60 mb-6 leading-relaxed">
+                Há mais de 14 anos realizando o sonho do carro próprio com qualidade, 
+                confiança e as melhores condições do mercado.
               </p>
+              <div className="flex gap-3">
+                <a href="#" className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors" data-testid="link-instagram">
+                  <Instagram className="h-5 w-5" />
+                </a>
+                <a href="#" className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors" data-testid="link-facebook">
+                  <Facebook className="h-5 w-5" />
+                </a>
+                <a href="https://wa.me/5511999999999" className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors" data-testid="link-whatsapp-footer">
+                  <MessageCircle className="h-5 w-5" />
+                </a>
+              </div>
             </div>
+            
             <div>
-              <h4 className="font-semibold mb-4">Links Rápidos</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/catalog" className="hover:text-foreground transition-colors">Catálogo</Link></li>
-                <li><a href="#benefits" className="hover:text-foreground transition-colors">Vantagens</a></li>
-                <li><a href="#testimonials" className="hover:text-foreground transition-colors">Depoimentos</a></li>
-                <li><a href="#contact" className="hover:text-foreground transition-colors">Contato</a></li>
+              <h4 className="font-semibold text-lg mb-4">Links Rápidos</h4>
+              <ul className="space-y-3 text-white/60">
+                <li><Link href="/catalog" className="hover:text-white transition-colors">Catálogo de Veículos</Link></li>
+                <li><a href="#benefits" className="hover:text-white transition-colors">Nossas Vantagens</a></li>
+                <li><a href="#process" className="hover:text-white transition-colors">Como Comprar</a></li>
+                <li><a href="#testimonials" className="hover:text-white transition-colors">Depoimentos</a></li>
+                <li><a href="#contact" className="hover:text-white transition-colors">Contato</a></li>
               </ul>
             </div>
+            
             <div>
-              <h4 className="font-semibold mb-4">Contato</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>(11) 99999-9999</li>
-                <li>(11) 3333-3333</li>
-                <li>contato@maybachcars.com.br</li>
+              <h4 className="font-semibold text-lg mb-4">Contato</h4>
+              <ul className="space-y-3 text-white/60">
+                <li className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  (11) 99999-9999
+                </li>
+                <li className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  (11) 3333-3333
+                </li>
+                <li className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  contato@maybachcars.com.br
+                </li>
               </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold text-lg mb-4">Endereço</h4>
+              <div className="text-white/60 space-y-2">
+                <p>Av. Principal, 1234</p>
+                <p>Centro - São Paulo/SP</p>
+                <p>CEP: 01234-000</p>
+              </div>
+              <div className="mt-4 text-white/60">
+                <p className="font-medium text-white mb-1">Horário:</p>
+                <p>Seg-Sex: 8h às 18h</p>
+                <p>Sábado: 8h às 14h</p>
+              </div>
             </div>
           </div>
-          <div className="mt-12 pt-8 border-t flex flex-wrap items-center justify-between gap-4">
-            <p className="text-sm text-muted-foreground">
+          
+          <div className="mt-12 pt-8 border-t border-white/10 flex flex-wrap items-center justify-between gap-4">
+            <p className="text-sm text-white/40">
               © {new Date().getFullYear()} MayBach Cars. Todos os direitos reservados.
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-white/40">
               CNPJ: 00.000.000/0001-00
             </p>
           </div>

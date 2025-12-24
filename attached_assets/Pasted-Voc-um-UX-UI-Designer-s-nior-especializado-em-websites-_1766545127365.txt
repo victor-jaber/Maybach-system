@@ -1,0 +1,72 @@
+Você é um UX/UI Designer sênior especializado em websites automotivos de alto padrão.
+
+Objetivo: Redesenhar a landing page de uma concessionária de automóveis para torná-la mais impactante, moderna e orientada à conversão.
+
+Problemas atuais:
+- As seções são monótonas e visualmente repetitivas.
+- Falta emoção, identidade automotiva e sensação de showroom.
+- Não há destaque suficiente para os veículos.
+
+Diretrizes de Design:
+
+1. HERO SECTION
+Criar uma Hero Section extremamente forte, com:
+- Background automotivo realista (showroom, estrada, carro em movimento, close de faróis, volante, painel).
+- Overlay sutil escuro para legibilidade.
+- Headline grande e emocional (ex: “Encontre o carro perfeito para sua próxima jornada”).
+- Subheadline curta focada em confiança e oportunidade.
+- CTA principal destacado: “Ver Estoque” / “Falar com um Especialista”.
+- Elementos de profundidade, brilho e motion leve.
+
+2. SEÇÃO: CARROS EM DESTAQUE
+Criar um carrossel ou grid premium com:
+- Cards de veículos com imagem grande.
+- Nome, ano, km, preço, condição.
+- CTA individual: “Ver Detalhes”.
+- Sombra suave, bordas arredondadas, efeito hover.
+
+3. SEÇÃO: POR QUE COMPRAR CONOSCO
+Apresentar 3 a 5 diferenciais em cards visuais:
+- Garantia
+- Financiamento facilitado
+- Veículos periciados
+- Atendimento especializado
+- Pós-venda premium
+
+4. SEÇÃO: EXPERIÊNCIA DO CLIENTE
+Bloco com:
+- Foto ambiente da concessionária ou clientes felizes.
+- Depoimentos reais.
+- Avaliações (estrelas, Google Reviews).
+
+5. SEÇÃO: PROCESSO DE COMPRA
+Explicar o passo a passo:
+Escolha → Simulação → Documentação → Entrega.
+Design em linha do tempo visual.
+
+6. SEÇÃO: SIMULAÇÃO / FINANCIAMENTO
+Bloco chamativo:
+- Simule seu financiamento.
+- CTA para WhatsApp ou formulário.
+
+7. SEÇÃO: CONFIANÇA E AUTORIDADE
+- Selos de qualidade.
+- Parceiros financeiros.
+- Anos de mercado.
+- Número de clientes atendidos.
+
+8. FOOTER RICO
+- Endereço, mapa, redes sociais.
+- Horário de funcionamento.
+- Links rápidos.
+- CTA final.
+
+Estilo visual:
+- Forte identidade automotiva.
+- Tipografia moderna e robusta.
+- Cores sóbrias, alto contraste.
+- Layout com sensação de movimento e velocidade.
+- Sensação premium, moderna e confiável.
+
+Objetivo final:
+Transformar a landing page em um showroom digital altamente persuasivo, elegante e voltado à conversão.
