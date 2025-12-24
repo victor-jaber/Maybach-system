@@ -9,6 +9,8 @@ import {
   insertVehicleApiSchema,
   insertCustomerApiSchema,
   insertSaleApiSchema,
+  insertStoreSchema,
+  insertContractApiSchema,
 } from "@shared/schema";
 import { z } from "zod";
 
@@ -577,6 +579,161 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error fetching FIPE price:", error);
       res.status(500).json({ message: "Erro ao consultar API FIPE" });
+    }
+  });
+
+  // Store Settings
+  app.get("/api/store", isAuthenticated, async (req, res) => {
+    try {
+      const store = await storage.getStore();
+      res.json(store || null);
+    } catch (error) {
+      console.error("Error fetching store:", error);
+      res.status(500).json({ message: "Erro ao buscar dados da loja" });
+    }
+  });
+
+  app.post("/api/store", isAuthenticated, async (req, res) => {
+    try {
+      const parsed = insertStoreSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Dados inválidos", errors: parsed.error.errors });
+      }
+      const store = await storage.createOrUpdateStore(parsed.data);
+      res.json(store);
+    } catch (error) {
+      console.error("Error saving store:", error);
+      res.status(500).json({ message: "Erro ao salvar dados da loja" });
+    }
+  });
+
+  // Contracts
+  app.get("/api/contracts", isAuthenticated, async (req, res) => {
+    try {
+      const contracts = await storage.getContracts();
+      res.json(contracts);
+    } catch (error) {
+      console.error("Error fetching contracts:", error);
+      res.status(500).json({ message: "Erro ao buscar contratos" });
+    }
+  });
+
+  app.get("/api/contracts/:id", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const contract = await storage.getContract(id);
+      if (!contract) {
+        return res.status(404).json({ message: "Contrato não encontrado" });
+      }
+      res.json(contract);
+    } catch (error) {
+      console.error("Error fetching contract:", error);
+      res.status(500).json({ message: "Erro ao buscar contrato" });
+    }
+  });
+
+  app.post("/api/contracts", isAuthenticated, async (req, res) => {
+    try {
+      const parsed = insertContractApiSchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res.status(400).json({ message: "Dados inválidos", errors: parsed.error.errors });
+      }
+      const contract = await storage.createContract(parsed.data as any);
+      res.status(201).json(contract);
+    } catch (error) {
+      console.error("Error creating contract:", error);
+      res.status(500).json({ message: "Erro ao criar contrato" });
+    }
+  });
+
+  app.patch("/api/contracts/:id", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const contract = await storage.updateContract(id, req.body);
+      if (!contract) {
+        return res.status(404).json({ message: "Contrato não encontrado" });
+      }
+      res.json(contract);
+    } catch (error) {
+      console.error("Error updating contract:", error);
+      res.status(500).json({ message: "Erro ao atualizar contrato" });
+    }
+  });
+
+  app.delete("/api/contracts/:id", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      await storage.deleteContract(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting contract:", error);
+      res.status(500).json({ message: "Erro ao excluir contrato" });
+    }
+  });
+
+  // Contract Installments
+  app.get("/api/contracts/:contractId/installments", isAuthenticated, async (req, res) => {
+    try {
+      const contractId = parseInt(req.params.contractId);
+      const installments = await storage.getContractInstallments(contractId);
+      res.json(installments);
+    } catch (error) {
+      console.error("Error fetching installments:", error);
+      res.status(500).json({ message: "Erro ao buscar parcelas" });
+    }
+  });
+
+  app.post("/api/contracts/:contractId/installments", isAuthenticated, async (req, res) => {
+    try {
+      const contractId = parseInt(req.params.contractId);
+      const installment = await storage.createContractInstallment({
+        ...req.body,
+        contractId,
+      });
+      res.status(201).json(installment);
+    } catch (error) {
+      console.error("Error creating installment:", error);
+      res.status(500).json({ message: "Erro ao criar parcela" });
+    }
+  });
+
+  app.patch("/api/contracts/installments/:id", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const installment = await storage.updateContractInstallment(id, req.body);
+      if (!installment) {
+        return res.status(404).json({ message: "Parcela não encontrada" });
+      }
+      res.json(installment);
+    } catch (error) {
+      console.error("Error updating installment:", error);
+      res.status(500).json({ message: "Erro ao atualizar parcela" });
+    }
+  });
+
+  // Contract Files
+  app.get("/api/contracts/:contractId/files", isAuthenticated, async (req, res) => {
+    try {
+      const contractId = parseInt(req.params.contractId);
+      const files = await storage.getContractFiles(contractId);
+      res.json(files);
+    } catch (error) {
+      console.error("Error fetching contract files:", error);
+      res.status(500).json({ message: "Erro ao buscar arquivos do contrato" });
+    }
+  });
+
+  app.post("/api/contracts/:contractId/files", isAuthenticated, async (req, res) => {
+    try {
+      const contractId = parseInt(req.params.contractId);
+      const file = await storage.createContractFile({
+        ...req.body,
+        contractId,
+      });
+      res.status(201).json(file);
+    } catch (error) {
+      console.error("Error creating contract file:", error);
+      res.status(500).json({ message: "Erro ao criar arquivo do contrato" });
     }
   });
 

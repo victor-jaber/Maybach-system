@@ -1,0 +1,122 @@
+Você é um Arquiteto de Software + Engenheiro Full-Stack + Especialista em contratos comerciais no Brasil e vai projetar e implementar um módulo chamado “Contratos” para um sistema de concessionária.
+
+CONTEXTO (IMPORTANTE)
+- O Cliente JÁ está cadastrado no sistema.
+- O Veículo JÁ está cadastrado no sistema.
+- Portanto, ao criar um contrato, o usuário apenas SELECIONA o cliente e o veículo, e o sistema preenche automaticamente todos os dados cadastrados (cliente, veículo e dados fixos da loja).
+- O usuário só informa/ajusta os dados específicos do contrato (valores, parcelas, condições, cláusulas opcionais, etc.).
+
+OBJETIVO
+Criar uma aba “Contratos” para registrar e gerar automaticamente contratos em PDF.
+Cenário principal: quando o cliente não tem o valor total de entrada do veículo, deve existir um “Contrato Externo de Complemento de Entrada” (acordo entre Cliente e Loja) formalizando o restante da entrada fora do financiamento. Em seguida, o sistema deve gerar também o “Contrato Completo de Compra e Venda”, já relacionando (quando existir) o contrato externo.
+
+REQUISITOS FUNCIONAIS
+1) Aba “Contratos”
+- Listar contratos com filtros: cliente, veículo, tipo, status, período.
+- Tipos de contrato:
+  a) Contrato Externo de Complemento de Entrada
+  b) Contrato de Compra e Venda do Veículo (contrato completo)
+  c) Outros (opcional)
+- Status:
+  rascunho, gerado, assinado (opcional), cancelado.
+- Ações:
+  criar, editar rascunho, gerar PDF, baixar PDF, duplicar, cancelar, registrar pagamento de parcelas (se houver).
+
+2) Criação de contrato (fluxo padrão)
+- Passo 1: Selecionar Cliente (dropdown/autocomplete)
+  -> Ao selecionar, puxar automaticamente do cadastro:
+     nome, CPF/CNPJ, RG, endereço completo, telefone, email.
+- Passo 2: Selecionar Veículo (dropdown/autocomplete)
+  -> Ao selecionar, puxar automaticamente do cadastro:
+     marca, modelo, versão, ano, cor, placa, chassi, renavam, km (se houver), valor anunciado (se houver).
+- Passo 3: Dados da Loja (sempre pré-setados em Configurações)
+  -> razão social, CNPJ, endereço, representante legal, CPF do representante, contatos.
+- Passo 4: Dados específicos do contrato (preenchidos pelo usuário)
+  -> valores, condições, datas, parcelas, multa/juros, observações.
+- Passo 5: Preview e geração de PDF.
+
+3) Contrato Externo de Complemento de Entrada (principal)
+- O usuário NÃO digita dados do cliente/veículo: apenas seleciona.
+- Campos que o usuário preenche:
+  - Entrada total combinada (R$)
+  - Valor já pago de entrada (R$)
+  - Valor restante da entrada (calculado automaticamente = total - pago)
+  - Forma de pagamento do restante:
+     a) À vista (data de vencimento)
+     b) Parcelado:
+        • quantidade de parcelas
+        • valor por parcela
+        • dia de vencimento (ex: todo dia 20)
+        • forma de pagamento (pix/boleto/transferência)
+  - Multa/juros por atraso:
+        • multa (%)
+        • juros (% ao mês)
+  - Cláusulas opcionais:
+        • vencimento antecipado em caso de inadimplência
+        • penalidades adicionais
+        • observações
+- O sistema deve gerar o contrato textual completo com placeholders e com os dados autopreenchidos.
+- O PDF deve ser salvo e disponibilizado para download.
+
+4) Contrato Completo de Compra e Venda
+- Deve puxar automaticamente:
+  - cliente (do cadastro)
+  - veículo (do cadastro)
+  - loja (configurações)
+  - valores da venda e entrada (do negócio)
+  - financiamento (se houver): banco, valor financiado, nº contrato, parcelas (opcional)
+  - e deve referenciar o “Contrato Externo de Complemento de Entrada” se existir.
+- Geração de PDF com cláusulas completas e profissionais.
+
+5) Configurações da Loja (pré-set)
+- Criar tela “Configurações > Dados da Loja” com:
+  razão social, nome fantasia, CNPJ, IE (opcional), endereço, representante legal, CPF do representante, email, telefone, logo (opcional).
+- Esses dados entram automaticamente nos contratos.
+
+REQUISITOS TÉCNICOS
+- Stack alvo: (assuma Next.js + Node + PostgreSQL) — ou proponha equivalente.
+- Back-end:
+  - CRUD de contratos
+  - Endpoint: POST /contracts/{id}/generate-pdf
+  - Armazenar PDF (S3 ou storage local) e retornar URL/arquivo para download.
+- Front-end:
+  - Tela de listagem com filtros
+  - Wizard de criação (seleção de cliente, seleção de veículo, dados do contrato)
+  - Preview do contrato antes de gerar
+  - Botões “Gerar PDF” e “Baixar PDF”
+- Template de contrato:
+  - Use HTML + headless chromium (Puppeteer/Playwright) OU pdfmake. Escolha 1 e justifique brevemente.
+- Segurança:
+  - Permissões (admin/financeiro)
+  - Auditoria (quem gerou, quando, versão).
+
+BANCO DE DADOS (MODELAGEM)
+Crie tabelas sugeridas:
+- stores (dados da loja)
+- customers
+- vehicles
+- deals (opcional: negócio/venda para centralizar valores)
+- contracts
+- contract_installments (parcelas do complemento de entrada)
+- contract_files (pdf gerado: url, hash, versão)
+Inclua relacionamentos e campos essenciais.
+
+ENTREGÁVEIS (responda com)
+1) Arquitetura do módulo + fluxos
+2) Modelagem do banco (DDL/pseudo-DDL)
+3) Endpoints e payloads exemplo
+4) Wireframe textual das telas (listagem, wizard, configurações)
+5) Template completo do “Contrato Externo de Complemento de Entrada” (pt-BR) com placeholders
+6) Template completo do “Contrato de Compra e Venda” (pt-BR) com placeholders
+7) Código exemplo:
+   - função de merge dos dados do cliente/veículo/loja no template
+   - geração de PDF e salvamento
+   - exemplo de front chamando o endpoint
+
+REGRAS DE SAÍDA
+- Escreva cláusulas formais (nível profissional).
+- Placeholders no padrão {{campo}}.
+- Não peça para o usuário digitar dados já existentes: sempre puxar do cadastro após selecionar Cliente e Veículo.
+- Garanta consistência de cálculo (restante = total - pago).
+- Inclua multa, juros, vencimento, foro, assinatura e testemunhas.
+- Texto em pt-BR.

@@ -207,6 +207,150 @@ export const insertVehicleImageSchema = createInsertSchema(vehicleImages).omit({
 export type InsertVehicleImage = z.infer<typeof insertVehicleImageSchema>;
 export type VehicleImage = typeof vehicleImages.$inferSelect;
 
+// Dados da Loja
+export const stores = pgTable("stores", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  razaoSocial: varchar("razao_social", { length: 200 }).notNull(),
+  nomeFantasia: varchar("nome_fantasia", { length: 200 }),
+  cnpj: varchar("cnpj", { length: 18 }).notNull(),
+  inscricaoEstadual: varchar("inscricao_estadual", { length: 20 }),
+  email: varchar("email", { length: 150 }),
+  phone: varchar("phone", { length: 20 }),
+  cep: varchar("cep", { length: 10 }),
+  street: varchar("street", { length: 200 }),
+  number: varchar("number", { length: 20 }),
+  complement: varchar("complement", { length: 100 }),
+  neighborhood: varchar("neighborhood", { length: 100 }),
+  city: varchar("city", { length: 100 }),
+  state: varchar("state", { length: 2 }),
+  representanteLegal: varchar("representante_legal", { length: 200 }),
+  cpfRepresentante: varchar("cpf_representante", { length: 14 }),
+  logoUrl: text("logo_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertStoreSchema = createInsertSchema(stores).omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertStore = z.infer<typeof insertStoreSchema>;
+export type Store = typeof stores.$inferSelect;
+
+// Contratos
+export const contracts = pgTable("contracts", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  customerId: integer("customer_id").notNull().references(() => customers.id),
+  vehicleId: integer("vehicle_id").notNull().references(() => vehicles.id),
+  saleId: integer("sale_id").references(() => sales.id),
+  relatedContractId: integer("related_contract_id"),
+  contractType: varchar("contract_type", { length: 50 }).notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("draft"),
+  entradaTotal: decimal("entrada_total", { precision: 12, scale: 2 }),
+  entradaPaga: decimal("entrada_paga", { precision: 12, scale: 2 }),
+  entradaRestante: decimal("entrada_restante", { precision: 12, scale: 2 }),
+  formaPagamentoRestante: varchar("forma_pagamento_restante", { length: 30 }),
+  dataVencimentoAvista: timestamp("data_vencimento_avista"),
+  quantidadeParcelas: integer("quantidade_parcelas"),
+  valorParcela: decimal("valor_parcela", { precision: 12, scale: 2 }),
+  diaVencimento: integer("dia_vencimento"),
+  formaPagamentoParcelas: varchar("forma_pagamento_parcelas", { length: 30 }),
+  multaAtraso: decimal("multa_atraso", { precision: 5, scale: 2 }),
+  jurosAtraso: decimal("juros_atraso", { precision: 5, scale: 2 }),
+  clausulaVencimentoAntecipado: boolean("clausula_vencimento_antecipado").default(false),
+  penalidadesAdicionais: text("penalidades_adicionais"),
+  observacoes: text("observacoes"),
+  valorVenda: decimal("valor_venda", { precision: 12, scale: 2 }),
+  valorFinanciado: decimal("valor_financiado", { precision: 12, scale: 2 }),
+  bancoFinanciamento: varchar("banco_financiamento", { length: 100 }),
+  numeroContratoFinanciamento: varchar("numero_contrato_financiamento", { length: 50 }),
+  parcelasFinanciamento: integer("parcelas_financiamento"),
+  createdBy: varchar("created_by", { length: 100 }),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const contractsRelations = relations(contracts, ({ one, many }) => ({
+  customer: one(customers, { fields: [contracts.customerId], references: [customers.id] }),
+  vehicle: one(vehicles, { fields: [contracts.vehicleId], references: [vehicles.id] }),
+  sale: one(sales, { fields: [contracts.saleId], references: [sales.id] }),
+  relatedContract: one(contracts, { fields: [contracts.relatedContractId], references: [contracts.id] }),
+  installments: many(contractInstallments),
+  files: many(contractFiles),
+}));
+
+export const insertContractSchema = createInsertSchema(contracts).omit({ id: true, createdAt: true, updatedAt: true });
+
+export const insertContractApiSchema = z.object({
+  customerId: z.coerce.number(),
+  vehicleId: z.coerce.number(),
+  saleId: z.coerce.number().optional().nullable(),
+  relatedContractId: z.coerce.number().optional().nullable(),
+  contractType: z.enum(["entry_complement", "purchase_sale"]),
+  status: z.enum(["draft", "generated", "signed", "cancelled"]).default("draft"),
+  entradaTotal: z.string().optional().nullable(),
+  entradaPaga: z.string().optional().nullable(),
+  entradaRestante: z.string().optional().nullable(),
+  formaPagamentoRestante: z.enum(["avista", "parcelado"]).optional().nullable(),
+  dataVencimentoAvista: z.union([z.string(), z.date()]).optional().nullable().transform(val => val ? new Date(val) : null),
+  quantidadeParcelas: z.coerce.number().optional().nullable(),
+  valorParcela: z.string().optional().nullable(),
+  diaVencimento: z.coerce.number().optional().nullable(),
+  formaPagamentoParcelas: z.enum(["pix", "boleto", "transferencia"]).optional().nullable(),
+  multaAtraso: z.string().optional().nullable(),
+  jurosAtraso: z.string().optional().nullable(),
+  clausulaVencimentoAntecipado: z.boolean().optional().default(false),
+  penalidadesAdicionais: z.string().optional().nullable(),
+  observacoes: z.string().optional().nullable(),
+  valorVenda: z.string().optional().nullable(),
+  valorFinanciado: z.string().optional().nullable(),
+  bancoFinanciamento: z.string().optional().nullable(),
+  numeroContratoFinanciamento: z.string().optional().nullable(),
+  parcelasFinanciamento: z.coerce.number().optional().nullable(),
+  createdBy: z.string().optional().nullable(),
+});
+
+export type InsertContract = z.infer<typeof insertContractSchema>;
+export type Contract = typeof contracts.$inferSelect;
+
+// Parcelas do Contrato
+export const contractInstallments = pgTable("contract_installments", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  contractId: integer("contract_id").notNull().references(() => contracts.id, { onDelete: "cascade" }),
+  numeroParcelaId: integer("numero_parcela").notNull(),
+  valor: decimal("valor", { precision: 12, scale: 2 }).notNull(),
+  dataVencimento: timestamp("data_vencimento").notNull(),
+  dataPagamento: timestamp("data_pagamento"),
+  valorPago: decimal("valor_pago", { precision: 12, scale: 2 }),
+  status: varchar("status", { length: 20 }).notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const contractInstallmentsRelations = relations(contractInstallments, ({ one }) => ({
+  contract: one(contracts, { fields: [contractInstallments.contractId], references: [contracts.id] }),
+}));
+
+export const insertContractInstallmentSchema = createInsertSchema(contractInstallments).omit({ id: true, createdAt: true });
+export type InsertContractInstallment = z.infer<typeof insertContractInstallmentSchema>;
+export type ContractInstallment = typeof contractInstallments.$inferSelect;
+
+// Arquivos de Contrato (PDFs)
+export const contractFiles = pgTable("contract_files", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  contractId: integer("contract_id").notNull().references(() => contracts.id, { onDelete: "cascade" }),
+  fileUrl: text("file_url").notNull(),
+  fileName: varchar("file_name", { length: 255 }).notNull(),
+  fileHash: varchar("file_hash", { length: 64 }),
+  version: integer("version").notNull().default(1),
+  generatedBy: varchar("generated_by", { length: 100 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const contractFilesRelations = relations(contractFiles, ({ one }) => ({
+  contract: one(contracts, { fields: [contractFiles.contractId], references: [contracts.id] }),
+}));
+
+export const insertContractFileSchema = createInsertSchema(contractFiles).omit({ id: true, createdAt: true });
+export type InsertContractFile = z.infer<typeof insertContractFileSchema>;
+export type ContractFile = typeof contractFiles.$inferSelect;
+
 // Extended types with relations
 export type VehicleWithRelations = Vehicle & {
   brand: Brand;
@@ -217,4 +361,13 @@ export type VehicleWithRelations = Vehicle & {
 export type SaleWithRelations = Sale & {
   customer: Customer;
   vehicle: VehicleWithRelations;
+};
+
+export type ContractWithRelations = Contract & {
+  customer: Customer;
+  vehicle: VehicleWithRelations;
+  sale?: Sale | null;
+  relatedContract?: Contract | null;
+  installments?: ContractInstallment[];
+  files?: ContractFile[];
 };

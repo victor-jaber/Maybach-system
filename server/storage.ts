@@ -6,6 +6,10 @@ import {
   customers,
   sales,
   users,
+  stores,
+  contracts,
+  contractInstallments,
+  contractFiles,
   type Brand,
   type InsertBrand,
   type Category,
@@ -20,6 +24,15 @@ import {
   type Sale,
   type InsertSale,
   type SaleWithRelations,
+  type Store,
+  type InsertStore,
+  type Contract,
+  type InsertContract,
+  type ContractWithRelations,
+  type ContractInstallment,
+  type InsertContractInstallment,
+  type ContractFile,
+  type InsertContractFile,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
@@ -80,6 +93,26 @@ export interface IStorage {
   updateVehicleImage(id: number, data: Partial<InsertVehicleImage>): Promise<VehicleImage | undefined>;
   deleteVehicleImage(id: number): Promise<boolean>;
   setVehiclePrimaryImage(vehicleId: number, imageId: number): Promise<void>;
+
+  // Store
+  getStore(): Promise<Store | undefined>;
+  createOrUpdateStore(store: InsertStore): Promise<Store>;
+
+  // Contracts
+  getContracts(): Promise<ContractWithRelations[]>;
+  getContract(id: number): Promise<ContractWithRelations | undefined>;
+  createContract(contract: InsertContract): Promise<Contract>;
+  updateContract(id: number, contract: Partial<InsertContract>): Promise<Contract | undefined>;
+  deleteContract(id: number): Promise<boolean>;
+
+  // Contract Installments
+  getContractInstallments(contractId: number): Promise<ContractInstallment[]>;
+  createContractInstallment(installment: InsertContractInstallment): Promise<ContractInstallment>;
+  updateContractInstallment(id: number, data: Partial<InsertContractInstallment>): Promise<ContractInstallment | undefined>;
+
+  // Contract Files
+  getContractFiles(contractId: number): Promise<ContractFile[]>;
+  createContractFile(file: InsertContractFile): Promise<ContractFile>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -347,6 +380,116 @@ export class DatabaseStorage implements IStorage {
     await db.update(vehicleImages)
       .set({ isPrimary: true })
       .where(eq(vehicleImages.id, imageId));
+  }
+
+  // Store
+  async getStore(): Promise<Store | undefined> {
+    const [store] = await db.select().from(stores).limit(1);
+    return store;
+  }
+
+  async createOrUpdateStore(store: InsertStore): Promise<Store> {
+    const existing = await this.getStore();
+    if (existing) {
+      const [updated] = await db.update(stores)
+        .set({ ...store, updatedAt: new Date() })
+        .where(eq(stores.id, existing.id))
+        .returning();
+      return updated;
+    }
+    const [newStore] = await db.insert(stores).values(store).returning();
+    return newStore;
+  }
+
+  // Contracts
+  async getContracts(): Promise<ContractWithRelations[]> {
+    const result = await db.query.contracts.findMany({
+      with: {
+        customer: true,
+        vehicle: {
+          with: {
+            brand: true,
+            category: true,
+            images: true,
+          },
+        },
+        sale: true,
+        installments: true,
+        files: true,
+      },
+      orderBy: [desc(contracts.createdAt)],
+    });
+    return result as ContractWithRelations[];
+  }
+
+  async getContract(id: number): Promise<ContractWithRelations | undefined> {
+    const result = await db.query.contracts.findFirst({
+      where: eq(contracts.id, id),
+      with: {
+        customer: true,
+        vehicle: {
+          with: {
+            brand: true,
+            category: true,
+            images: true,
+          },
+        },
+        sale: true,
+        installments: true,
+        files: true,
+      },
+    });
+    return result as ContractWithRelations | undefined;
+  }
+
+  async createContract(contract: InsertContract): Promise<Contract> {
+    const [newContract] = await db.insert(contracts).values(contract).returning();
+    return newContract;
+  }
+
+  async updateContract(id: number, contract: Partial<InsertContract>): Promise<Contract | undefined> {
+    const [updated] = await db.update(contracts)
+      .set({ ...contract, updatedAt: new Date() })
+      .where(eq(contracts.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteContract(id: number): Promise<boolean> {
+    await db.delete(contracts).where(eq(contracts.id, id));
+    return true;
+  }
+
+  // Contract Installments
+  async getContractInstallments(contractId: number): Promise<ContractInstallment[]> {
+    return db.select().from(contractInstallments)
+      .where(eq(contractInstallments.contractId, contractId))
+      .orderBy(contractInstallments.numeroParcelaId);
+  }
+
+  async createContractInstallment(installment: InsertContractInstallment): Promise<ContractInstallment> {
+    const [newInstallment] = await db.insert(contractInstallments).values(installment).returning();
+    return newInstallment;
+  }
+
+  async updateContractInstallment(id: number, data: Partial<InsertContractInstallment>): Promise<ContractInstallment | undefined> {
+    const [updated] = await db.update(contractInstallments)
+      .set(data)
+      .where(eq(contractInstallments.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Contract Files
+  async getContractFiles(contractId: number): Promise<ContractFile[]> {
+    return db.select().from(contractFiles)
+      .where(eq(contractFiles.contractId, contractId))
+      .orderBy(desc(contractFiles.createdAt));
+  }
+
+  async createContractFile(file: InsertContractFile): Promise<ContractFile> {
+    const [newFile] = await db.insert(contractFiles).values(file).returning();
+    return newFile;
   }
 }
 
