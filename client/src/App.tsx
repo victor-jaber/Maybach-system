@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation, Redirect } from "wouter";
+import { Switch, Route, Redirect } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -43,21 +43,6 @@ function AdminLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-function AdminRoutes() {
-  return (
-    <AdminLayout>
-      <Switch>
-        <Route path="/admin" component={DashboardPage} />
-        <Route path="/admin/vehicles" component={VehiclesPage} />
-        <Route path="/admin/customers" component={CustomersPage} />
-        <Route path="/admin/sales" component={SalesPage} />
-        <Route path="/admin/brands" component={BrandsPage} />
-        <Route path="/admin/categories" component={CategoriesPage} />
-        <Route component={NotFound} />
-      </Switch>
-    </AdminLayout>
-  );
-}
 
 function LoadingScreen() {
   return (
@@ -86,7 +71,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function Router() {
   const { isAuthenticated } = useAuth();
-  const [location] = useLocation();
 
   return (
     <Switch>
@@ -95,9 +79,46 @@ function Router() {
       <Route path="/login">
         {isAuthenticated ? <Redirect to="/admin" /> : <LoginPage />}
       </Route>
-      <Route path="/admin/:rest*">
+      <Route path="/admin">
         <ProtectedRoute>
-          <AdminRoutes />
+          <AdminLayout>
+            <DashboardPage />
+          </AdminLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin/vehicles">
+        <ProtectedRoute>
+          <AdminLayout>
+            <VehiclesPage />
+          </AdminLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin/customers">
+        <ProtectedRoute>
+          <AdminLayout>
+            <CustomersPage />
+          </AdminLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin/sales">
+        <ProtectedRoute>
+          <AdminLayout>
+            <SalesPage />
+          </AdminLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin/brands">
+        <ProtectedRoute>
+          <AdminLayout>
+            <BrandsPage />
+          </AdminLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin/categories">
+        <ProtectedRoute>
+          <AdminLayout>
+            <CategoriesPage />
+          </AdminLayout>
         </ProtectedRoute>
       </Route>
       <Route component={NotFound} />
