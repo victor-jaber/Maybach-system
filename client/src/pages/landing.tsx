@@ -112,7 +112,7 @@ export default function LandingPage() {
                 </span>
               </div>
               
-              <h1 className="text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl leading-tight">
+              <h1 className="text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl leading-tight heading-premium">
                 Encontre o carro{" "}
                 <span className="text-[#C1A36A] italic">perfeito</span>
                 <br />
@@ -173,7 +173,7 @@ export default function LandingPage() {
                     Nosso Showroom
                   </span>
                 </div>
-                <h2 className="text-4xl font-bold tracking-tight">
+                <h2 className="text-4xl font-bold tracking-tight heading-premium">
                   Veículos em Destaque
                 </h2>
                 <p className="mt-3 text-lg text-muted-foreground max-w-xl">
@@ -268,7 +268,7 @@ export default function LandingPage() {
                 </span>
                 <div className="h-px w-8 bg-[#C1A36A]" />
               </div>
-              <h2 className="text-4xl font-bold tracking-tight text-white">
+              <h2 className="text-4xl font-bold tracking-tight text-white heading-premium">
                 Por Que Escolher a MayBach Cars?
               </h2>
               <p className="mt-4 text-lg text-white/70 max-w-2xl mx-auto">
@@ -350,7 +350,7 @@ export default function LandingPage() {
                 </span>
                 <div className="h-px w-8 bg-[#735C3F]" />
               </div>
-              <h2 className="text-4xl font-bold tracking-tight">
+              <h2 className="text-4xl font-bold tracking-tight heading-premium">
                 Como Funciona a Compra
               </h2>
               <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -410,7 +410,7 @@ export default function LandingPage() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
               <div className="text-center lg:text-left">
-                <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+                <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl heading-premium">
                   Simule Seu Financiamento Agora
                 </h2>
                 <p className="mt-3 text-xl text-white/90 max-w-xl">
@@ -445,7 +445,7 @@ export default function LandingPage() {
                 </span>
                 <div className="h-px w-8 bg-[#735C3F]" />
               </div>
-              <h2 className="text-4xl font-bold tracking-tight">
+              <h2 className="text-4xl font-bold tracking-tight heading-premium">
                 O Que Nossos Clientes Dizem
               </h2>
               <div className="mt-4 flex items-center justify-center gap-2">
@@ -592,7 +592,7 @@ export default function LandingPage() {
                     Visite-nos
                   </span>
                 </div>
-                <h2 className="text-4xl font-bold tracking-tight mb-4">
+                <h2 className="text-4xl font-bold tracking-tight mb-4 heading-premium">
                   Estamos Prontos Para Atendê-lo
                 </h2>
                 <p className="text-lg text-muted-foreground mb-8">
