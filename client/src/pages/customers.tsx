@@ -112,6 +112,7 @@ export default function CustomersPage() {
       apiRequest("POST", "/api/customers", {
         ...data,
         birthDate: data.birthDate ? new Date(data.birthDate) : null,
+        monthlyIncome: data.monthlyIncome ? parseCurrencyToNumber(data.monthlyIncome) : null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
@@ -129,6 +130,7 @@ export default function CustomersPage() {
       apiRequest("PATCH", `/api/customers/${data.id}`, {
         ...data,
         birthDate: data.birthDate ? new Date(data.birthDate) : null,
+        monthlyIncome: data.monthlyIncome ? parseCurrencyToNumber(data.monthlyIncome) : null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
@@ -175,7 +177,7 @@ export default function CustomersPage() {
         ? new Date(customer.birthDate).toISOString().split("T")[0]
         : "",
       profession: customer.profession || "",
-      monthlyIncome: customer.monthlyIncome?.toString() || "",
+      monthlyIncome: customer.monthlyIncome ? formatCurrency(customer.monthlyIncome) : "",
       email: customer.email || "",
       phone: customer.phone,
       secondaryPhone: customer.secondaryPhone || "",
