@@ -65,7 +65,7 @@ const saleFormSchema = z.object({
   vehicleId: z.number({ required_error: "Selecione um veículo" }),
   saleDate: z.string().min(1, "Data da venda é obrigatória"),
   totalValue: z.string().min(1, "Valor total é obrigatório"),
-  paymentType: z.enum(["cash", "financed"], { required_error: "Selecione o tipo de pagamento" }),
+  paymentType: z.enum(["cash", "financed", "credit_card"], { required_error: "Selecione o tipo de pagamento" }),
   downPayment: z.string().optional(),
   financedValue: z.string().optional(),
   installments: z.number().optional(),
@@ -245,8 +245,8 @@ export default function SalesPage() {
                     {formatCurrency(sale.totalValue)}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={sale.paymentType === "cash" ? "default" : "secondary"}>
-                      {sale.paymentType === "cash" ? "À Vista" : "Financiado"}
+                    <Badge variant={sale.paymentType === "cash" ? "default" : sale.paymentType === "credit_card" ? "outline" : "secondary"}>
+                      {sale.paymentType === "cash" ? "À Vista" : sale.paymentType === "credit_card" ? "Cartão de Crédito" : "Financiado"}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -400,6 +400,7 @@ export default function SalesPage() {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="cash">À Vista</SelectItem>
+                        <SelectItem value="credit_card">Cartão de Crédito</SelectItem>
                         <SelectItem value="financed">Financiado</SelectItem>
                       </SelectContent>
                     </Select>
@@ -407,6 +408,39 @@ export default function SalesPage() {
                   </FormItem>
                 )}
               />
+
+              {paymentType === "credit_card" && (
+                <div className="space-y-4 rounded-md border p-4">
+                  <h3 className="text-sm font-medium">Dados do Cartão de Crédito</h3>
+                  <FormField
+                    control={form.control}
+                    name="installments"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Número de Parcelas *</FormLabel>
+                        <Select
+                          onValueChange={(value) => field.onChange(parseInt(value))}
+                          value={field.value?.toString()}
+                        >
+                          <FormControl>
+                            <SelectTrigger data-testid="select-credit-card-installments">
+                              <SelectValue placeholder="Selecione o número de parcelas" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {Array.from({ length: 24 }, (_, i) => i + 1).map((num) => (
+                              <SelectItem key={num} value={num.toString()}>
+                                {num}x
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
 
               {paymentType === "financed" && (
                 <div className="space-y-4 rounded-md border p-4">
@@ -609,10 +643,16 @@ export default function SalesPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Forma de Pagamento</span>
-                    <Badge variant={viewingSale.paymentType === "cash" ? "default" : "secondary"}>
-                      {viewingSale.paymentType === "cash" ? "À Vista" : "Financiado"}
+                    <Badge variant={viewingSale.paymentType === "cash" ? "default" : viewingSale.paymentType === "credit_card" ? "outline" : "secondary"}>
+                      {viewingSale.paymentType === "cash" ? "À Vista" : viewingSale.paymentType === "credit_card" ? "Cartão de Crédito" : "Financiado"}
                     </Badge>
                   </div>
+                  {viewingSale.paymentType === "credit_card" && viewingSale.installments && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Parcelas</span>
+                      <span className="font-medium">{viewingSale.installments}x</span>
+                    </div>
+                  )}
                   {viewingSale.paymentType === "financed" && (
                     <>
                       <div className="flex justify-between">

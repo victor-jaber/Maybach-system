@@ -177,7 +177,7 @@ export const insertSaleApiSchema = z.object({
   vehicleId: z.coerce.number(),
   saleDate: z.union([z.string(), z.date()]).transform(val => new Date(val)),
   totalValue: z.string(),
-  paymentType: z.enum(["cash", "financed"]),
+  paymentType: z.enum(["cash", "financed", "credit_card"]),
   downPayment: z.string().optional().nullable(),
   financedValue: z.string().optional().nullable(),
   installments: z.coerce.number().optional().nullable(),
