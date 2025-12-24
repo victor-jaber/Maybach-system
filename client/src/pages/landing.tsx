@@ -199,7 +199,7 @@ export default function LandingPage() {
                       </Badge>
                       <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <Button size="sm" className="bg-[#5B9A4D] text-white" asChild data-testid={`button-vehicle-details-${vehicle.id}`}>
-                          <Link href="/catalog">
+                          <Link href={`/catalog/${vehicle.id}`}>
                             Ver Detalhes
                             <ArrowRight className="ml-1 h-3 w-3" />
                           </Link>
@@ -392,7 +392,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="py-20 bg-gradient-to-br from-[#5B9A4D] to-[#4a8340]">
+        <section className="py-20 bg-[#735C3F]">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
               <div className="text-center lg:text-left">
@@ -404,13 +404,13 @@ export default function LandingPage() {
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-4">
-                <Button size="lg" variant="outline" className="bg-white text-[#5B9A4D] border-white" asChild data-testid="button-simulate-whatsapp">
+                <Button size="lg" variant="outline" className="bg-white text-[#735C3F] border-white" asChild data-testid="button-simulate-whatsapp">
                   <a href="https://wa.me/5511999999999?text=Olá! Gostaria de simular um financiamento." target="_blank" rel="noopener noreferrer">
                     <MessageCircle className="mr-2 h-5 w-5" />
                     Simular pelo WhatsApp
                   </a>
                 </Button>
-                <Button size="lg" className="bg-white/10 border-white/30 text-white" asChild data-testid="button-call-now">
+                <Button size="lg" className="bg-[#5B9A4D] text-white" asChild data-testid="button-call-now">
                   <a href="tel:+551199999999">
                     <Phone className="mr-2 h-5 w-5" />
                     Ligar Agora

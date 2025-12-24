@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 import LandingPage from "@/pages/landing";
 import CatalogPage from "@/pages/catalog";
+import VehicleDetailPage from "@/pages/vehicle-detail";
 import LoginPage from "@/pages/login";
 import DashboardPage from "@/pages/dashboard";
 import VehiclesPage from "@/pages/vehicles";
@@ -77,6 +78,7 @@ function Router() {
     <Switch>
       <Route path="/" component={LandingPage} />
       <Route path="/catalog" component={CatalogPage} />
+      <Route path="/catalog/:id" component={VehicleDetailPage} />
       <Route path="/login">
         {isAuthenticated ? <Redirect to="/admin" /> : <LoginPage />}
       </Route>

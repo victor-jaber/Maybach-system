@@ -142,6 +142,20 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/vehicles/public/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const vehicle = await storage.getVehicle(id);
+      if (!vehicle || vehicle.status !== "available") {
+        return res.status(404).json({ message: "Vehicle not found" });
+      }
+      res.json(vehicle);
+    } catch (error) {
+      console.error("Error fetching public vehicle:", error);
+      res.status(500).json({ message: "Failed to fetch vehicle" });
+    }
+  });
+
   // Vehicles (admin)
   app.get("/api/vehicles", isAuthenticated, async (req, res) => {
     try {

@@ -73,8 +73,10 @@ function VehicleCard({ vehicle }: { vehicle: VehicleWithRelations }) {
           <span className="text-xl font-bold text-primary">
             {formatCurrency(vehicle.price)}
           </span>
-          <Button size="sm" variant="outline" data-testid={`button-view-vehicle-${vehicle.id}`}>
-            Ver Detalhes
+          <Button size="sm" variant="outline" asChild data-testid={`button-view-vehicle-${vehicle.id}`}>
+            <Link href={`/catalog/${vehicle.id}`}>
+              Ver Detalhes
+            </Link>
           </Button>
         </div>
       </CardContent>
