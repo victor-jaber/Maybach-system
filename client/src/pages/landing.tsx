@@ -11,6 +11,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { VehicleWithRelations } from "@shared/schema";
 import logoImage from "@/assets/maybach-logo.png";
+import santanderLogo from "@assets/stock_images/santander_bank_logo_a312f71e.jpg";
+import bradescoLogo from "@assets/stock_images/bradesco_bank_logo_834d4a38.jpg";
+import bbLogo from "@assets/stock_images/banco_do_brasil_logo_2c23e3c1.jpg";
+import caixaLogo from "@assets/stock_images/caixa_economica_fede_331d31bd.jpg";
+import bvLogo from "@assets/stock_images/bv_financeira_bank_l_0688426f.jpg";
+import panLogo from "@assets/stock_images/banco_pan_logo_a0f7d645.jpg";
 
 function formatCurrency(value: string | number) {
   const num = typeof value === "string" ? parseFloat(value) : value;
@@ -526,25 +532,23 @@ export default function LandingPage() {
                 Parceiros de Confiança
               </h3>
               <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
-                <div className="flex items-center gap-2 text-muted-foreground/60 hover:text-muted-foreground transition-colors">
-                  <Building2 className="h-8 w-8" />
-                  <span className="font-bold text-lg">Santander</span>
+                <div className="flex items-center justify-center h-12 grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100">
+                  <img src={santanderLogo} alt="Santander" className="h-full w-auto object-contain" />
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground/60 hover:text-muted-foreground transition-colors">
-                  <Building2 className="h-8 w-8" />
-                  <span className="font-bold text-lg">Bradesco</span>
+                <div className="flex items-center justify-center h-12 grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100">
+                  <img src={bradescoLogo} alt="Bradesco" className="h-full w-auto object-contain" />
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground/60 hover:text-muted-foreground transition-colors">
-                  <Building2 className="h-8 w-8" />
-                  <span className="font-bold text-lg">Itaú</span>
+                <div className="flex items-center justify-center h-12 grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100">
+                  <img src={bbLogo} alt="Banco do Brasil" className="h-full w-auto object-contain" />
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground/60 hover:text-muted-foreground transition-colors">
-                  <Building2 className="h-8 w-8" />
-                  <span className="font-bold text-lg">BV</span>
+                <div className="flex items-center justify-center h-12 grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100">
+                  <img src={caixaLogo} alt="Caixa" className="h-full w-auto object-contain" />
                 </div>
-                <div className="flex items-center gap-2 text-muted-foreground/60 hover:text-muted-foreground transition-colors">
-                  <Building2 className="h-8 w-8" />
-                  <span className="font-bold text-lg">Pan</span>
+                <div className="flex items-center justify-center h-12 grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100">
+                  <img src={bvLogo} alt="BV Financeira" className="h-full w-auto object-contain" />
+                </div>
+                <div className="flex items-center justify-center h-12 grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100">
+                  <img src={panLogo} alt="Banco Pan" className="h-full w-auto object-contain" />
                 </div>
               </div>
             </div>
