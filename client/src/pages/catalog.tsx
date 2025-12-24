@@ -14,7 +14,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ThemeToggle } from "@/components/theme-toggle";
 import type { VehicleWithRelations, Brand, Category } from "@shared/schema";
 
 function formatCurrency(value: number | string): string {
@@ -151,7 +150,6 @@ export default function CatalogPage() {
                 Voltar
               </Link>
             </Button>
-            <ThemeToggle />
           </div>
         </div>
       </header>

@@ -6,7 +6,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { ThemeToggle } from "@/components/theme-toggle";
 import type { VehicleWithRelations } from "@shared/schema";
 import logoImage from "@/assets/maybach-logo.png";
 
@@ -39,7 +38,7 @@ export default function VehicleDetailPage() {
             <Link href="/">
               <img src={logoImage} alt="MayBach Cars" className="h-10 w-auto" />
             </Link>
-            <ThemeToggle />
+
           </div>
         </header>
         <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -65,7 +64,7 @@ export default function VehicleDetailPage() {
             <Link href="/">
               <img src={logoImage} alt="MayBach Cars" className="h-10 w-auto" />
             </Link>
-            <ThemeToggle />
+
           </div>
         </header>
         <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -99,7 +98,7 @@ export default function VehicleDetailPage() {
                 Catálogo
               </Link>
             </Button>
-            <ThemeToggle />
+
           </div>
         </div>
       </header>

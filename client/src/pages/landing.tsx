@@ -9,7 +9,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ThemeToggle } from "@/components/theme-toggle";
 import type { VehicleWithRelations } from "@shared/schema";
 import logoImage from "@/assets/maybach-logo.png";
 
@@ -54,7 +53,6 @@ export default function LandingPage() {
             </a>
           </nav>
           <div className="flex items-center gap-3">
-            <ThemeToggle />
             <Button asChild data-testid="link-catalog">
               <Link href="/catalog">Ver Catálogo</Link>
             </Button>
