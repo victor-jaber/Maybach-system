@@ -220,6 +220,77 @@ export async function registerRoutes(
     }
   });
 
+  // Vehicle Images
+  app.get("/api/vehicles/:vehicleId/images", isAuthenticated, async (req, res) => {
+    try {
+      const vehicleId = parseInt(req.params.vehicleId);
+      const images = await storage.getVehicleImages(vehicleId);
+      res.json(images);
+    } catch (error) {
+      console.error("Error fetching vehicle images:", error);
+      res.status(500).json({ message: "Failed to fetch vehicle images" });
+    }
+  });
+
+  app.post("/api/vehicles/:vehicleId/images", isAuthenticated, async (req, res) => {
+    try {
+      const vehicleId = parseInt(req.params.vehicleId);
+      const { imageUrl, isPrimary = false, order = 0 } = req.body;
+      
+      if (!imageUrl) {
+        return res.status(400).json({ message: "Image URL is required" });
+      }
+      
+      const image = await storage.addVehicleImage({
+        vehicleId,
+        imageUrl,
+        isPrimary,
+        order,
+      });
+      res.status(201).json(image);
+    } catch (error) {
+      console.error("Error adding vehicle image:", error);
+      res.status(500).json({ message: "Failed to add vehicle image" });
+    }
+  });
+
+  app.patch("/api/vehicles/:vehicleId/images/:imageId", isAuthenticated, async (req, res) => {
+    try {
+      const imageId = parseInt(req.params.imageId);
+      const image = await storage.updateVehicleImage(imageId, req.body);
+      if (!image) {
+        return res.status(404).json({ message: "Image not found" });
+      }
+      res.json(image);
+    } catch (error) {
+      console.error("Error updating vehicle image:", error);
+      res.status(500).json({ message: "Failed to update vehicle image" });
+    }
+  });
+
+  app.delete("/api/vehicles/:vehicleId/images/:imageId", isAuthenticated, async (req, res) => {
+    try {
+      const imageId = parseInt(req.params.imageId);
+      await storage.deleteVehicleImage(imageId);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting vehicle image:", error);
+      res.status(500).json({ message: "Failed to delete vehicle image" });
+    }
+  });
+
+  app.post("/api/vehicles/:vehicleId/images/:imageId/primary", isAuthenticated, async (req, res) => {
+    try {
+      const vehicleId = parseInt(req.params.vehicleId);
+      const imageId = parseInt(req.params.imageId);
+      await storage.setVehiclePrimaryImage(vehicleId, imageId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error setting primary image:", error);
+      res.status(500).json({ message: "Failed to set primary image" });
+    }
+  });
+
   // Customers
   app.get("/api/customers", isAuthenticated, async (req, res) => {
     try {

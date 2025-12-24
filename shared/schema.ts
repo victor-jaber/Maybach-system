@@ -63,6 +63,7 @@ export const vehiclesRelations = relations(vehicles, ({ one, many }) => ({
   brand: one(brands, { fields: [vehicles.brandId], references: [brands.id] }),
   category: one(categories, { fields: [vehicles.categoryId], references: [categories.id] }),
   sales: many(sales),
+  images: many(vehicleImages),
 }));
 
 export const insertVehicleSchema = createInsertSchema(vehicles).omit({ id: true, createdAt: true, updatedAt: true });
@@ -188,10 +189,29 @@ export const insertSaleApiSchema = z.object({
 export type InsertSale = z.infer<typeof insertSaleSchema>;
 export type Sale = typeof sales.$inferSelect;
 
+// Imagens dos veículos
+export const vehicleImages = pgTable("vehicle_images", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  vehicleId: integer("vehicle_id").notNull().references(() => vehicles.id, { onDelete: "cascade" }),
+  imageUrl: text("image_url").notNull(),
+  isPrimary: boolean("is_primary").notNull().default(false),
+  order: integer("order").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const vehicleImagesRelations = relations(vehicleImages, ({ one }) => ({
+  vehicle: one(vehicles, { fields: [vehicleImages.vehicleId], references: [vehicles.id] }),
+}));
+
+export const insertVehicleImageSchema = createInsertSchema(vehicleImages).omit({ id: true, createdAt: true });
+export type InsertVehicleImage = z.infer<typeof insertVehicleImageSchema>;
+export type VehicleImage = typeof vehicleImages.$inferSelect;
+
 // Extended types with relations
 export type VehicleWithRelations = Vehicle & {
   brand: Brand;
   category: Category;
+  images?: VehicleImage[];
 };
 
 export type SaleWithRelations = Sale & {

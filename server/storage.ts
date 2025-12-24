@@ -2,6 +2,7 @@ import {
   brands,
   categories,
   vehicles,
+  vehicleImages,
   customers,
   sales,
   users,
@@ -12,6 +13,8 @@ import {
   type Vehicle,
   type InsertVehicle,
   type VehicleWithRelations,
+  type VehicleImage,
+  type InsertVehicleImage,
   type Customer,
   type InsertCustomer,
   type Sale,
@@ -70,6 +73,13 @@ export interface IStorage {
   getAdminUsers(): Promise<AdminUser[]>;
   updateAdminUser(id: string, data: { name?: string; email?: string; password?: string }): Promise<AdminUser | undefined>;
   deleteAdminUser(id: string): Promise<boolean>;
+
+  // Vehicle Images
+  getVehicleImages(vehicleId: number): Promise<VehicleImage[]>;
+  addVehicleImage(image: InsertVehicleImage): Promise<VehicleImage>;
+  updateVehicleImage(id: number, data: Partial<InsertVehicleImage>): Promise<VehicleImage | undefined>;
+  deleteVehicleImage(id: number): Promise<boolean>;
+  setVehiclePrimaryImage(vehicleId: number, imageId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -129,6 +139,7 @@ export class DatabaseStorage implements IStorage {
       with: {
         brand: true,
         category: true,
+        images: true,
       },
       orderBy: [desc(vehicles.createdAt)],
     });
@@ -141,6 +152,7 @@ export class DatabaseStorage implements IStorage {
       with: {
         brand: true,
         category: true,
+        images: true,
       },
     });
     return result as VehicleWithRelations | undefined;
@@ -152,6 +164,7 @@ export class DatabaseStorage implements IStorage {
       with: {
         brand: true,
         category: true,
+        images: true,
       },
       orderBy: [desc(vehicles.createdAt)],
     });
@@ -300,6 +313,40 @@ export class DatabaseStorage implements IStorage {
   async deleteAdminUser(id: string): Promise<boolean> {
     await db.delete(users).where(eq(users.id, id));
     return true;
+  }
+
+  // Vehicle Images
+  async getVehicleImages(vehicleId: number): Promise<VehicleImage[]> {
+    return db.select().from(vehicleImages)
+      .where(eq(vehicleImages.vehicleId, vehicleId))
+      .orderBy(desc(vehicleImages.isPrimary), vehicleImages.order);
+  }
+
+  async addVehicleImage(image: InsertVehicleImage): Promise<VehicleImage> {
+    const [newImage] = await db.insert(vehicleImages).values(image).returning();
+    return newImage;
+  }
+
+  async updateVehicleImage(id: number, data: Partial<InsertVehicleImage>): Promise<VehicleImage | undefined> {
+    const [updated] = await db.update(vehicleImages)
+      .set(data)
+      .where(eq(vehicleImages.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteVehicleImage(id: number): Promise<boolean> {
+    await db.delete(vehicleImages).where(eq(vehicleImages.id, id));
+    return true;
+  }
+
+  async setVehiclePrimaryImage(vehicleId: number, imageId: number): Promise<void> {
+    await db.update(vehicleImages)
+      .set({ isPrimary: false })
+      .where(eq(vehicleImages.vehicleId, vehicleId));
+    await db.update(vehicleImages)
+      .set({ isPrimary: true })
+      .where(eq(vehicleImages.id, imageId));
   }
 }
 
