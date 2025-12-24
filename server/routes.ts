@@ -459,5 +459,93 @@ export async function registerRoutes(
     }
   });
 
+  // FIPE API Routes
+  const FIPE_API_URL = "https://fipe.dev/v1";
+  const FIPE_API_KEY = process.env.FIPE_API_KEY;
+
+  app.get("/api/fipe/types", isAuthenticated, async (req, res) => {
+    try {
+      const response = await fetch(FIPE_API_URL, {
+        headers: { "X-Api-Key": FIPE_API_KEY || "" },
+      });
+      if (!response.ok) {
+        return res.status(response.status).json({ message: "Erro ao buscar tipos de veículos" });
+      }
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching FIPE types:", error);
+      res.status(500).json({ message: "Erro ao consultar API FIPE" });
+    }
+  });
+
+  app.get("/api/fipe/brands/:typeId", isAuthenticated, async (req, res) => {
+    try {
+      const { typeId } = req.params;
+      const response = await fetch(`${FIPE_API_URL}/${typeId}`, {
+        headers: { "X-Api-Key": FIPE_API_KEY || "" },
+      });
+      if (!response.ok) {
+        return res.status(response.status).json({ message: "Erro ao buscar marcas" });
+      }
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching FIPE brands:", error);
+      res.status(500).json({ message: "Erro ao consultar API FIPE" });
+    }
+  });
+
+  app.get("/api/fipe/models/:typeId/:brandId", isAuthenticated, async (req, res) => {
+    try {
+      const { typeId, brandId } = req.params;
+      const response = await fetch(`${FIPE_API_URL}/${typeId}/${brandId}`, {
+        headers: { "X-Api-Key": FIPE_API_KEY || "" },
+      });
+      if (!response.ok) {
+        return res.status(response.status).json({ message: "Erro ao buscar modelos" });
+      }
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching FIPE models:", error);
+      res.status(500).json({ message: "Erro ao consultar API FIPE" });
+    }
+  });
+
+  app.get("/api/fipe/years/:typeId/:brandId/:modelId", isAuthenticated, async (req, res) => {
+    try {
+      const { typeId, brandId, modelId } = req.params;
+      const response = await fetch(`${FIPE_API_URL}/${typeId}/${brandId}/${modelId}`, {
+        headers: { "X-Api-Key": FIPE_API_KEY || "" },
+      });
+      if (!response.ok) {
+        return res.status(response.status).json({ message: "Erro ao buscar anos" });
+      }
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching FIPE years:", error);
+      res.status(500).json({ message: "Erro ao consultar API FIPE" });
+    }
+  });
+
+  app.get("/api/fipe/price/:typeId/:brandId/:modelId/:yearId", isAuthenticated, async (req, res) => {
+    try {
+      const { typeId, brandId, modelId, yearId } = req.params;
+      const response = await fetch(`${FIPE_API_URL}/${typeId}/${brandId}/${modelId}/${yearId}`, {
+        headers: { "X-Api-Key": FIPE_API_KEY || "" },
+      });
+      if (!response.ok) {
+        return res.status(response.status).json({ message: "Erro ao buscar preço" });
+      }
+      const data = await response.json();
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching FIPE price:", error);
+      res.status(500).json({ message: "Erro ao consultar API FIPE" });
+    }
+  });
+
   return httpServer;
 }

@@ -8,6 +8,7 @@ import {
   FolderTree,
   LogOut,
   UserCog,
+  Search,
 } from "lucide-react";
 import {
   Sidebar,
@@ -45,6 +46,11 @@ const mainNavItems = [
     title: "Vendas",
     url: "/admin/sales",
     icon: ShoppingCart,
+  },
+  {
+    title: "Consulta FIPE",
+    url: "/admin/fipe",
+    icon: Search,
   },
 ];
 
