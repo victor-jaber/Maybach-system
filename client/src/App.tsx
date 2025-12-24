@@ -23,6 +23,7 @@ import UsersPage from "@/pages/users";
 import FipePage from "@/pages/fipe";
 import ContractsPage from "@/pages/contracts";
 import StoreSettingsPage from "@/pages/store-settings";
+import ReportsPage from "@/pages/reports";
 import NotFound from "@/pages/not-found";
 
 function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -150,6 +151,13 @@ function Router() {
         <ProtectedRoute>
           <AdminLayout>
             <StoreSettingsPage />
+          </AdminLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin/reports">
+        <ProtectedRoute>
+          <AdminLayout>
+            <ReportsPage />
           </AdminLayout>
         </ProtectedRoute>
       </Route>

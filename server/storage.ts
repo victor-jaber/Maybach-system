@@ -35,7 +35,7 @@ import {
   type InsertContractFile,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql, and, gte, lte, count, sum } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 
 export interface AdminUser {
@@ -113,6 +113,62 @@ export interface IStorage {
   // Contract Files
   getContractFiles(contractId: number): Promise<ContractFile[]>;
   createContractFile(file: InsertContractFile): Promise<ContractFile>;
+
+  // Reports & Statistics
+  getDashboardStats(): Promise<DashboardStats>;
+  getSalesByPeriod(startDate: string, endDate: string, groupBy: "day" | "week" | "month"): Promise<SalesByPeriod[]>;
+  getSalesByBrand(startDate?: string, endDate?: string): Promise<SalesByBrand[]>;
+  getSalesByCategory(startDate?: string, endDate?: string): Promise<SalesByCategory[]>;
+  getSalesBySeller(startDate?: string, endDate?: string): Promise<SalesBySeller[]>;
+  getProfitMarginAnalysis(startDate?: string, endDate?: string): Promise<ProfitMarginData[]>;
+}
+
+// Report Types
+export interface DashboardStats {
+  totalSalesMonth: number;
+  totalRevenueMonth: number;
+  averageTicket: number;
+  totalVehiclesInStock: number;
+  totalCustomers: number;
+  salesGrowth: number;
+}
+
+export interface SalesByPeriod {
+  period: string;
+  count: number;
+  revenue: number;
+}
+
+export interface SalesByBrand {
+  brandId: number;
+  brandName: string;
+  count: number;
+  revenue: number;
+}
+
+export interface SalesByCategory {
+  categoryId: number;
+  categoryName: string;
+  count: number;
+  revenue: number;
+}
+
+export interface SalesBySeller {
+  sellerId: string;
+  sellerName: string;
+  count: number;
+  revenue: number;
+}
+
+export interface ProfitMarginData {
+  saleId: number;
+  vehicleModel: string;
+  brandName: string;
+  saleDate: Date;
+  salePrice: number;
+  purchasePrice: number;
+  profit: number;
+  marginPercent: number;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -490,6 +546,189 @@ export class DatabaseStorage implements IStorage {
   async createContractFile(file: InsertContractFile): Promise<ContractFile> {
     const [newFile] = await db.insert(contractFiles).values(file).returning();
     return newFile;
+  }
+
+  // ========== Reports & Statistics ==========
+
+  async getDashboardStats(): Promise<DashboardStats> {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    // Current month sales
+    const currentMonthSales = await db.select({
+      count: count(),
+      revenue: sum(sales.totalValue),
+    })
+      .from(sales)
+      .where(gte(sales.saleDate, startOfMonth));
+
+    // Last month sales for growth comparison
+    const lastMonthSales = await db.select({
+      count: count(),
+      revenue: sum(sales.totalValue),
+    })
+      .from(sales)
+      .where(and(
+        gte(sales.saleDate, startOfLastMonth),
+        lte(sales.saleDate, endOfLastMonth)
+      ));
+
+    // Total vehicles in stock
+    const vehiclesInStock = await db.select({ count: count() })
+      .from(vehicles)
+      .where(eq(vehicles.status, "available"));
+
+    // Total customers
+    const totalCustomers = await db.select({ count: count() })
+      .from(customers);
+
+    const currentCount = Number(currentMonthSales[0]?.count || 0);
+    const currentRevenue = Number(currentMonthSales[0]?.revenue || 0);
+    const lastCount = Number(lastMonthSales[0]?.count || 0);
+
+    // Calculate growth percentage
+    const salesGrowth = lastCount > 0 
+      ? ((currentCount - lastCount) / lastCount) * 100 
+      : currentCount > 0 ? 100 : 0;
+
+    return {
+      totalSalesMonth: currentCount,
+      totalRevenueMonth: currentRevenue,
+      averageTicket: currentCount > 0 ? currentRevenue / currentCount : 0,
+      totalVehiclesInStock: Number(vehiclesInStock[0]?.count || 0),
+      totalCustomers: Number(totalCustomers[0]?.count || 0),
+      salesGrowth: Math.round(salesGrowth * 100) / 100,
+    };
+  }
+
+  async getSalesByPeriod(
+    startDate: string,
+    endDate: string,
+    groupBy: "day" | "week" | "month"
+  ): Promise<SalesByPeriod[]> {
+    const start = startDate ? new Date(startDate) : new Date(new Date().setMonth(new Date().getMonth() - 6));
+    const end = endDate ? new Date(endDate) : new Date();
+
+    const dateFormat = groupBy === "day" 
+      ? "YYYY-MM-DD"
+      : groupBy === "week"
+      ? "IYYY-IW"
+      : "YYYY-MM";
+
+    const result = await db.execute(sql`
+      SELECT 
+        TO_CHAR(sale_date, ${dateFormat}) as period,
+        COUNT(*)::int as count,
+        COALESCE(SUM(total_value), 0)::numeric as revenue
+      FROM sales
+      WHERE sale_date >= ${start} AND sale_date <= ${end}
+      GROUP BY TO_CHAR(sale_date, ${dateFormat})
+      ORDER BY period ASC
+    `);
+
+    return (result.rows as any[]).map(row => ({
+      period: row.period,
+      count: Number(row.count),
+      revenue: Number(row.revenue),
+    }));
+  }
+
+  async getSalesByBrand(startDate?: string, endDate?: string): Promise<SalesByBrand[]> {
+    const start = startDate ? new Date(startDate) : new Date(new Date().setFullYear(new Date().getFullYear() - 1));
+    const end = endDate ? new Date(endDate) : new Date();
+
+    const result = await db.execute(sql`
+      SELECT 
+        b.id as brand_id,
+        b.name as brand_name,
+        COUNT(s.id)::int as count,
+        COALESCE(SUM(s.total_value), 0)::numeric as revenue
+      FROM sales s
+      INNER JOIN vehicles v ON s.vehicle_id = v.id
+      INNER JOIN brands b ON v.brand_id = b.id
+      WHERE s.sale_date >= ${start} AND s.sale_date <= ${end}
+      GROUP BY b.id, b.name
+      ORDER BY count DESC
+    `);
+
+    return (result.rows as any[]).map(row => ({
+      brandId: Number(row.brand_id),
+      brandName: row.brand_name,
+      count: Number(row.count),
+      revenue: Number(row.revenue),
+    }));
+  }
+
+  async getSalesByCategory(startDate?: string, endDate?: string): Promise<SalesByCategory[]> {
+    const start = startDate ? new Date(startDate) : new Date(new Date().setFullYear(new Date().getFullYear() - 1));
+    const end = endDate ? new Date(endDate) : new Date();
+
+    const result = await db.execute(sql`
+      SELECT 
+        c.id as category_id,
+        c.name as category_name,
+        COUNT(s.id)::int as count,
+        COALESCE(SUM(s.total_value), 0)::numeric as revenue
+      FROM sales s
+      INNER JOIN vehicles v ON s.vehicle_id = v.id
+      INNER JOIN categories c ON v.category_id = c.id
+      WHERE s.sale_date >= ${start} AND s.sale_date <= ${end}
+      GROUP BY c.id, c.name
+      ORDER BY count DESC
+    `);
+
+    return (result.rows as any[]).map(row => ({
+      categoryId: Number(row.category_id),
+      categoryName: row.category_name,
+      count: Number(row.count),
+      revenue: Number(row.revenue),
+    }));
+  }
+
+  async getSalesBySeller(startDate?: string, endDate?: string): Promise<SalesBySeller[]> {
+    // For now, return empty array as we don't have seller tracking on sales
+    // This would require adding a seller_id field to sales table
+    return [];
+  }
+
+  async getProfitMarginAnalysis(startDate?: string, endDate?: string): Promise<ProfitMarginData[]> {
+    const start = startDate ? new Date(startDate) : new Date(new Date().setFullYear(new Date().getFullYear() - 1));
+    const end = endDate ? new Date(endDate) : new Date();
+
+    const result = await db.execute(sql`
+      SELECT 
+        s.id as sale_id,
+        v.model as vehicle_model,
+        b.name as brand_name,
+        s.sale_date,
+        s.total_value::numeric as sale_price,
+        COALESCE(v.price::numeric, 0) as purchase_price
+      FROM sales s
+      INNER JOIN vehicles v ON s.vehicle_id = v.id
+      INNER JOIN brands b ON v.brand_id = b.id
+      WHERE s.sale_date >= ${start} AND s.sale_date <= ${end}
+      ORDER BY s.sale_date DESC
+    `);
+
+    return (result.rows as any[]).map(row => {
+      const salePrice = Number(row.sale_price);
+      const purchasePrice = Number(row.purchase_price);
+      const profit = salePrice - purchasePrice;
+      const marginPercent = purchasePrice > 0 ? (profit / purchasePrice) * 100 : 0;
+
+      return {
+        saleId: Number(row.sale_id),
+        vehicleModel: row.vehicle_model,
+        brandName: row.brand_name,
+        saleDate: new Date(row.sale_date),
+        salePrice,
+        purchasePrice,
+        profit,
+        marginPercent: Math.round(marginPercent * 100) / 100,
+      };
+    });
   }
 }
 

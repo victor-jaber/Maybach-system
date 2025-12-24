@@ -887,5 +887,82 @@ export async function registerRoutes(
     }
   });
 
+  // ========== REPORTS & STATISTICS ==========
+
+  // Dashboard statistics
+  app.get("/api/reports/dashboard", isAuthenticated, async (req, res) => {
+    try {
+      const stats = await storage.getDashboardStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+      res.status(500).json({ message: "Erro ao buscar estatísticas" });
+    }
+  });
+
+  // Sales by period
+  app.get("/api/reports/sales-by-period", isAuthenticated, async (req, res) => {
+    try {
+      const { startDate, endDate, groupBy = "day" } = req.query;
+      const data = await storage.getSalesByPeriod(
+        startDate as string,
+        endDate as string,
+        groupBy as "day" | "week" | "month"
+      );
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching sales by period:", error);
+      res.status(500).json({ message: "Erro ao buscar vendas por período" });
+    }
+  });
+
+  // Sales by brand
+  app.get("/api/reports/sales-by-brand", isAuthenticated, async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      const data = await storage.getSalesByBrand(startDate as string, endDate as string);
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching sales by brand:", error);
+      res.status(500).json({ message: "Erro ao buscar vendas por marca" });
+    }
+  });
+
+  // Sales by category
+  app.get("/api/reports/sales-by-category", isAuthenticated, async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      const data = await storage.getSalesByCategory(startDate as string, endDate as string);
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching sales by category:", error);
+      res.status(500).json({ message: "Erro ao buscar vendas por categoria" });
+    }
+  });
+
+  // Sales by seller (admin user who registered the sale)
+  app.get("/api/reports/sales-by-seller", isAuthenticated, async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      const data = await storage.getSalesBySeller(startDate as string, endDate as string);
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching sales by seller:", error);
+      res.status(500).json({ message: "Erro ao buscar vendas por vendedor" });
+    }
+  });
+
+  // Profit margin analysis
+  app.get("/api/reports/profit-margin", isAuthenticated, async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      const data = await storage.getProfitMarginAnalysis(startDate as string, endDate as string);
+      res.json(data);
+    } catch (error) {
+      console.error("Error fetching profit margin:", error);
+      res.status(500).json({ message: "Erro ao buscar análise de margem" });
+    }
+  });
+
   return httpServer;
 }
