@@ -79,12 +79,14 @@ import type { Customer } from "@shared/schema";
 
 const customerFormSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
-  cpfCnpj: z.string().min(1, "CPF/CNPJ é obrigatório").refine((val) => {
+  cpfCnpj: z.string().min(1, "CPF/CNPJ é obrigatório").superRefine((val, ctx) => {
     const result = validateCPFCNPJ(val);
-    return result.valid;
-  }, (val) => {
-    const result = validateCPFCNPJ(val);
-    return { message: result.message || "CPF/CNPJ inválido" };
+    if (!result.valid) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: result.message || "CPF/CNPJ inválido",
+      });
+    }
   }),
   rg: z.string().optional().refine((val) => {
     if (!val || val.trim() === "") return true;
