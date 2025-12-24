@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { VehicleImageCarousel } from "@/components/VehicleImageCarousel";
 import type { VehicleWithRelations } from "@shared/schema";
 import logoImage from "@/assets/maybach-logo.png";
 
@@ -115,20 +116,11 @@ export default function VehicleDetailPage() {
 
         <div className="grid gap-8 lg:grid-cols-2">
           <div className="space-y-4">
-            <div className="aspect-[4/3] rounded-xl overflow-hidden bg-muted">
-              {vehicle.imageUrl ? (
-                <img
-                  src={vehicle.imageUrl}
-                  alt={`${vehicle.brand?.name} ${vehicle.model}`}
-                  className="h-full w-full object-cover"
-                  data-testid="img-vehicle-main"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center bg-gradient-to-br from-stone-100 to-stone-200 dark:from-stone-800 dark:to-stone-900">
-                  <Car className="h-24 w-24 text-muted-foreground/20" />
-                </div>
-              )}
-            </div>
+            <VehicleImageCarousel
+              images={vehicle.images || []}
+              vehicleName={`${vehicle.brand?.name} ${vehicle.model}`}
+              fallbackImageUrl={vehicle.imageUrl}
+            />
 
             <div className="grid grid-cols-3 gap-4">
               <Card className="text-center p-4">

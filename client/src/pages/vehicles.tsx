@@ -57,8 +57,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { VehicleImageUploader } from "@/components/VehicleImageUploader";
-import type { VehicleWithRelations, Brand, Category } from "@shared/schema";
+import { VehicleMultiImageUploader } from "@/components/VehicleMultiImageUploader";
+import type { VehicleWithRelations, Brand, Category, VehicleImage } from "@shared/schema";
 
 const vehicleFormSchema = z.object({
   brandId: z.number({ required_error: "Selecione uma marca" }),
@@ -98,6 +98,8 @@ export default function VehiclesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<VehicleWithRelations | null>(null);
   const [deletingVehicle, setDeletingVehicle] = useState<VehicleWithRelations | null>(null);
+  const [localImages, setLocalImages] = useState<VehicleImage[]>([]);
+  const [pendingImageUploads, setPendingImageUploads] = useState<{url: string, isPrimary: boolean}[]>([]);
   const { toast } = useToast();
 
   const { data: vehicles, isLoading } = useQuery<VehicleWithRelations[]>({
@@ -125,12 +127,25 @@ export default function VehiclesPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: VehicleFormValues) =>
-      apiRequest("POST", "/api/vehicles", data),
+    mutationFn: async (data: VehicleFormValues) => {
+      const vehicle = await apiRequest("POST", "/api/vehicles", data);
+      const vehicleData = await vehicle.json();
+      
+      for (const img of pendingImageUploads) {
+        await apiRequest("POST", `/api/vehicles/${vehicleData.id}/images`, {
+          imageUrl: img.url,
+          isPrimary: img.isPrimary,
+        });
+      }
+      
+      return vehicleData;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
       setIsDialogOpen(false);
       form.reset();
+      setLocalImages([]);
+      setPendingImageUploads([]);
       toast({ title: "Veículo cadastrado com sucesso!" });
     },
     onError: () => {
@@ -165,8 +180,34 @@ export default function VehiclesPage() {
     },
   });
 
+  const addImageMutation = useMutation({
+    mutationFn: ({ vehicleId, imageUrl, isPrimary }: { vehicleId: number; imageUrl: string; isPrimary: boolean }) =>
+      apiRequest("POST", `/api/vehicles/${vehicleId}/images`, { imageUrl, isPrimary }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
+    },
+  });
+
+  const removeImageMutation = useMutation({
+    mutationFn: ({ vehicleId, imageId }: { vehicleId: number; imageId: number }) =>
+      apiRequest("DELETE", `/api/vehicles/${vehicleId}/images/${imageId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
+    },
+  });
+
+  const setPrimaryMutation = useMutation({
+    mutationFn: ({ vehicleId, imageId }: { vehicleId: number; imageId: number }) =>
+      apiRequest("POST", `/api/vehicles/${vehicleId}/images/${imageId}/primary`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
+    },
+  });
+
   const handleOpenCreate = () => {
     setEditingVehicle(null);
+    setLocalImages([]);
+    setPendingImageUploads([]);
     form.reset({
       model: "",
       year: new Date().getFullYear(),
@@ -180,6 +221,8 @@ export default function VehiclesPage() {
 
   const handleOpenEdit = (vehicle: VehicleWithRelations) => {
     setEditingVehicle(vehicle);
+    setLocalImages(vehicle.images || []);
+    setPendingImageUploads([]);
     form.reset({
       brandId: vehicle.brandId,
       categoryId: vehicle.categoryId,
@@ -199,6 +242,70 @@ export default function VehiclesPage() {
       status: vehicle.status,
     });
     setIsDialogOpen(true);
+  };
+
+  const handleImageAdd = async (imageUrl: string, isPrimary: boolean) => {
+    if (editingVehicle) {
+      const response = await addImageMutation.mutateAsync({
+        vehicleId: editingVehicle.id,
+        imageUrl,
+        isPrimary,
+      });
+      setLocalImages(prev => [...prev, response as VehicleImage]);
+    } else {
+      const tempId = -Date.now();
+      const newImage: VehicleImage = {
+        id: tempId,
+        vehicleId: 0,
+        imageUrl,
+        isPrimary,
+        order: pendingImageUploads.length,
+        createdAt: new Date(),
+      };
+      setLocalImages(prev => [...prev, newImage]);
+      setPendingImageUploads(prev => [...prev, { url: imageUrl, isPrimary }]);
+    }
+  };
+
+  const handleImageRemove = async (imageId: number) => {
+    if (editingVehicle && imageId > 0) {
+      await removeImageMutation.mutateAsync({
+        vehicleId: editingVehicle.id,
+        imageId,
+      });
+    }
+    setLocalImages(prev => prev.filter(img => img.id !== imageId));
+    if (imageId < 0) {
+      const index = localImages.findIndex(img => img.id === imageId);
+      if (index >= 0) {
+        setPendingImageUploads(prev => prev.filter((_, i) => i !== index));
+      }
+    }
+  };
+
+  const handleSetPrimary = async (imageId: number) => {
+    if (editingVehicle && imageId > 0) {
+      await setPrimaryMutation.mutateAsync({
+        vehicleId: editingVehicle.id,
+        imageId,
+      });
+      setLocalImages(prev => prev.map(img => ({
+        ...img,
+        isPrimary: img.id === imageId,
+      })));
+    } else {
+      setLocalImages(prev => prev.map(img => ({
+        ...img,
+        isPrimary: img.id === imageId,
+      })));
+      setPendingImageUploads(prev => {
+        const imageIndex = localImages.findIndex(img => img.id === imageId);
+        return prev.map((p, i) => ({
+          ...p,
+          isPrimary: i === imageIndex,
+        }));
+      });
+    }
   };
 
   const onSubmit = (data: VehicleFormValues) => {
@@ -596,24 +703,21 @@ export default function VehiclesPage() {
                 />
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="imageUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Imagem do Veículo</FormLabel>
-                      <FormControl>
-                        <VehicleImageUploader
-                          value={field.value}
-                          onChange={field.onChange}
-                          onRemove={() => field.onChange("")}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">Imagens do Veículo</label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Adicione uma imagem principal e fotos adicionais para a galeria
+                  </p>
+                  <VehicleMultiImageUploader
+                    vehicleId={editingVehicle?.id}
+                    images={localImages}
+                    onImageAdd={handleImageAdd}
+                    onImageRemove={handleImageRemove}
+                    onSetPrimary={handleSetPrimary}
+                    isLoading={addImageMutation.isPending || removeImageMutation.isPending}
+                  />
+                </div>
                 <FormField
                   control={form.control}
                   name="status"

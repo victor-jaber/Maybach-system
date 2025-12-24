@@ -28,13 +28,24 @@ function formatMileage(mileage: number): string {
   return new Intl.NumberFormat("pt-BR").format(mileage) + " km";
 }
 
+function getVehicleMainImage(vehicle: VehicleWithRelations): string | null {
+  if (vehicle.images && vehicle.images.length > 0) {
+    const primaryImage = vehicle.images.find(img => img.isPrimary);
+    if (primaryImage) return primaryImage.imageUrl;
+    return vehicle.images[0].imageUrl;
+  }
+  return vehicle.imageUrl || null;
+}
+
 function VehicleCard({ vehicle }: { vehicle: VehicleWithRelations }) {
+  const mainImage = getVehicleMainImage(vehicle);
+  
   return (
     <Card className="overflow-hidden hover-elevate" data-testid={`card-catalog-vehicle-${vehicle.id}`}>
       <div className="aspect-video bg-muted relative overflow-hidden">
-        {vehicle.imageUrl ? (
+        {mainImage ? (
           <img
-            src={vehicle.imageUrl}
+            src={mainImage}
             alt={vehicle.model}
             className="h-full w-full object-cover"
           />

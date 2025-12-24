@@ -27,6 +27,15 @@ function formatMileage(km: number) {
   return km.toLocaleString("pt-BR") + " km";
 }
 
+function getVehicleMainImage(vehicle: VehicleWithRelations): string | null {
+  if (vehicle.images && vehicle.images.length > 0) {
+    const primaryImage = vehicle.images.find(img => img.isPrimary);
+    if (primaryImage) return primaryImage.imageUrl;
+    return vehicle.images[0].imageUrl;
+  }
+  return vehicle.imageUrl || null;
+}
+
 export default function LandingPage() {
   const { data: vehicles = [] } = useQuery<VehicleWithRelations[]>({
     queryKey: ["/api/vehicles/public"],
@@ -183,17 +192,19 @@ export default function LandingPage() {
             
             {featuredVehicles.length > 0 ? (
               <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-                {featuredVehicles.map((vehicle) => (
+                {featuredVehicles.map((vehicle) => {
+                  const mainImage = getVehicleMainImage(vehicle);
+                  return (
                   <Card key={vehicle.id} className="group overflow-hidden border-0 shadow-xl bg-card" data-testid={`card-vehicle-${vehicle.id}`}>
                     <div className="aspect-[4/3] bg-muted relative overflow-hidden">
-                      {vehicle.imageUrl ? (
+                      {mainImage ? (
                         <img
-                          src={vehicle.imageUrl}
+                          src={mainImage}
                           alt={`${vehicle.brand.name} ${vehicle.model}`}
                           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                         />
                       ) : (
-                        <div className="flex h-full items-center justify-center bg-gradient-to-br from-stone-100 to-stone-200 dark:from-stone-800 dark:to-stone-900">
+                        <div className="flex h-full items-center justify-center bg-gradient-to-br from-stone-100 to-stone-200">
                           <Car className="h-20 w-20 text-muted-foreground/20" />
                         </div>
                       )}
@@ -234,7 +245,8 @@ export default function LandingPage() {
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="text-center py-20 bg-muted/30 rounded-2xl">
