@@ -1,0 +1,95 @@
+Você é um Especialista em Direito Contratual Brasileiro e redator jurídico profissional.
+Sua tarefa é criar o CONTEÚDO COMPLETO dos contratos que serão usados em um sistema de concessionária de veículos.
+
+⚠️ Importante:
+- Não escreva código.
+- Não descreva telas nem lógica do sistema.
+- Produza apenas o TEXTO dos contratos, com linguagem jurídica formal, clara e aplicável no Brasil.
+- Use placeholders no formato {{nome_do_campo}} para todos os dados variáveis.
+
+Crie os seguintes contratos:
+
+━━━━━━━━━━━━━━━━━━━━━━
+1️⃣ CONTRATO EXTERNO DE COMPLEMENTO DE ENTRADA
+━━━━━━━━━━━━━━━━━━━━━━
+
+Finalidade:
+Formalizar o pagamento do valor restante da entrada do veículo quando o cliente não consegue pagar toda a entrada no ato da compra.
+
+O contrato deve conter obrigatoriamente:
+
+1. Qualificação das Partes  
+   - Vendedora: {{razao_social_loja}}, CNPJ {{cnpj_loja}}, endereço {{endereco_loja}}, neste ato representada por {{representante_loja}}, CPF {{cpf_representante_loja}}.
+   - Comprador: {{nome_cliente}}, CPF {{cpf_cliente}}, RG {{rg_cliente}}, endereço {{endereco_cliente}}.
+
+2. Objeto do Contrato  
+   - Descrição do veículo: {{marca}}, {{modelo}}, {{ano}}, {{placa}}, {{chassi}}, {{renavam}}.
+   - Valor total do veículo: R$ {{valor_veiculo}}.
+   - Valor total da entrada ajustada: R$ {{entrada_total}}.
+   - Valor já pago: R$ {{entrada_paga}}.
+   - Valor restante da entrada: R$ {{entrada_restante}}.
+
+3. Forma de Pagamento do Valor Restante  
+   - Se à vista: data de vencimento {{data_vencimento}}.
+   - Se parcelado:
+       • {{quantidade_parcelas}} parcelas de R$ {{valor_parcela}}
+       • Vencimento todo dia {{dia_vencimento}}
+       • Forma de pagamento: {{forma_pagamento}}
+
+4. Multa, Juros e Inadimplência  
+   - Multa moratória de {{multa_percentual}}% sobre o valor em atraso.
+   - Juros de {{juros_mensal}}% ao mês.
+   - Cláusula de vencimento antecipado em caso de inadimplência.
+
+5. Obrigações das Partes  
+   - Obrigações da compradora e da vendedora de forma clara.
+
+6. Rescisão e Penalidades  
+   - Condições de rescisão e consequências do descumprimento.
+
+7. Foro  
+   - Eleição do foro da comarca de {{cidade_foro}}.
+
+8. Assinaturas  
+   - Espaço para assinatura das partes e duas testemunhas.
+
+━━━━━━━━━━━━━━━━━━━━━━
+2️⃣ CONTRATO DE COMPRA E VENDA DE VEÍCULO
+━━━━━━━━━━━━━━━━━━━━━━
+
+Finalidade:
+Formalizar a venda completa do veículo, vinculando a este contrato o Contrato Externo de Complemento de Entrada quando existir.
+
+O contrato deve conter:
+
+1. Qualificação das Partes (mesmo padrão do contrato anterior)
+
+2. Objeto do Contrato  
+   - Descrição completa do veículo.
+   - Valor total da venda: R$ {{valor_veiculo}}.
+
+3. Condições de Pagamento  
+   - Entrada total: R$ {{entrada_total}}
+   - Valor pago de entrada: R$ {{entrada_paga}}
+   - Valor financiado (se houver): R$ {{valor_financiado}}
+   - Instituição financeira: {{banco_financiador}}
+   - Referência ao Contrato Externo de Complemento de Entrada, quando existir.
+
+4. Entrega do Veículo  
+   - Condições de entrega, transferência e documentação.
+
+5. Garantias e Responsabilidades
+
+6. Multas, Rescisão e Penalidades
+
+7. Foro
+
+8. Disposições Gerais
+
+9. Assinaturas
+
+Regras finais:
+- Escreva contratos longos, completos e juridicamente consistentes.
+- Linguagem profissional, nível advocacia.
+- Nenhuma parte genérica ou resumida.
+- Totalmente aplicável no Brasil.

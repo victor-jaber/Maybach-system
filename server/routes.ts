@@ -4,6 +4,7 @@ import PDFDocument from "pdfkit";
 import { storage } from "./storage";
 import { registerAuthRoutes, isAuthenticated, seedAdminUser } from "./auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+import { getEntryComplementContract, getPurchaseSaleContract, type ContractData } from "./contract-templates";
 import {
   insertBrandSchema,
   insertCategorySchema,
@@ -708,10 +709,73 @@ export async function registerRoutes(
       }
 
       const store = await storage.getStore();
-      const contractTypeLabels: Record<string, string> = {
-        entry_complement: "CONTRATO DE COMPLEMENTO DE ENTRADA",
-        purchase_sale: "CONTRATO DE COMPRA E VENDA DE VEÍCULO",
+      
+      const buildAddress = (obj: { street?: string | null; number?: string | null; complement?: string | null; neighborhood?: string | null; city?: string | null; state?: string | null; cep?: string | null }) => {
+        const parts = [];
+        if (obj.street) parts.push(obj.street);
+        if (obj.number) parts.push(`nº ${obj.number}`);
+        if (obj.complement) parts.push(obj.complement);
+        if (obj.neighborhood) parts.push(`Bairro ${obj.neighborhood}`);
+        if (obj.city && obj.state) parts.push(`${obj.city}/${obj.state}`);
+        if (obj.cep) parts.push(`CEP ${obj.cep}`);
+        return parts.join(", ") || "Não informado";
       };
+
+      const contractData: ContractData = {
+        razaoSocialLoja: store?.razaoSocial || "Não informado",
+        cnpjLoja: formatCNPJ(store?.cnpj) || "Não informado",
+        enderecoLoja: store ? buildAddress(store) : "Não informado",
+        representanteLoja: store?.representanteLegal || "Não informado",
+        cpfRepresentanteLoja: formatCPF(store?.cpfRepresentante) || "Não informado",
+        telefoneLoja: store?.phone || "Não informado",
+        
+        nomeCliente: contract.customer?.name || "Não informado",
+        cpfCnpjCliente: contract.customer?.cpfCnpj?.length === 11 
+          ? formatCPF(contract.customer.cpfCnpj) 
+          : formatCNPJ(contract.customer?.cpfCnpj),
+        tipoDocumentoCliente: (contract.customer?.cpfCnpj?.replace(/\D/g, "").length === 11 ? "CPF" : "CNPJ") as "CPF" | "CNPJ",
+        rgCliente: contract.customer?.rg || "Não informado",
+        cnhCliente: contract.customer?.cnh || "Não informado",
+        enderecoCliente: contract.customer ? buildAddress(contract.customer) : "Não informado",
+        telefoneCliente: contract.customer?.phone || "Não informado",
+        emailCliente: contract.customer?.email || "Não informado",
+        
+        marca: contract.vehicle?.brand?.name || "Não informado",
+        modelo: contract.vehicle?.model || "Não informado",
+        ano: contract.vehicle?.year?.toString() || "Não informado",
+        cor: contract.vehicle?.color || "Não informado",
+        placa: contract.vehicle?.plate || "Não informado",
+        chassi: contract.vehicle?.chassis || "Não informado",
+        renavam: contract.vehicle?.renavam || "Não informado",
+        km: contract.vehicle?.mileage?.toLocaleString("pt-BR") || "0",
+        
+        valorVeiculo: formatCurrency(contract.valorVenda),
+        entradaTotal: formatCurrency(contract.entradaTotal),
+        entradaPaga: formatCurrency(contract.entradaPaga),
+        entradaRestante: formatCurrency(contract.entradaRestante),
+        valorFinanciado: formatCurrency(contract.valorFinanciado),
+        bancoFinanciador: contract.bancoFinanciamento || "",
+        
+        formaPagamento: (contract.formaPagamentoRestante as "avista" | "parcelado") || "avista",
+        dataVencimentoAvista: formatDate(contract.dataVencimentoAvista),
+        quantidadeParcelas: contract.quantidadeParcelas || 0,
+        valorParcela: formatCurrency(contract.valorParcela),
+        diaVencimento: contract.diaVencimento || 1,
+        formaPagamentoParcelas: contract.formaPagamentoParcelas || "",
+        
+        multaPercentual: contract.multaAtraso?.toString() || "2",
+        jurosMensal: contract.jurosAtraso?.toString() || "1",
+        
+        cidadeForo: store?.city || "São Paulo",
+        dataEmissao: formatDate(new Date()),
+      };
+
+      let contractText = "";
+      if (contract.contractType === "entry_complement") {
+        contractText = getEntryComplementContract(contractData);
+      } else {
+        contractText = getPurchaseSaleContract(contractData);
+      }
 
       const doc = new PDFDocument({ margin: 50, size: "A4" });
       const chunks: Buffer[] = [];
@@ -724,79 +788,31 @@ export async function registerRoutes(
         res.send(pdfBuffer);
       });
 
-      doc.fontSize(16).font("Helvetica-Bold").text(contractTypeLabels[contract.contractType] || "CONTRATO", { align: "center" });
-      doc.moveDown();
-
-      if (store) {
-        doc.fontSize(10).font("Helvetica-Bold").text("VENDEDOR:");
-        doc.font("Helvetica");
-        doc.text(`Razão Social: ${store.razaoSocial || "-"}`);
-        doc.text(`CNPJ: ${formatCNPJ(store.cnpj)}`);
-        if (store.phone) doc.text(`Telefone: ${store.phone}`);
-        if (store.street) {
-          doc.text(`Endereço: ${store.street}, ${store.number || "S/N"} - ${store.neighborhood || ""}, ${store.city || ""}-${store.state || ""} CEP: ${store.cep || ""}`);
+      const lines = contractText.trim().split("\n");
+      for (const line of lines) {
+        if (line.trim() === "") {
+          doc.moveDown(0.5);
+        } else if (line.match(/^CLÁUSULA|^CONTRATO PARTICULAR/)) {
+          doc.fontSize(11).font("Helvetica-Bold").text(line.trim(), { align: "left" });
+          doc.font("Helvetica").fontSize(10);
+        } else if (line.match(/^\d+\.\d+\./)) {
+          doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "justify", indent: 0 });
+        } else if (line.trim().startsWith("a)") || line.trim().startsWith("b)") || line.trim().startsWith("c)") || line.trim().startsWith("d)") || line.trim().startsWith("e)")) {
+          doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "left", indent: 20 });
+        } else if (line.includes("_____")) {
+          doc.moveDown(1);
+          doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "center" });
+        } else if (line.trim().startsWith("VENDEDORA:") || line.trim().startsWith("COMPRADOR")) {
+          doc.fontSize(10).font("Helvetica-Bold").text(line.trim(), { align: "left" });
+          doc.font("Helvetica");
+        } else if (line.trim().startsWith("TESTEMUNHAS:")) {
+          doc.moveDown(1);
+          doc.fontSize(10).font("Helvetica-Bold").text(line.trim(), { align: "left" });
+          doc.font("Helvetica");
+        } else {
+          doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "justify" });
         }
-        doc.moveDown();
       }
-
-      if (contract.customer) {
-        doc.fontSize(10).font("Helvetica-Bold").text("COMPRADOR:");
-        doc.font("Helvetica");
-        doc.text(`Nome: ${contract.customer.name}`);
-        doc.text(`CPF/CNPJ: ${contract.customer.cpfCnpj?.length === 11 ? formatCPF(contract.customer.cpfCnpj) : formatCNPJ(contract.customer.cpfCnpj)}`);
-        if (contract.customer.rg) doc.text(`RG: ${contract.customer.rg}`);
-        if (contract.customer.phone) doc.text(`Telefone: ${contract.customer.phone}`);
-        if (contract.customer.email) doc.text(`Email: ${contract.customer.email}`);
-        if (contract.customer.street) {
-          doc.text(`Endereço: ${contract.customer.street}, ${contract.customer.number || "S/N"} - ${contract.customer.neighborhood || ""}, ${contract.customer.city || ""}-${contract.customer.state || ""} CEP: ${contract.customer.cep || ""}`);
-        }
-        doc.moveDown();
-      }
-
-      if (contract.vehicle) {
-        doc.fontSize(10).font("Helvetica-Bold").text("VEÍCULO:");
-        doc.font("Helvetica");
-        doc.text(`Marca/Modelo: ${contract.vehicle.brand?.name || ""} ${contract.vehicle.model}`);
-        doc.text(`Ano: ${contract.vehicle.year}`);
-        doc.text(`Cor: ${contract.vehicle.color || "-"}`);
-        doc.text(`Placa: ${contract.vehicle.plate || "-"}`);
-        doc.text(`Renavam: ${contract.vehicle.renavam || "-"}`);
-        doc.text(`Chassi: ${contract.vehicle.chassis || "-"}`);
-        doc.text(`KM: ${contract.vehicle.mileage?.toLocaleString("pt-BR") || "0"}`);
-        doc.moveDown();
-      }
-
-      doc.fontSize(10).font("Helvetica-Bold").text("VALORES:");
-      doc.font("Helvetica");
-      if (contract.valorVenda) doc.text(`Valor da Venda: ${formatCurrency(contract.valorVenda)}`);
-      if (contract.entradaTotal) doc.text(`Entrada Total: ${formatCurrency(contract.entradaTotal)}`);
-      if (contract.entradaPaga) doc.text(`Entrada Paga: ${formatCurrency(contract.entradaPaga)}`);
-      if (contract.entradaRestante) doc.text(`Entrada Restante: ${formatCurrency(contract.entradaRestante)}`);
-      doc.moveDown();
-
-      if (contract.formaPagamentoRestante === "parcelado" && contract.quantidadeParcelas) {
-        doc.fontSize(10).font("Helvetica-Bold").text("PARCELAMENTO:");
-        doc.font("Helvetica");
-        doc.text(`Quantidade de Parcelas: ${contract.quantidadeParcelas}`);
-        if (contract.valorParcela) doc.text(`Valor da Parcela: ${formatCurrency(contract.valorParcela)}`);
-        if (contract.diaVencimento) doc.text(`Dia de Vencimento: ${contract.diaVencimento}`);
-        if (contract.multaAtraso) doc.text(`Multa por Atraso: ${contract.multaAtraso}%`);
-        if (contract.jurosAtraso) doc.text(`Juros por Atraso: ${contract.jurosAtraso}% ao mês`);
-        doc.moveDown();
-      }
-
-      if (contract.formaPagamentoRestante === "avista" && contract.dataVencimentoAvista) {
-        doc.fontSize(10).font("Helvetica-Bold").text("PAGAMENTO À VISTA:");
-        doc.font("Helvetica");
-        doc.text(`Data de Vencimento: ${formatDate(contract.dataVencimentoAvista)}`);
-        doc.moveDown();
-      }
-
-      doc.moveDown(2);
-      doc.text(`Data de Emissão: ${formatDate(new Date())}`);
-      doc.moveDown(3);
-      doc.text("_______________________________                    _______________________________", { align: "center" });
-      doc.text("                    VENDEDOR                                                             COMPRADOR", { align: "center" });
 
       doc.end();
     } catch (error) {
