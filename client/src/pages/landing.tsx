@@ -81,7 +81,7 @@ export default function LandingPage() {
                   Sua satisfação é nossa prioridade.
                 </p>
                 <div className="mt-10 flex flex-wrap items-center gap-4">
-                  <Button size="lg" className="bg-[#8FA37E] hover:bg-[#7a8f6b] text-white" asChild data-testid="button-see-catalog">
+                  <Button size="lg" className="bg-[#5B9A4D] hover:bg-[#4a8340] text-white" asChild data-testid="button-see-catalog">
                     <Link href="/catalog">
                       Explorar Catálogo
                       <ChevronRight className="ml-2 h-4 w-4" />
@@ -223,7 +223,7 @@ export default function LandingPage() {
                         <span className="text-xl font-bold text-[#735C3F]">
                           {formatCurrency(vehicle.price)}
                         </span>
-                        <Button size="sm" className="bg-[#8FA37E] hover:bg-[#7a8f6b] text-white" asChild>
+                        <Button size="sm" className="bg-[#5B9A4D] hover:bg-[#4a8340] text-white" asChild>
                           <Link href="/catalog">
                             Detalhes
                             <ArrowRight className="ml-1 h-3 w-3" />
@@ -463,7 +463,7 @@ export default function LandingPage() {
               </Card>
             </div>
             <div className="text-center">
-              <Button size="lg" className="bg-[#8FA37E] hover:bg-[#7a8f6b] text-white" asChild>
+              <Button size="lg" className="bg-[#5B9A4D] hover:bg-[#4a8340] text-white" asChild>
                 <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer">
                   <Phone className="mr-2 h-4 w-4" />
                   Falar pelo WhatsApp
@@ -484,7 +484,7 @@ export default function LandingPage() {
                   Acesse nosso catálogo completo e encontre o carro ideal para você.
                 </p>
               </div>
-              <Button size="lg" className="bg-[#8FA37E] hover:bg-[#7a8f6b] text-white" asChild data-testid="button-catalog-cta">
+              <Button size="lg" className="bg-[#5B9A4D] hover:bg-[#4a8340] text-white" asChild data-testid="button-catalog-cta">
                 <Link href="/catalog">
                   Ver Catálogo Completo
                   <ChevronRight className="ml-2 h-4 w-4" />
