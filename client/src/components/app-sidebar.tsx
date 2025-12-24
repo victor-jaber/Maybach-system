@@ -9,6 +9,8 @@ import {
   LogOut,
   UserCog,
   Search,
+  FileText,
+  Building,
 } from "lucide-react";
 import {
   Sidebar,
@@ -52,6 +54,11 @@ const mainNavItems = [
     url: "/admin/fipe",
     icon: Search,
   },
+  {
+    title: "Contratos",
+    url: "/admin/contracts",
+    icon: FileText,
+  },
 ];
 
 const configNavItems = [
@@ -69,6 +76,11 @@ const configNavItems = [
     title: "Usuários",
     url: "/admin/users",
     icon: UserCog,
+  },
+  {
+    title: "Loja",
+    url: "/admin/store-settings",
+    icon: Building,
   },
 ];
 
