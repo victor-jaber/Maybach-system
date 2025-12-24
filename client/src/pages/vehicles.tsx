@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { VehicleImageUploader } from "@/components/VehicleImageUploader";
 import type { VehicleWithRelations, Brand, Category } from "@shared/schema";
 
 const vehicleFormSchema = z.object({
@@ -601,9 +602,13 @@ export default function VehiclesPage() {
                   name="imageUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>URL da Imagem</FormLabel>
+                      <FormLabel>Imagem do Veículo</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="https://..." data-testid="input-image-url" />
+                        <VehicleImageUploader
+                          value={field.value}
+                          onChange={field.onChange}
+                          onRemove={() => field.onChange("")}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
