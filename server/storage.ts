@@ -613,6 +613,8 @@ export class DatabaseStorage implements IStorage {
   ): Promise<SalesByPeriod[]> {
     const start = startDate ? new Date(startDate) : new Date(new Date().setMonth(new Date().getMonth() - 6));
     const end = endDate ? new Date(endDate) : new Date();
+    // Set end date to end of day to include all sales on that day
+    end.setHours(23, 59, 59, 999);
 
     const dateFormat = groupBy === "day" 
       ? "YYYY-MM-DD"
@@ -641,6 +643,7 @@ export class DatabaseStorage implements IStorage {
   async getSalesByBrand(startDate?: string, endDate?: string): Promise<SalesByBrand[]> {
     const start = startDate ? new Date(startDate) : new Date(new Date().setFullYear(new Date().getFullYear() - 1));
     const end = endDate ? new Date(endDate) : new Date();
+    end.setHours(23, 59, 59, 999);
 
     const result = await db.execute(sql`
       SELECT 
@@ -667,6 +670,7 @@ export class DatabaseStorage implements IStorage {
   async getSalesByCategory(startDate?: string, endDate?: string): Promise<SalesByCategory[]> {
     const start = startDate ? new Date(startDate) : new Date(new Date().setFullYear(new Date().getFullYear() - 1));
     const end = endDate ? new Date(endDate) : new Date();
+    end.setHours(23, 59, 59, 999);
 
     const result = await db.execute(sql`
       SELECT 
@@ -699,6 +703,7 @@ export class DatabaseStorage implements IStorage {
   async getProfitMarginAnalysis(startDate?: string, endDate?: string): Promise<ProfitMarginData[]> {
     const start = startDate ? new Date(startDate) : new Date(new Date().setFullYear(new Date().getFullYear() - 1));
     const end = endDate ? new Date(endDate) : new Date();
+    end.setHours(23, 59, 59, 999);
 
     const result = await db.execute(sql`
       SELECT 
