@@ -59,7 +59,7 @@ export default function LandingPage() {
 
       <main>
         <section className="relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-stone-900 via-stone-800 to-neutral-900" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#2E2B27] via-[#3a3632] to-[#2E2B27]" />
           <div className="absolute inset-0 opacity-20" style={{
             backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23735C3F' fill-opacity='0.15'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
           }} />
@@ -71,17 +71,17 @@ export default function LandingPage() {
                 </Badge>
                 <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl">
                   Realize o sonho do seu{" "}
-                  <span className="text-[#a08060]">
+                  <span className="text-[#C1A36A]">
                     carro ideal
                   </span>
                 </h1>
-                <p className="mt-6 text-lg text-stone-300 leading-relaxed">
+                <p className="mt-6 text-lg text-[#E2DED6] leading-relaxed">
                   A MayBach Cars oferece os melhores veículos seminovos e usados do mercado, 
                   com procedência garantida, preços justos e as melhores condições de financiamento.
                   Sua satisfação é nossa prioridade.
                 </p>
                 <div className="mt-10 flex flex-wrap items-center gap-4">
-                  <Button size="lg" className="bg-[#735C3F] hover:bg-[#5d4a32] text-white" asChild data-testid="button-see-catalog">
+                  <Button size="lg" className="bg-[#8FA37E] hover:bg-[#7a8f6b] text-white" asChild data-testid="button-see-catalog">
                     <Link href="/catalog">
                       Explorar Catálogo
                       <ChevronRight className="ml-2 h-4 w-4" />
@@ -96,36 +96,36 @@ export default function LandingPage() {
                 </div>
                 <div className="mt-10 flex flex-wrap items-center gap-6">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-[#a08060]" />
-                    <span className="text-sm text-stone-300">Garantia de Procedência</span>
+                    <CheckCircle className="h-5 w-5 text-[#C1A36A]" />
+                    <span className="text-sm text-[#E2DED6]">Garantia de Procedência</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-[#a08060]" />
-                    <span className="text-sm text-stone-300">Financiamento Facilitado</span>
+                    <CheckCircle className="h-5 w-5 text-[#C1A36A]" />
+                    <span className="text-sm text-[#E2DED6]">Financiamento Facilitado</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="h-5 w-5 text-[#a08060]" />
-                    <span className="text-sm text-stone-300">Atendimento Premium</span>
+                    <CheckCircle className="h-5 w-5 text-[#C1A36A]" />
+                    <span className="text-sm text-[#E2DED6]">Atendimento Premium</span>
                   </div>
                 </div>
               </div>
               <div className="relative hidden lg:block">
                 <div className="absolute -top-4 -right-4 w-72 h-72 bg-[#735C3F]/20 rounded-full blur-3xl" />
-                <div className="absolute -bottom-8 -left-8 w-64 h-64 bg-[#a08060]/10 rounded-full blur-2xl" />
-                <div className="relative bg-gradient-to-br from-stone-800/80 to-stone-900/80 rounded-2xl p-8 border border-stone-700/50 backdrop-blur">
+                <div className="absolute -bottom-8 -left-8 w-64 h-64 bg-[#C1A36A]/10 rounded-full blur-2xl" />
+                <div className="relative bg-gradient-to-br from-[#3a3632]/90 to-[#2E2B27]/90 rounded-2xl p-8 border border-[#735C3F]/30 backdrop-blur">
                   <img src={logoImage} alt="MayBach Cars" className="w-full max-w-[280px] mx-auto opacity-90" />
                   <div className="mt-6 grid grid-cols-3 gap-4 text-center">
                     <div>
                       <div className="text-2xl font-bold text-white">500+</div>
-                      <div className="text-xs text-stone-400">Vendidos</div>
+                      <div className="text-xs text-[#E2DED6]">Vendidos</div>
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-white">14+</div>
-                      <div className="text-xs text-stone-400">Anos</div>
+                      <div className="text-xs text-[#E2DED6]">Anos</div>
                     </div>
                     <div>
                       <div className="text-2xl font-bold text-white">98%</div>
-                      <div className="text-xs text-stone-400">Satisfação</div>
+                      <div className="text-xs text-[#E2DED6]">Satisfação</div>
                     </div>
                   </div>
                 </div>
@@ -223,7 +223,7 @@ export default function LandingPage() {
                         <span className="text-xl font-bold text-[#735C3F]">
                           {formatCurrency(vehicle.price)}
                         </span>
-                        <Button size="sm" className="bg-[#735C3F] hover:bg-[#5d4a32] text-white" asChild>
+                        <Button size="sm" className="bg-[#8FA37E] hover:bg-[#7a8f6b] text-white" asChild>
                           <Link href="/catalog">
                             Detalhes
                             <ArrowRight className="ml-1 h-3 w-3" />
@@ -254,7 +254,7 @@ export default function LandingPage() {
           </section>
         )}
 
-        <section id="benefits" className="py-20 bg-gradient-to-b from-stone-50 to-stone-100 dark:from-stone-900 dark:to-stone-950">
+        <section id="benefits" className="py-20 bg-secondary">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <Badge variant="outline" className="mb-4 border-[#735C3F]/30 text-[#735C3F]">
@@ -463,7 +463,7 @@ export default function LandingPage() {
               </Card>
             </div>
             <div className="text-center">
-              <Button size="lg" className="bg-[#735C3F] hover:bg-[#5d4a32] text-white" asChild>
+              <Button size="lg" className="bg-[#8FA37E] hover:bg-[#7a8f6b] text-white" asChild>
                 <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer">
                   <Phone className="mr-2 h-4 w-4" />
                   Falar pelo WhatsApp
@@ -473,18 +473,18 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="bg-gradient-to-r from-stone-900 to-stone-800 py-16">
+        <section className="bg-gradient-to-r from-[#2E2B27] to-[#3a3632] py-16">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="flex flex-wrap items-center justify-between gap-8">
               <div>
                 <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
                   Pronto para encontrar seu próximo veículo?
                 </h2>
-                <p className="mt-2 text-stone-300">
+                <p className="mt-2 text-[#E2DED6]">
                   Acesse nosso catálogo completo e encontre o carro ideal para você.
                 </p>
               </div>
-              <Button size="lg" className="bg-[#735C3F] hover:bg-[#5d4a32] text-white" asChild data-testid="button-catalog-cta">
+              <Button size="lg" className="bg-[#8FA37E] hover:bg-[#7a8f6b] text-white" asChild data-testid="button-catalog-cta">
                 <Link href="/catalog">
                   Ver Catálogo Completo
                   <ChevronRight className="ml-2 h-4 w-4" />
