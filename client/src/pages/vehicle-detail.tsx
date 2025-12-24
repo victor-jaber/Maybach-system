@@ -7,16 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { VehicleImageCarousel } from "@/components/VehicleImageCarousel";
+import { formatCurrency } from "@/lib/currency";
 import type { VehicleWithRelations } from "@shared/schema";
 import logoImage from "@/assets/maybach-logo.png";
-
-function formatCurrency(value: number | string): string {
-  const num = typeof value === "string" ? parseFloat(value) : value;
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(num);
-}
 
 function formatMileage(mileage: number): string {
   return new Intl.NumberFormat("pt-BR").format(mileage) + " km";

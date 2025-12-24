@@ -26,6 +26,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { formatCurrency, formatCurrencyCompact } from "@/lib/currency";
 import type { VehicleWithRelations, Brand, Category } from "@shared/schema";
 
 interface FilterState {
@@ -42,14 +43,6 @@ interface FilterState {
 const FUEL_OPTIONS = ["Flex", "Gasolina", "Etanol", "Diesel", "Elétrico", "Híbrido"];
 const TRANSMISSION_OPTIONS = ["Manual", "Automático", "CVT", "Automatizado"];
 
-function formatCurrency(value: number | string): string {
-  const num = typeof value === "string" ? parseFloat(value) : value;
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(num);
-}
-
 function formatMileage(mileage: number): string {
   return new Intl.NumberFormat("pt-BR").format(mileage) + " km";
 }
@@ -59,7 +52,7 @@ function formatCompactNumber(num: number): string {
     return (num / 1000000).toFixed(1).replace('.0', '') + 'M';
   }
   if (num >= 1000) {
-    return (num / 1000).toFixed(0) + 'k';
+    return Math.round(num / 1000) + 'k';
   }
   return num.toString();
 }
@@ -432,8 +425,8 @@ export default function CatalogPage() {
     const prices = vehicles.map((v) => parseFloat(v.price as string));
     const years = vehicles.map((v) => v.year);
     const mileages = vehicles.map((v) => v.mileage);
-    const fuels = [...new Set(vehicles.map((v) => v.fuel).filter(Boolean))] as string[];
-    const transmissions = [...new Set(vehicles.map((v) => v.transmission).filter(Boolean))] as string[];
+    const fuels = Array.from(new Set(vehicles.map((v) => v.fuel).filter(Boolean))) as string[];
+    const transmissions = Array.from(new Set(vehicles.map((v) => v.transmission).filter(Boolean))) as string[];
 
     return {
       price: { min: Math.min(...prices), max: Math.max(...prices) },

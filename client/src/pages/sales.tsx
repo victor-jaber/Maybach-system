@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { formatCurrency, formatCurrencyInput, parseCurrencyToNumber } from "@/lib/currency";
 import type { SaleWithRelations, VehicleWithRelations, Customer } from "@shared/schema";
 
 const saleFormSchema = z.object({
@@ -74,15 +75,6 @@ const saleFormSchema = z.object({
 });
 
 type SaleFormValues = z.infer<typeof saleFormSchema>;
-
-function formatCurrency(value: number | string | null): string {
-  if (!value) return "-";
-  const num = typeof value === "string" ? parseFloat(value) : value;
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(num);
-}
 
 function formatDate(date: string | Date): string {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -378,7 +370,15 @@ export default function SalesPage() {
                     <FormItem>
                       <FormLabel>Valor Total *</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Ex: 85000.00" data-testid="input-total-value" />
+                        <Input
+                          {...field}
+                          placeholder="R$ 0,00"
+                          data-testid="input-total-value"
+                          onChange={(e) => {
+                            const formatted = formatCurrencyInput(e.target.value);
+                            field.onChange(formatted);
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -419,7 +419,15 @@ export default function SalesPage() {
                         <FormItem>
                           <FormLabel>Valor de Entrada</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="Ex: 20000.00" data-testid="input-down-payment" />
+                            <Input
+                              {...field}
+                              placeholder="R$ 0,00"
+                              data-testid="input-down-payment"
+                              onChange={(e) => {
+                                const formatted = formatCurrencyInput(e.target.value);
+                                field.onChange(formatted);
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -432,7 +440,15 @@ export default function SalesPage() {
                         <FormItem>
                           <FormLabel>Valor Financiado</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="Ex: 65000.00" data-testid="input-financed-value" />
+                            <Input
+                              {...field}
+                              placeholder="R$ 0,00"
+                              data-testid="input-financed-value"
+                              onChange={(e) => {
+                                const formatted = formatCurrencyInput(e.target.value);
+                                field.onChange(formatted);
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -463,7 +479,15 @@ export default function SalesPage() {
                         <FormItem>
                           <FormLabel>Valor da Parcela</FormLabel>
                           <FormControl>
-                            <Input {...field} placeholder="Ex: 1500.00" data-testid="input-installment-value" />
+                            <Input
+                              {...field}
+                              placeholder="R$ 0,00"
+                              data-testid="input-installment-value"
+                              onChange={(e) => {
+                                const formatted = formatCurrencyInput(e.target.value);
+                                field.onChange(formatted);
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

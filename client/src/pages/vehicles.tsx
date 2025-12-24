@@ -57,6 +57,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { formatCurrency, formatCurrencyInput, parseCurrencyToNumber } from "@/lib/currency";
 import { VehicleMultiImageUploader } from "@/components/VehicleMultiImageUploader";
 import type { VehicleWithRelations, Brand, Category, VehicleImage } from "@shared/schema";
 
@@ -80,14 +81,6 @@ const vehicleFormSchema = z.object({
 });
 
 type VehicleFormValues = z.infer<typeof vehicleFormSchema>;
-
-function formatCurrency(value: number | string): string {
-  const num = typeof value === "string" ? parseFloat(value) : value;
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(num);
-}
 
 function formatMileage(mileage: number): string {
   return new Intl.NumberFormat("pt-BR").format(mileage) + " km";
@@ -251,7 +244,8 @@ export default function VehiclesPage() {
         imageUrl,
         isPrimary,
       });
-      setLocalImages(prev => [...prev, response as VehicleImage]);
+      const imageData = await (response as Response).json() as VehicleImage;
+      setLocalImages(prev => [...prev, imageData]);
     } else {
       const tempId = -Date.now();
       const newImage: VehicleImage = {
@@ -578,7 +572,15 @@ export default function VehiclesPage() {
                     <FormItem>
                       <FormLabel>Preço *</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Ex: 85000.00" data-testid="input-price" />
+                        <Input
+                          {...field}
+                          placeholder="R$ 0,00"
+                          data-testid="input-price"
+                          onChange={(e) => {
+                            const formatted = formatCurrencyInput(e.target.value);
+                            field.onChange(formatted);
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -9,15 +9,8 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatCurrency } from "@/lib/currency";
 import type { Vehicle, Customer, Sale, SaleWithRelations } from "@shared/schema";
-
-function formatCurrency(value: number | string): string {
-  const num = typeof value === "string" ? parseFloat(value) : value;
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(num);
-}
 
 function formatDate(date: string | Date): string {
   return new Intl.DateTimeFormat("pt-BR", {

@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { formatCurrency, formatCurrencyInput, parseCurrencyToNumber } from "@/lib/currency";
 import type { Customer } from "@shared/schema";
 
 const customerFormSchema = z.object({
@@ -85,15 +86,6 @@ const brazilianStates = [
   "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN",
   "RS", "RO", "RR", "SC", "SP", "SE", "TO"
 ];
-
-function formatCurrency(value: number | string | null): string {
-  if (!value) return "-";
-  const num = typeof value === "string" ? parseFloat(value) : value;
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(num);
-}
 
 export default function CustomersPage() {
   const [search, setSearch] = useState("");
@@ -414,7 +406,15 @@ export default function CustomersPage() {
                       <FormItem>
                         <FormLabel>Renda Mensal</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Ex: 5000.00" data-testid="input-monthly-income" />
+                          <Input
+                            {...field}
+                            placeholder="R$ 0,00"
+                            data-testid="input-monthly-income"
+                            onChange={(e) => {
+                              const formatted = formatCurrencyInput(e.target.value);
+                              field.onChange(formatted);
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
