@@ -19,6 +19,7 @@ import CustomersPage from "@/pages/customers";
 import SalesPage from "@/pages/sales";
 import BrandsPage from "@/pages/brands";
 import CategoriesPage from "@/pages/categories";
+import UsersPage from "@/pages/users";
 import NotFound from "@/pages/not-found";
 
 function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -118,6 +119,13 @@ function Router() {
         <ProtectedRoute>
           <AdminLayout>
             <CategoriesPage />
+          </AdminLayout>
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin/users">
+        <ProtectedRoute>
+          <AdminLayout>
+            <UsersPage />
           </AdminLayout>
         </ProtectedRoute>
       </Route>

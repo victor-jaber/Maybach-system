@@ -7,6 +7,7 @@ import {
   Tags,
   FolderTree,
   LogOut,
+  UserCog,
 } from "lucide-react";
 import {
   Sidebar,
@@ -57,6 +58,11 @@ const configNavItems = [
     title: "Categorias",
     url: "/admin/categories",
     icon: FolderTree,
+  },
+  {
+    title: "Usuários",
+    url: "/admin/users",
+    icon: UserCog,
   },
 ];
 

@@ -4,6 +4,7 @@ import {
   vehicles,
   customers,
   sales,
+  users,
   type Brand,
   type InsertBrand,
   type Category,
@@ -19,6 +20,15 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
+import bcrypt from "bcryptjs";
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+  createdAt: string | null;
+}
 
 export interface IStorage {
   // Brands
@@ -55,6 +65,11 @@ export interface IStorage {
   getSale(id: number): Promise<SaleWithRelations | undefined>;
   createSale(sale: InsertSale): Promise<Sale>;
   deleteSale(id: number): Promise<boolean>;
+
+  // Admin Users
+  getAdminUsers(): Promise<AdminUser[]>;
+  updateAdminUser(id: string, data: { name?: string; email?: string; password?: string }): Promise<AdminUser | undefined>;
+  deleteAdminUser(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -238,6 +253,52 @@ export class DatabaseStorage implements IStorage {
       // Mark vehicle as available again
       await db.update(vehicles).set({ status: "available" }).where(eq(vehicles.id, sale.vehicleId));
     }
+    return true;
+  }
+
+  // Admin Users
+  async getAdminUsers(): Promise<AdminUser[]> {
+    const result = await db.select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      role: users.role,
+      createdAt: users.createdAt,
+    }).from(users).orderBy(users.name);
+    
+    return result.map(u => ({
+      id: u.id,
+      email: u.email || "",
+      name: u.name || "",
+      role: u.role || "admin",
+      createdAt: u.createdAt ? u.createdAt.toISOString() : null,
+    }));
+  }
+
+  async updateAdminUser(id: string, data: { name?: string; email?: string; password?: string }): Promise<AdminUser | undefined> {
+    const updateData: { name?: string; email?: string; passwordHash?: string } = {};
+    
+    if (data.name) updateData.name = data.name;
+    if (data.email) updateData.email = data.email;
+    if (data.password) {
+      updateData.passwordHash = await bcrypt.hash(data.password, 10);
+    }
+    
+    const [updated] = await db.update(users).set(updateData).where(eq(users.id, id)).returning();
+    
+    if (!updated) return undefined;
+    
+    return {
+      id: updated.id,
+      email: updated.email || "",
+      name: updated.name || "",
+      role: updated.role || "admin",
+      createdAt: updated.createdAt ? updated.createdAt.toISOString() : null,
+    };
+  }
+
+  async deleteAdminUser(id: string): Promise<boolean> {
+    await db.delete(users).where(eq(users.id, id));
     return true;
   }
 }
