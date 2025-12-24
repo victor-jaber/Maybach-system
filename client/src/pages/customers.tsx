@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -9,6 +9,7 @@ import {
   Pencil,
   Trash2,
   Users,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,20 +57,61 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatCurrency, formatCurrencyInput, parseCurrencyToNumber } from "@/lib/currency";
+import {
+  formatCPFCNPJ,
+  cleanCPFCNPJ,
+  validateCPFCNPJ,
+  formatRG,
+  cleanRG,
+  validateRG,
+  formatCNH,
+  validateCNH,
+  formatPhone,
+  cleanPhone,
+  validatePhone,
+  formatCEP,
+  cleanCEP,
+  validateCEP,
+  validateAge,
+} from "@/lib/br-formatters";
+import { useViaCep } from "@/hooks/use-viacep";
 import type { Customer } from "@shared/schema";
 
 const customerFormSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
-  cpfCnpj: z.string().min(11, "CPF/CNPJ inválido"),
-  rg: z.string().optional(),
-  cnh: z.string().optional(),
-  birthDate: z.string().optional(),
+  cpfCnpj: z.string().min(1, "CPF/CNPJ é obrigatório").refine((val) => {
+    const result = validateCPFCNPJ(val);
+    return result.valid;
+  }, (val) => {
+    const result = validateCPFCNPJ(val);
+    return { message: result.message || "CPF/CNPJ inválido" };
+  }),
+  rg: z.string().optional().refine((val) => {
+    if (!val || val.trim() === "") return true;
+    return validateRG(val);
+  }, "RG inválido (7 a 9 dígitos)"),
+  cnh: z.string().optional().refine((val) => {
+    if (!val || val.trim() === "") return true;
+    return validateCNH(val);
+  }, "CNH inválida (11 dígitos)"),
+  birthDate: z.string().optional().refine((val) => {
+    if (!val || val.trim() === "") return true;
+    return validateAge(val, 18);
+  }, "Cliente deve ter pelo menos 18 anos"),
   profession: z.string().optional(),
   monthlyIncome: z.string().optional(),
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
-  phone: z.string().min(1, "Telefone é obrigatório"),
-  secondaryPhone: z.string().optional(),
-  cep: z.string().optional(),
+  phone: z.string().min(1, "Telefone é obrigatório").refine((val) => {
+    return validatePhone(val);
+  }, "Telefone inválido (10 ou 11 dígitos)"),
+  secondaryPhone: z.string().optional().refine((val) => {
+    if (!val || val.trim() === "") return true;
+    return validatePhone(val);
+  }, "Telefone inválido (10 ou 11 dígitos)"),
+  cep: z.string().optional().refine((val) => {
+    if (!val || val.trim() === "") return true;
+    return validateCEP(val);
+  }, "CEP inválido (8 dígitos)"),
   street: z.string().optional(),
   number: z.string().optional(),
   complement: z.string().optional(),
@@ -93,6 +135,7 @@ export default function CustomersPage() {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [deletingCustomer, setDeletingCustomer] = useState<Customer | null>(null);
   const { toast } = useToast();
+  const { loading: cepLoading, lookupCEP } = useViaCep();
 
   const { data: customers, isLoading } = useQuery<Customer[]>({
     queryKey: ["/api/customers"],
@@ -104,13 +147,54 @@ export default function CustomersPage() {
       name: "",
       cpfCnpj: "",
       phone: "",
+      rg: "",
+      cnh: "",
+      birthDate: "",
+      profession: "",
+      monthlyIncome: "",
+      email: "",
+      secondaryPhone: "",
+      cep: "",
+      street: "",
+      number: "",
+      complement: "",
+      neighborhood: "",
+      city: "",
+      state: "",
+      notes: "",
     },
   });
+
+  const cepValue = useWatch({ control: form.control, name: "cep" });
+
+  useEffect(() => {
+    const handleCepLookup = async () => {
+      if (cepValue && cleanCEP(cepValue).length === 8) {
+        const address = await lookupCEP(cepValue);
+        if (address) {
+          form.setValue("street", address.logradouro || "");
+          form.setValue("neighborhood", address.bairro || "");
+          form.setValue("city", address.localidade || "");
+          form.setValue("state", address.uf || "");
+          if (address.complemento) {
+            form.setValue("complement", address.complemento);
+          }
+        }
+      }
+    };
+    handleCepLookup();
+  }, [cepValue, lookupCEP, form]);
 
   const createMutation = useMutation({
     mutationFn: (data: CustomerFormValues) =>
       apiRequest("POST", "/api/customers", {
         ...data,
+        cpfCnpj: cleanCPFCNPJ(data.cpfCnpj),
+        rg: data.rg ? cleanRG(data.rg) : null,
+        cnh: data.cnh ? data.cnh.replace(/\D/g, "") : null,
+        phone: cleanPhone(data.phone),
+        secondaryPhone: data.secondaryPhone ? cleanPhone(data.secondaryPhone) : null,
+        cep: data.cep ? cleanCEP(data.cep) : null,
         birthDate: data.birthDate ? new Date(data.birthDate) : null,
         monthlyIncome: data.monthlyIncome ? parseCurrencyToNumber(data.monthlyIncome) : null,
       }),
@@ -129,6 +213,12 @@ export default function CustomersPage() {
     mutationFn: (data: CustomerFormValues & { id: number }) =>
       apiRequest("PATCH", `/api/customers/${data.id}`, {
         ...data,
+        cpfCnpj: cleanCPFCNPJ(data.cpfCnpj),
+        rg: data.rg ? cleanRG(data.rg) : null,
+        cnh: data.cnh ? data.cnh.replace(/\D/g, "") : null,
+        phone: cleanPhone(data.phone),
+        secondaryPhone: data.secondaryPhone ? cleanPhone(data.secondaryPhone) : null,
+        cep: data.cep ? cleanCEP(data.cep) : null,
         birthDate: data.birthDate ? new Date(data.birthDate) : null,
         monthlyIncome: data.monthlyIncome ? parseCurrencyToNumber(data.monthlyIncome) : null,
       }),
@@ -170,8 +260,8 @@ export default function CustomersPage() {
     setEditingCustomer(customer);
     form.reset({
       name: customer.name,
-      cpfCnpj: customer.cpfCnpj,
-      rg: customer.rg || "",
+      cpfCnpj: formatCPFCNPJ(customer.cpfCnpj),
+      rg: customer.rg ? formatRG(customer.rg) : "",
       cnh: customer.cnh || "",
       birthDate: customer.birthDate
         ? new Date(customer.birthDate).toISOString().split("T")[0]
@@ -179,9 +269,9 @@ export default function CustomersPage() {
       profession: customer.profession || "",
       monthlyIncome: customer.monthlyIncome ? formatCurrency(customer.monthlyIncome) : "",
       email: customer.email || "",
-      phone: customer.phone,
-      secondaryPhone: customer.secondaryPhone || "",
-      cep: customer.cep || "",
+      phone: formatPhone(customer.phone),
+      secondaryPhone: customer.secondaryPhone ? formatPhone(customer.secondaryPhone) : "",
+      cep: customer.cep ? formatCEP(customer.cep) : "",
       street: customer.street || "",
       number: customer.number || "",
       complement: customer.complement || "",
@@ -276,8 +366,8 @@ export default function CustomersPage() {
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>{customer.cpfCnpj}</TableCell>
-                  <TableCell>{customer.phone}</TableCell>
+                  <TableCell>{formatCPFCNPJ(customer.cpfCnpj)}</TableCell>
+                  <TableCell>{formatPhone(customer.phone)}</TableCell>
                   <TableCell>
                     {customer.city && customer.state
                       ? `${customer.city}/${customer.state}`
@@ -343,7 +433,16 @@ export default function CustomersPage() {
                       <FormItem>
                         <FormLabel>CPF/CNPJ *</FormLabel>
                         <FormControl>
-                          <Input {...field} data-testid="input-cpf-cnpj" />
+                          <Input
+                            {...field}
+                            placeholder="000.000.000-00"
+                            maxLength={18}
+                            data-testid="input-cpf-cnpj"
+                            onChange={(e) => {
+                              const formatted = formatCPFCNPJ(e.target.value);
+                              field.onChange(formatted);
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -356,7 +455,16 @@ export default function CustomersPage() {
                       <FormItem>
                         <FormLabel>RG</FormLabel>
                         <FormControl>
-                          <Input {...field} data-testid="input-rg" />
+                          <Input
+                            {...field}
+                            placeholder="00.000.000-0"
+                            maxLength={12}
+                            data-testid="input-rg"
+                            onChange={(e) => {
+                              const formatted = formatRG(e.target.value);
+                              field.onChange(formatted);
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -369,7 +477,16 @@ export default function CustomersPage() {
                       <FormItem>
                         <FormLabel>CNH</FormLabel>
                         <FormControl>
-                          <Input {...field} data-testid="input-cnh" />
+                          <Input
+                            {...field}
+                            placeholder="00000000000"
+                            maxLength={11}
+                            data-testid="input-cnh"
+                            onChange={(e) => {
+                              const formatted = formatCNH(e.target.value);
+                              field.onChange(formatted);
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -435,7 +552,16 @@ export default function CustomersPage() {
                       <FormItem>
                         <FormLabel>Telefone *</FormLabel>
                         <FormControl>
-                          <Input {...field} data-testid="input-phone" />
+                          <Input
+                            {...field}
+                            placeholder="(00) 00000-0000"
+                            maxLength={15}
+                            data-testid="input-phone"
+                            onChange={(e) => {
+                              const formatted = formatPhone(e.target.value);
+                              field.onChange(formatted);
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -448,7 +574,16 @@ export default function CustomersPage() {
                       <FormItem>
                         <FormLabel>Telefone Secundário</FormLabel>
                         <FormControl>
-                          <Input {...field} data-testid="input-secondary-phone" />
+                          <Input
+                            {...field}
+                            placeholder="(00) 00000-0000"
+                            maxLength={15}
+                            data-testid="input-secondary-phone"
+                            onChange={(e) => {
+                              const formatted = formatPhone(e.target.value);
+                              field.onChange(formatted);
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -478,9 +613,18 @@ export default function CustomersPage() {
                     name="cep"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>CEP</FormLabel>
+                        <FormLabel>CEP {cepLoading && <Loader2 className="inline h-3 w-3 animate-spin ml-1" />}</FormLabel>
                         <FormControl>
-                          <Input {...field} data-testid="input-cep" />
+                          <Input
+                            {...field}
+                            placeholder="00000-000"
+                            maxLength={9}
+                            data-testid="input-cep"
+                            onChange={(e) => {
+                              const formatted = formatCEP(e.target.value);
+                              field.onChange(formatted);
+                            }}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
