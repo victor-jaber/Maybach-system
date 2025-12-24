@@ -12,6 +12,7 @@ import {
   FileText,
   Building,
 } from "lucide-react";
+import logoImage from "@assets/maybach-logo.png";
 import {
   Sidebar,
   SidebarContent,
@@ -102,9 +103,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <Link href="/admin" className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-md bg-primary">
-            <Car className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <img src={logoImage} alt="MayBach Cars" className="h-10 w-auto" />
           <div className="flex flex-col">
             <span className="text-lg font-semibold text-sidebar-foreground">
               MayBach

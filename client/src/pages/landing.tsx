@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/currency";
 import type { VehicleWithRelations } from "@shared/schema";
-import logoImage from "@/assets/maybach-logo.png";
+import logoImage from "@assets/maybach-logo.png";
 import santanderLogo from "@assets/logo-specto-case-santander-01_1766547163533.png";
 import bradescoLogo from "@assets/logo-bradesco-hero_1766547163533.png";
 import bvLogo from "@assets/Banco_BV_Logo.svg_1766547163533.png";
