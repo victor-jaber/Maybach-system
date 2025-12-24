@@ -964,5 +964,81 @@ export async function registerRoutes(
     }
   });
 
+  // ==================== VEHICLE DEBTS (MULTAS/IPVA) ====================
+  
+  // Get debts for a specific vehicle
+  app.get("/api/vehicles/:id/debts", isAuthenticated, async (req, res) => {
+    try {
+      const vehicleId = parseInt(req.params.id);
+      const debts = await storage.getVehicleDebts(vehicleId);
+      res.json(debts);
+    } catch (error) {
+      console.error("Error fetching vehicle debts:", error);
+      res.status(500).json({ message: "Erro ao buscar débitos do veículo" });
+    }
+  });
+
+  // Consult debts from external API (or mock)
+  app.post("/api/vehicles/:id/debts/consult", isAuthenticated, async (req, res) => {
+    try {
+      const vehicleId = parseInt(req.params.id);
+      const vehicle = await storage.getVehicle(vehicleId);
+      
+      if (!vehicle) {
+        return res.status(404).json({ message: "Veículo não encontrado" });
+      }
+
+      if (!vehicle.plate || !vehicle.renavam) {
+        return res.status(400).json({ message: "Veículo precisa ter placa e renavam cadastrados para consulta" });
+      }
+
+      // For now, generate mock/demo data since we don't have a real API key
+      // In production, this would call Celcoin, Asteroide, or another API
+      const debts = await storage.consultVehicleDebts(vehicleId, vehicle.plate, vehicle.renavam);
+      res.json(debts);
+    } catch (error) {
+      console.error("Error consulting vehicle debts:", error);
+      res.status(500).json({ message: "Erro ao consultar débitos do veículo" });
+    }
+  });
+
+  // Mark debt as paid
+  app.patch("/api/vehicle-debts/:id/pay", isAuthenticated, async (req, res) => {
+    try {
+      const debtId = parseInt(req.params.id);
+      const updatedDebt = await storage.markDebtAsPaid(debtId);
+      if (!updatedDebt) {
+        return res.status(404).json({ message: "Débito não encontrado" });
+      }
+      res.json(updatedDebt);
+    } catch (error) {
+      console.error("Error marking debt as paid:", error);
+      res.status(500).json({ message: "Erro ao marcar débito como pago" });
+    }
+  });
+
+  // Delete a debt record
+  app.delete("/api/vehicle-debts/:id", isAuthenticated, async (req, res) => {
+    try {
+      const debtId = parseInt(req.params.id);
+      await storage.deleteVehicleDebt(debtId);
+      res.json({ message: "Débito removido com sucesso" });
+    } catch (error) {
+      console.error("Error deleting vehicle debt:", error);
+      res.status(500).json({ message: "Erro ao remover débito" });
+    }
+  });
+
+  // Get all debts summary (for dashboard)
+  app.get("/api/vehicle-debts/summary", isAuthenticated, async (req, res) => {
+    try {
+      const summary = await storage.getDebtsSummary();
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching debts summary:", error);
+      res.status(500).json({ message: "Erro ao buscar resumo de débitos" });
+    }
+  });
+
   return httpServer;
 }

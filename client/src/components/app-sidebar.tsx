@@ -12,6 +12,7 @@ import {
   FileText,
   Building,
   BarChart3,
+  AlertTriangle,
 } from "lucide-react";
 import logoImage from "@assets/maybach-logo.png";
 import {
@@ -60,6 +61,11 @@ const mainNavItems = [
     title: "Contratos",
     url: "/admin/contracts",
     icon: FileText,
+  },
+  {
+    title: "Débitos",
+    url: "/admin/debts",
+    icon: AlertTriangle,
   },
   {
     title: "Relatórios",

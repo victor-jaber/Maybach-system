@@ -10,6 +10,7 @@ import {
   contracts,
   contractInstallments,
   contractFiles,
+  vehicleDebts,
   type Brand,
   type InsertBrand,
   type Category,
@@ -33,6 +34,8 @@ import {
   type InsertContractInstallment,
   type ContractFile,
   type InsertContractFile,
+  type VehicleDebt,
+  type InsertVehicleDebt,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, sql, and, gte, lte, count, sum } from "drizzle-orm";
@@ -729,6 +732,159 @@ export class DatabaseStorage implements IStorage {
         marginPercent: Math.round(marginPercent * 100) / 100,
       };
     });
+  }
+
+  // ==================== VEHICLE DEBTS ====================
+
+  async getVehicleDebts(vehicleId: number): Promise<VehicleDebt[]> {
+    return await db
+      .select()
+      .from(vehicleDebts)
+      .where(eq(vehicleDebts.vehicleId, vehicleId))
+      .orderBy(vehicleDebts.dueDate);
+  }
+
+  async consultVehicleDebts(vehicleId: number, plate: string, renavam: string): Promise<VehicleDebt[]> {
+    // Clear existing debts for fresh consultation
+    await db.delete(vehicleDebts).where(eq(vehicleDebts.vehicleId, vehicleId));
+
+    // Generate demo/mock data (in production, this would call an external API)
+    const currentYear = new Date().getFullYear();
+    const mockDebts: InsertVehicleDebt[] = [];
+
+    // IPVA do ano corrente
+    mockDebts.push({
+      vehicleId,
+      debtType: "ipva",
+      description: `IPVA ${currentYear} - Cota Única`,
+      year: currentYear,
+      dueDate: new Date(currentYear, 0, 31), // 31 de janeiro
+      value: (Math.random() * 3000 + 1500).toFixed(2),
+      status: Math.random() > 0.5 ? "pending" : "paid",
+      reference: `${renavam}${currentYear}01`,
+      source: "demo",
+    });
+
+    // Licenciamento
+    mockDebts.push({
+      vehicleId,
+      debtType: "licenciamento",
+      description: `Licenciamento Anual ${currentYear}`,
+      year: currentYear,
+      dueDate: new Date(currentYear, 3, 30), // Abril
+      value: "98.91",
+      status: Math.random() > 0.3 ? "pending" : "paid",
+      reference: `LIC${plate}${currentYear}`,
+      source: "demo",
+    });
+
+    // Possível multa
+    if (Math.random() > 0.4) {
+      mockDebts.push({
+        vehicleId,
+        debtType: "multa",
+        description: "Multa - Excesso de Velocidade",
+        year: currentYear,
+        dueDate: new Date(currentYear, Math.floor(Math.random() * 11), Math.floor(Math.random() * 28) + 1),
+        value: (Math.random() * 400 + 130.16).toFixed(2),
+        status: "pending",
+        reference: `MUL${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+        source: "demo",
+      });
+    }
+
+    // DPVAT/Seguro Obrigatório
+    mockDebts.push({
+      vehicleId,
+      debtType: "seguro",
+      description: `Seguro Obrigatório ${currentYear}`,
+      year: currentYear,
+      dueDate: new Date(currentYear, 0, 31),
+      value: "16.00",
+      status: Math.random() > 0.2 ? "paid" : "pending",
+      reference: `SEG${renavam}${currentYear}`,
+      source: "demo",
+    });
+
+    // Insert all debts
+    const insertedDebts: VehicleDebt[] = [];
+    for (const debt of mockDebts) {
+      const [inserted] = await db.insert(vehicleDebts).values(debt).returning();
+      insertedDebts.push(inserted);
+    }
+
+    return insertedDebts;
+  }
+
+  async markDebtAsPaid(debtId: number): Promise<VehicleDebt | null> {
+    const [updated] = await db
+      .update(vehicleDebts)
+      .set({ status: "paid", paymentDate: new Date() })
+      .where(eq(vehicleDebts.id, debtId))
+      .returning();
+    return updated || null;
+  }
+
+  async deleteVehicleDebt(debtId: number): Promise<void> {
+    await db.delete(vehicleDebts).where(eq(vehicleDebts.id, debtId));
+  }
+
+  async getDebtsSummary(): Promise<{
+    totalPending: number;
+    totalPaid: number;
+    byType: { type: string; count: number; total: number }[];
+    vehiclesWithDebts: number;
+  }> {
+    const result = await db.execute(sql`
+      SELECT 
+        status,
+        debt_type,
+        COUNT(*)::integer as count,
+        COALESCE(SUM(value), 0)::numeric as total,
+        COUNT(DISTINCT vehicle_id)::integer as vehicles
+      FROM vehicle_debts
+      GROUP BY status, debt_type
+    `);
+
+    const rows = result.rows as any[];
+    let totalPending = 0;
+    let totalPaid = 0;
+    const byTypeMap = new Map<string, { count: number; total: number }>();
+    const vehicleSet = new Set<number>();
+
+    for (const row of rows) {
+      const amount = Number(row.total);
+      const count = Number(row.count);
+
+      if (row.status === "pending") {
+        totalPending += amount;
+      } else if (row.status === "paid") {
+        totalPaid += amount;
+      }
+
+      const existing = byTypeMap.get(row.debt_type) || { count: 0, total: 0 };
+      byTypeMap.set(row.debt_type, {
+        count: existing.count + count,
+        total: existing.total + amount,
+      });
+    }
+
+    // Get unique vehicles count
+    const vehiclesResult = await db.execute(sql`
+      SELECT COUNT(DISTINCT vehicle_id)::integer as count FROM vehicle_debts WHERE status = 'pending'
+    `);
+    const vehiclesWithDebts = Number((vehiclesResult.rows[0] as any)?.count || 0);
+
+    return {
+      totalPending,
+      totalPaid,
+      byType: Array.from(byTypeMap.entries()).map(([type, data]) => ({
+        type,
+        count: data.count,
+        total: data.total,
+      })),
+      vehiclesWithDebts,
+    };
   }
 }
 

@@ -351,6 +351,31 @@ export const insertContractFileSchema = createInsertSchema(contractFiles).omit({
 export type InsertContractFile = z.infer<typeof insertContractFileSchema>;
 export type ContractFile = typeof contractFiles.$inferSelect;
 
+// Débitos Veiculares (Multas, IPVA, Licenciamento)
+export const vehicleDebts = pgTable("vehicle_debts", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  vehicleId: integer("vehicle_id").notNull().references(() => vehicles.id, { onDelete: "cascade" }),
+  debtType: varchar("debt_type", { length: 50 }).notNull(), // 'ipva', 'multa', 'licenciamento', 'seguro', 'divida_ativa'
+  description: varchar("description", { length: 255 }).notNull(),
+  year: integer("year"),
+  dueDate: timestamp("due_date"),
+  value: decimal("value", { precision: 12, scale: 2 }).notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("pending"), // 'pending', 'paid', 'expired'
+  paymentDate: timestamp("payment_date"),
+  reference: varchar("reference", { length: 100 }), // Código de barras, linha digitável
+  consultedAt: timestamp("consulted_at").defaultNow(),
+  source: varchar("source", { length: 50 }), // API source (detran-sp, celcoin, etc.)
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const vehicleDebtsRelations = relations(vehicleDebts, ({ one }) => ({
+  vehicle: one(vehicles, { fields: [vehicleDebts.vehicleId], references: [vehicles.id] }),
+}));
+
+export const insertVehicleDebtSchema = createInsertSchema(vehicleDebts).omit({ id: true, createdAt: true, consultedAt: true });
+export type InsertVehicleDebt = z.infer<typeof insertVehicleDebtSchema>;
+export type VehicleDebt = typeof vehicleDebts.$inferSelect;
+
 // Extended types with relations
 export type VehicleWithRelations = Vehicle & {
   brand: Brand;
