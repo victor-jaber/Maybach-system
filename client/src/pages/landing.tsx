@@ -74,87 +74,77 @@ export default function LandingPage() {
 
       <main>
         <section className="relative min-h-[90vh] flex items-center overflow-hidden">
-          <div className="absolute inset-0 bg-[#1a1816]">
-            <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/70 to-black/50" />
+          <div className="absolute inset-0 bg-[#0D0D0C]" />
+          
+          <div className="absolute right-0 top-0 bottom-0 w-1/2 hidden lg:block">
+            <div className="absolute inset-0 bg-[#0D0D0C]" />
             <div 
-              className="absolute inset-0 opacity-40"
+              className="absolute inset-0"
               style={{
-                backgroundImage: `
-                  radial-gradient(ellipse 80% 50% at 80% 50%, rgba(115, 92, 63, 0.3) 0%, transparent 50%),
-                  radial-gradient(ellipse 60% 40% at 20% 80%, rgba(193, 163, 106, 0.15) 0%, transparent 40%)
-                `
-              }}
-            />
-            <div 
-              className="absolute inset-0 opacity-10"
-              style={{
-                backgroundImage: `
-                  linear-gradient(90deg, transparent 0%, transparent 50%, rgba(255,255,255,0.03) 50%, transparent 51%),
-                  linear-gradient(0deg, transparent 0%, transparent 50%, rgba(255,255,255,0.02) 50%, transparent 51%)
-                `,
-                backgroundSize: '100px 100px'
+                background: `linear-gradient(to right, #0D0D0C 0%, transparent 30%)`
               }}
             />
           </div>
           
-          <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
+          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-px h-[60%] bg-gradient-to-b from-transparent via-[#C1A36A]/30 to-transparent hidden lg:block ml-8" />
           
-          <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-            <div className="max-w-3xl">
-              <div className="flex items-center gap-2 mb-6">
-                <div className="h-px w-12 bg-[#C1A36A]" />
-                <span className="text-sm font-medium tracking-widest uppercase text-[#C1A36A]">
-                  Excelência em Veículos Premium
-                </span>
-              </div>
+          <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
+          
+          <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8 lg:pl-16">
+            <div className="max-w-2xl">
+              <span className="inline-block text-xs font-medium tracking-[0.3em] uppercase text-[#C1A36A] mb-8 border border-[#C1A36A]/30 px-4 py-2">
+                Excelência em Veículos Premium
+              </span>
               
-              <h1 className="text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl leading-tight heading-premium">
-                Encontre o carro{" "}
-                <span className="text-[#C1A36A] italic">perfeito</span>
+              <h1 className="text-5xl font-light tracking-tight text-white sm:text-6xl lg:text-7xl leading-[1.1] heading-premium">
+                Encontre o carro
                 <br />
-                para sua próxima jornada
+                <span className="text-[#C1A36A] font-normal">perfeito</span> para você
               </h1>
               
-              <p className="mt-8 text-xl text-white/80 leading-relaxed max-w-2xl">
+              <p className="mt-8 text-lg text-white/60 leading-relaxed max-w-xl font-light">
                 Na MayBach Cars, cada veículo conta uma história de qualidade e confiança.
-                Mais de 14 anos realizando sonhos com procedência garantida e condições únicas.
+                Mais de 14 anos realizando sonhos com procedência garantida.
               </p>
               
-              <div className="mt-10 flex flex-wrap items-center gap-4">
-                <Button size="lg" className="bg-[#5B9A4D] text-white" asChild data-testid="button-see-catalog">
+              <div className="mt-12 flex flex-wrap items-center gap-4">
+                <Button size="lg" className="bg-[#C1A36A] hover:bg-[#A8905D] text-[#0D0D0C] font-medium px-8" asChild data-testid="button-see-catalog">
                   <Link href="/catalog">
-                    <Car className="mr-2 h-5 w-5" />
-                    Ver Estoque Completo
+                    Ver Estoque
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" className="bg-white/5 border-white/20 text-white backdrop-blur-sm" asChild data-testid="button-whatsapp-hero">
+                <Button size="lg" variant="ghost" className="text-white/80 hover:text-white hover:bg-white/5" asChild data-testid="button-whatsapp-hero">
                   <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer">
                     <MessageCircle className="mr-2 h-5 w-5" />
-                    Falar com Especialista
+                    Fale Conosco
                   </a>
                 </Button>
               </div>
               
-              <div className="mt-16 grid grid-cols-3 gap-8 max-w-lg">
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-white">500+</div>
-                  <div className="text-sm text-white/60 mt-1">Veículos Vendidos</div>
+              <div className="mt-20 flex items-center gap-12">
+                <div>
+                  <div className="text-3xl font-light text-white">500<span className="text-[#C1A36A]">+</span></div>
+                  <div className="text-xs text-white/40 mt-1 tracking-wider uppercase">Veículos Vendidos</div>
                 </div>
-                <div className="text-center border-x border-white/10">
-                  <div className="text-4xl font-bold text-white">14+</div>
-                  <div className="text-sm text-white/60 mt-1">Anos no Mercado</div>
+                <div className="w-px h-12 bg-white/10" />
+                <div>
+                  <div className="text-3xl font-light text-white">14<span className="text-[#C1A36A]">+</span></div>
+                  <div className="text-xs text-white/40 mt-1 tracking-wider uppercase">Anos de Mercado</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-white">98%</div>
-                  <div className="text-sm text-white/60 mt-1">Clientes Satisfeitos</div>
+                <div className="w-px h-12 bg-white/10" />
+                <div>
+                  <div className="text-3xl font-light text-white">98<span className="text-[#C1A36A]">%</span></div>
+                  <div className="text-xs text-white/40 mt-1 tracking-wider uppercase">Satisfação</div>
                 </div>
               </div>
             </div>
           </div>
           
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-            <a href="#vehicles" className="text-white/40 hover:text-white/60 transition-colors" data-testid="link-scroll-vehicles">
-              <ChevronRight className="h-8 w-8 rotate-90" />
+          <div className="absolute bottom-10 left-1/2 -translate-x-1/2">
+            <a href="#vehicles" className="group flex flex-col items-center gap-2 text-white/30 hover:text-white/50 transition-colors" data-testid="link-scroll-vehicles">
+              <span className="text-[10px] tracking-[0.2em] uppercase">Explore</span>
+              <ChevronRight className="h-5 w-5 rotate-90 group-hover:translate-y-1 transition-transform" />
             </a>
           </div>
         </section>
