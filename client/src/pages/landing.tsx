@@ -418,65 +418,57 @@ export default function LandingPage() {
 
         <section id="contact" className="py-20 bg-card">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
-              <div>
-                <Badge variant="outline" className="mb-4 border-[#735C3F]/30 text-[#735C3F]">
-                  Fale Conosco
-                </Badge>
-                <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                  Estamos Prontos Para Ajudá-lo
-                </h2>
-                <p className="mt-4 text-lg text-muted-foreground">
-                  Entre em contato conosco e agende uma visita. Nossa equipe está pronta 
-                  para encontrar o veículo perfeito para você.
-                </p>
-                <div className="mt-8 space-y-6">
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#735C3F]">
-                      <Phone className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg">Telefone / WhatsApp</h3>
-                      <p className="text-muted-foreground">(11) 99999-9999</p>
-                      <p className="text-muted-foreground">(11) 3333-3333</p>
-                    </div>
+            <div className="text-center mb-12">
+              <Badge variant="outline" className="mb-4 border-[#735C3F]/30 text-[#735C3F]">
+                Fale Conosco
+              </Badge>
+              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                Estamos Prontos Para Ajudá-lo
+              </h2>
+              <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
+                Entre em contato conosco e agende uma visita. Nossa equipe está pronta 
+                para encontrar o veículo perfeito para você.
+              </p>
+            </div>
+            <div className="grid gap-6 md:grid-cols-3 max-w-4xl mx-auto mb-12">
+              <Card className="text-center border-0 shadow-lg">
+                <CardContent className="pt-8 pb-6">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-[#735C3F]">
+                    <Phone className="h-6 w-6 text-white" />
                   </div>
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#735C3F]">
-                      <MapPin className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg">Endereço</h3>
-                      <p className="text-muted-foreground">Av. Principal, 1234 - Centro</p>
-                      <p className="text-muted-foreground">São Paulo - SP</p>
-                    </div>
+                  <h3 className="font-bold text-lg mb-2">Telefone / WhatsApp</h3>
+                  <p className="text-muted-foreground">(11) 99999-9999</p>
+                  <p className="text-muted-foreground">(11) 3333-3333</p>
+                </CardContent>
+              </Card>
+              <Card className="text-center border-0 shadow-lg">
+                <CardContent className="pt-8 pb-6">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-[#735C3F]">
+                    <MapPin className="h-6 w-6 text-white" />
                   </div>
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#735C3F]">
-                      <Clock className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg">Horário de Funcionamento</h3>
-                      <p className="text-muted-foreground">Segunda a Sexta: 8h às 18h</p>
-                      <p className="text-muted-foreground">Sábado: 8h às 14h</p>
-                    </div>
+                  <h3 className="font-bold text-lg mb-2">Endereço</h3>
+                  <p className="text-muted-foreground">Av. Principal, 1234 - Centro</p>
+                  <p className="text-muted-foreground">São Paulo - SP</p>
+                </CardContent>
+              </Card>
+              <Card className="text-center border-0 shadow-lg">
+                <CardContent className="pt-8 pb-6">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-[#735C3F]">
+                    <Clock className="h-6 w-6 text-white" />
                   </div>
-                </div>
-              </div>
-              <div className="relative">
-                <div className="aspect-square rounded-2xl bg-gradient-to-br from-stone-800 to-stone-900 p-8 flex items-center justify-center">
-                  <div className="text-center">
-                    <img src={logoImage} alt="MayBach Cars" className="w-48 mx-auto mb-8 opacity-80" />
-                    <p className="text-stone-400 mb-6">Qualidade e confiança há mais de 14 anos</p>
-                    <Button size="lg" className="bg-[#735C3F] hover:bg-[#5d4a32] text-white" asChild>
-                      <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer">
-                        <Phone className="mr-2 h-4 w-4" />
-                        Falar pelo WhatsApp
-                      </a>
-                    </Button>
-                  </div>
-                </div>
-              </div>
+                  <h3 className="font-bold text-lg mb-2">Horário</h3>
+                  <p className="text-muted-foreground">Seg-Sex: 8h às 18h</p>
+                  <p className="text-muted-foreground">Sábado: 8h às 14h</p>
+                </CardContent>
+              </Card>
+            </div>
+            <div className="text-center">
+              <Button size="lg" className="bg-[#735C3F] hover:bg-[#5d4a32] text-white" asChild>
+                <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer">
+                  <Phone className="mr-2 h-4 w-4" />
+                  Falar pelo WhatsApp
+                </a>
+              </Button>
             </div>
           </div>
         </section>
