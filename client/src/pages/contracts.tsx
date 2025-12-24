@@ -249,9 +249,14 @@ export default function ContractsPage() {
 
   const generatePdfMutation = useMutation({
     mutationFn: async (id: number) => {
+      const token = localStorage.getItem("auth_token");
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
       const response = await fetch(`/api/contracts/${id}/generate-pdf`, {
         method: "POST",
-        credentials: "include",
+        headers,
       });
       if (!response.ok) {
         throw new Error("Failed to generate PDF");
