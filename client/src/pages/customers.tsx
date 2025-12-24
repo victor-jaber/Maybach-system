@@ -198,7 +198,7 @@ export default function CustomersPage() {
         secondaryPhone: data.secondaryPhone ? cleanPhone(data.secondaryPhone) : null,
         cep: data.cep ? cleanCEP(data.cep) : null,
         birthDate: data.birthDate ? new Date(data.birthDate) : null,
-        monthlyIncome: data.monthlyIncome ? parseCurrencyToNumber(data.monthlyIncome) : null,
+        monthlyIncome: data.monthlyIncome ? String(parseCurrencyToNumber(data.monthlyIncome)) : null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
@@ -222,7 +222,7 @@ export default function CustomersPage() {
         secondaryPhone: data.secondaryPhone ? cleanPhone(data.secondaryPhone) : null,
         cep: data.cep ? cleanCEP(data.cep) : null,
         birthDate: data.birthDate ? new Date(data.birthDate) : null,
-        monthlyIncome: data.monthlyIncome ? parseCurrencyToNumber(data.monthlyIncome) : null,
+        monthlyIncome: data.monthlyIncome ? String(parseCurrencyToNumber(data.monthlyIncome)) : null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
