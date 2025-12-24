@@ -1,5 +1,6 @@
+import { useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -17,16 +18,39 @@ import {
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Building, Save } from "lucide-react";
+import { Building, Save, Loader2 } from "lucide-react";
+import {
+  formatCNPJ,
+  formatCPF,
+  formatPhone,
+  formatCEP,
+  cleanCEP,
+  cleanPhone,
+  validateCNPJ,
+  validateCPF,
+  validatePhone,
+  validateCEP,
+} from "@/lib/br-formatters";
+import { useViaCep } from "@/hooks/use-viacep";
 
 const storeFormSchema = z.object({
   razaoSocial: z.string().min(1, "Razão Social é obrigatória"),
   nomeFantasia: z.string().optional(),
-  cnpj: z.string().min(14, "CNPJ inválido"),
+  cnpj: z.string().min(1, "CNPJ é obrigatório").refine((val) => {
+    const digits = val.replace(/\D/g, "");
+    if (digits.length < 14) return false;
+    return validateCNPJ(val);
+  }, "CNPJ inválido"),
   inscricaoEstadual: z.string().optional(),
-  phone: z.string().optional(),
+  phone: z.string().optional().refine((val) => {
+    if (!val || val.trim() === "") return true;
+    return validatePhone(val);
+  }, "Telefone inválido"),
   email: z.string().email("Email inválido").optional().or(z.literal("")),
-  cep: z.string().optional(),
+  cep: z.string().optional().refine((val) => {
+    if (!val || val.trim() === "") return true;
+    return validateCEP(val);
+  }, "CEP inválido"),
   street: z.string().optional(),
   number: z.string().optional(),
   complement: z.string().optional(),
@@ -34,7 +58,12 @@ const storeFormSchema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
   representanteLegal: z.string().optional(),
-  cpfRepresentante: z.string().optional(),
+  cpfRepresentante: z.string().optional().refine((val) => {
+    if (!val || val.trim() === "") return true;
+    const digits = val.replace(/\D/g, "");
+    if (digits.length < 11) return false;
+    return validateCPF(val);
+  }, "CPF inválido"),
   logoUrl: z.string().optional(),
 });
 
@@ -42,6 +71,7 @@ type StoreFormData = z.infer<typeof storeFormSchema>;
 
 export default function StoreSettingsPage() {
   const { toast } = useToast();
+  const { loading: cepLoading, lookupCEP } = useViaCep();
 
   const { data: store, isLoading } = useQuery<Store | null>({
     queryKey: ["/api/store"],
@@ -70,11 +100,11 @@ export default function StoreSettingsPage() {
     values: store ? {
       razaoSocial: store.razaoSocial || "",
       nomeFantasia: store.nomeFantasia || "",
-      cnpj: store.cnpj || "",
+      cnpj: store.cnpj ? formatCNPJ(store.cnpj) : "",
       inscricaoEstadual: store.inscricaoEstadual || "",
-      phone: store.phone || "",
+      phone: store.phone ? formatPhone(store.phone) : "",
       email: store.email || "",
-      cep: store.cep || "",
+      cep: store.cep ? formatCEP(store.cep) : "",
       street: store.street || "",
       number: store.number || "",
       complement: store.complement || "",
@@ -82,14 +112,40 @@ export default function StoreSettingsPage() {
       city: store.city || "",
       state: store.state || "",
       representanteLegal: store.representanteLegal || "",
-      cpfRepresentante: store.cpfRepresentante || "",
+      cpfRepresentante: store.cpfRepresentante ? formatCPF(store.cpfRepresentante) : "",
       logoUrl: store.logoUrl || "",
     } : undefined,
   });
 
+  const cepValue = useWatch({ control: form.control, name: "cep" });
+
+  useEffect(() => {
+    const handleCepLookup = async () => {
+      if (cepValue && cleanCEP(cepValue).length === 8) {
+        const address = await lookupCEP(cepValue);
+        if (address) {
+          form.setValue("street", address.logradouro || "");
+          form.setValue("neighborhood", address.bairro || "");
+          form.setValue("city", address.localidade || "");
+          form.setValue("state", address.uf || "");
+          if (address.complemento) {
+            form.setValue("complement", address.complemento);
+          }
+        }
+      }
+    };
+    handleCepLookup();
+  }, [cepValue, lookupCEP, form]);
+
   const saveMutation = useMutation({
     mutationFn: async (data: StoreFormData) => {
-      return apiRequest("POST", "/api/store", data);
+      return apiRequest("POST", "/api/store", {
+        ...data,
+        cnpj: data.cnpj.replace(/\D/g, ""),
+        cpfRepresentante: data.cpfRepresentante ? data.cpfRepresentante.replace(/\D/g, "") : null,
+        phone: data.phone ? cleanPhone(data.phone) : null,
+        cep: data.cep ? cleanCEP(data.cep) : null,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/store"] });
@@ -174,9 +230,18 @@ export default function StoreSettingsPage() {
                 name="cnpj"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>CNPJ</FormLabel>
+                    <FormLabel>CNPJ *</FormLabel>
                     <FormControl>
-                      <Input placeholder="00.000.000/0000-00" {...field} data-testid="input-store-cnpj" />
+                      <Input
+                        placeholder="00.000.000/0000-00"
+                        maxLength={18}
+                        {...field}
+                        data-testid="input-store-cnpj"
+                        onChange={(e) => {
+                          const formatted = formatCNPJ(e.target.value);
+                          field.onChange(formatted);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -202,7 +267,16 @@ export default function StoreSettingsPage() {
                   <FormItem>
                     <FormLabel>Telefone</FormLabel>
                     <FormControl>
-                      <Input placeholder="(00) 00000-0000" {...field} data-testid="input-store-phone" />
+                      <Input
+                        placeholder="(00) 00000-0000"
+                        maxLength={15}
+                        {...field}
+                        data-testid="input-store-phone"
+                        onChange={(e) => {
+                          const formatted = formatPhone(e.target.value);
+                          field.onChange(formatted);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -235,9 +309,18 @@ export default function StoreSettingsPage() {
                 name="cep"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>CEP</FormLabel>
+                    <FormLabel>CEP {cepLoading && <Loader2 className="inline h-3 w-3 animate-spin ml-1" />}</FormLabel>
                     <FormControl>
-                      <Input placeholder="00000-000" {...field} data-testid="input-store-cep" />
+                      <Input
+                        placeholder="00000-000"
+                        maxLength={9}
+                        {...field}
+                        data-testid="input-store-cep"
+                        onChange={(e) => {
+                          const formatted = formatCEP(e.target.value);
+                          field.onChange(formatted);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -352,7 +435,16 @@ export default function StoreSettingsPage() {
                   <FormItem>
                     <FormLabel>CPF</FormLabel>
                     <FormControl>
-                      <Input placeholder="000.000.000-00" {...field} data-testid="input-cpf-representante" />
+                      <Input
+                        placeholder="000.000.000-00"
+                        maxLength={14}
+                        {...field}
+                        data-testid="input-cpf-representante"
+                        onChange={(e) => {
+                          const formatted = formatCPF(e.target.value);
+                          field.onChange(formatted);
+                        }}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

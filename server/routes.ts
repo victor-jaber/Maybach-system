@@ -1,5 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import PDFDocument from "pdfkit";
 import { storage } from "./storage";
 import { registerAuthRoutes, isAuthenticated, seedAdminUser } from "./auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
@@ -13,6 +14,33 @@ import {
   insertContractApiSchema,
 } from "@shared/schema";
 import { z } from "zod";
+
+function formatCurrency(value: number | string | null | undefined): string {
+  if (value === null || value === undefined || value === "") return "R$ 0,00";
+  const numericValue = typeof value === "string" ? parseFloat(value) : value;
+  if (isNaN(numericValue)) return "R$ 0,00";
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(numericValue);
+}
+
+function formatCPF(cpf: string | null | undefined): string {
+  if (!cpf) return "";
+  const digits = cpf.replace(/\D/g, "");
+  if (digits.length !== 11) return cpf;
+  return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+}
+
+function formatCNPJ(cnpj: string | null | undefined): string {
+  if (!cnpj) return "";
+  const digits = cnpj.replace(/\D/g, "");
+  if (digits.length !== 14) return cnpj;
+  return digits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, "$1.$2.$3/$4-$5");
+}
+
+function formatDate(date: Date | string | null | undefined): string {
+  if (!date) return "";
+  const d = new Date(date);
+  return d.toLocaleDateString("pt-BR");
+}
 
 const updateAdminUserSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório").optional(),
@@ -668,6 +696,112 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error deleting contract:", error);
       res.status(500).json({ message: "Erro ao excluir contrato" });
+    }
+  });
+
+  app.post("/api/contracts/:id/generate-pdf", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const contract = await storage.getContract(id);
+      if (!contract) {
+        return res.status(404).json({ message: "Contrato não encontrado" });
+      }
+
+      const store = await storage.getStore();
+      const contractTypeLabels: Record<string, string> = {
+        entry_complement: "CONTRATO DE COMPLEMENTO DE ENTRADA",
+        purchase_sale: "CONTRATO DE COMPRA E VENDA DE VEÍCULO",
+      };
+
+      const doc = new PDFDocument({ margin: 50, size: "A4" });
+      const chunks: Buffer[] = [];
+
+      doc.on("data", (chunk) => chunks.push(chunk));
+      doc.on("end", () => {
+        const pdfBuffer = Buffer.concat(chunks);
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `attachment; filename=contrato_${id}.pdf`);
+        res.send(pdfBuffer);
+      });
+
+      doc.fontSize(16).font("Helvetica-Bold").text(contractTypeLabels[contract.contractType] || "CONTRATO", { align: "center" });
+      doc.moveDown();
+
+      if (store) {
+        doc.fontSize(10).font("Helvetica-Bold").text("VENDEDOR:");
+        doc.font("Helvetica");
+        doc.text(`Razão Social: ${store.razaoSocial || "-"}`);
+        doc.text(`CNPJ: ${formatCNPJ(store.cnpj)}`);
+        if (store.phone) doc.text(`Telefone: ${store.phone}`);
+        if (store.street) {
+          doc.text(`Endereço: ${store.street}, ${store.number || "S/N"} - ${store.neighborhood || ""}, ${store.city || ""}-${store.state || ""} CEP: ${store.cep || ""}`);
+        }
+        doc.moveDown();
+      }
+
+      if (contract.customer) {
+        doc.fontSize(10).font("Helvetica-Bold").text("COMPRADOR:");
+        doc.font("Helvetica");
+        doc.text(`Nome: ${contract.customer.name}`);
+        doc.text(`CPF/CNPJ: ${contract.customer.cpfCnpj?.length === 11 ? formatCPF(contract.customer.cpfCnpj) : formatCNPJ(contract.customer.cpfCnpj)}`);
+        if (contract.customer.rg) doc.text(`RG: ${contract.customer.rg}`);
+        if (contract.customer.phone) doc.text(`Telefone: ${contract.customer.phone}`);
+        if (contract.customer.email) doc.text(`Email: ${contract.customer.email}`);
+        if (contract.customer.street) {
+          doc.text(`Endereço: ${contract.customer.street}, ${contract.customer.number || "S/N"} - ${contract.customer.neighborhood || ""}, ${contract.customer.city || ""}-${contract.customer.state || ""} CEP: ${contract.customer.cep || ""}`);
+        }
+        doc.moveDown();
+      }
+
+      if (contract.vehicle) {
+        doc.fontSize(10).font("Helvetica-Bold").text("VEÍCULO:");
+        doc.font("Helvetica");
+        doc.text(`Marca/Modelo: ${contract.vehicle.brand?.name || ""} ${contract.vehicle.model}`);
+        doc.text(`Ano: ${contract.vehicle.year}`);
+        doc.text(`Cor: ${contract.vehicle.color || "-"}`);
+        doc.text(`Placa: ${contract.vehicle.plate || "-"}`);
+        doc.text(`Renavam: ${contract.vehicle.renavam || "-"}`);
+        doc.text(`Chassi: ${contract.vehicle.chassis || "-"}`);
+        doc.text(`KM: ${contract.vehicle.mileage?.toLocaleString("pt-BR") || "0"}`);
+        doc.moveDown();
+      }
+
+      doc.fontSize(10).font("Helvetica-Bold").text("VALORES:");
+      doc.font("Helvetica");
+      if (contract.valorVenda) doc.text(`Valor da Venda: ${formatCurrency(contract.valorVenda)}`);
+      if (contract.entradaTotal) doc.text(`Entrada Total: ${formatCurrency(contract.entradaTotal)}`);
+      if (contract.entradaPaga) doc.text(`Entrada Paga: ${formatCurrency(contract.entradaPaga)}`);
+      if (contract.entradaRestante) doc.text(`Entrada Restante: ${formatCurrency(contract.entradaRestante)}`);
+      doc.moveDown();
+
+      if (contract.formaPagamentoRestante === "parcelado" && contract.quantidadeParcelas) {
+        doc.fontSize(10).font("Helvetica-Bold").text("PARCELAMENTO:");
+        doc.font("Helvetica");
+        doc.text(`Quantidade de Parcelas: ${contract.quantidadeParcelas}`);
+        if (contract.valorParcela) doc.text(`Valor da Parcela: ${formatCurrency(contract.valorParcela)}`);
+        if (contract.diaVencimento) doc.text(`Dia de Vencimento: ${contract.diaVencimento}`);
+        if (contract.multaAtraso) doc.text(`Multa por Atraso: ${contract.multaAtraso}%`);
+        if (contract.jurosAtraso) doc.text(`Juros por Atraso: ${contract.jurosAtraso}% ao mês`);
+        doc.moveDown();
+      }
+
+      if (contract.formaPagamentoRestante === "avista" && contract.dataVencimentoAvista) {
+        doc.fontSize(10).font("Helvetica-Bold").text("PAGAMENTO À VISTA:");
+        doc.font("Helvetica");
+        doc.text(`Data de Vencimento: ${formatDate(contract.dataVencimentoAvista)}`);
+        doc.moveDown();
+      }
+
+      doc.moveDown(2);
+      doc.text(`Data de Emissão: ${formatDate(new Date())}`);
+      doc.moveDown(3);
+      doc.text("_______________________________                    _______________________________", { align: "center" });
+      doc.text("                    VENDEDOR                                                             COMPRADOR", { align: "center" });
+
+      doc.end();
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      res.status(500).json({ message: "Erro ao gerar PDF do contrato" });
     }
   });
 
