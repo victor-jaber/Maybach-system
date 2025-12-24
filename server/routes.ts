@@ -459,20 +459,17 @@ export async function registerRoutes(
     }
   });
 
-  // FIPE API Routes
-  const FIPE_API_URL = "https://fipe.dev/v1";
-  const FIPE_API_KEY = process.env.FIPE_API_KEY;
+  // FIPE API Routes - Using parallelum public API
+  const FIPE_API_URL = "https://fipe.parallelum.com.br/api/v2";
 
-  app.get("/api/fipe/types", isAuthenticated, async (req, res) => {
+  app.get("/api/fipe/types", isAuthenticated, async (_req, res) => {
     try {
-      const response = await fetch(FIPE_API_URL, {
-        headers: { "X-Api-Key": FIPE_API_KEY || "" },
-      });
-      if (!response.ok) {
-        return res.status(response.status).json({ message: "Erro ao buscar tipos de veículos" });
-      }
-      const data = await response.json();
-      res.json(data);
+      const types = [
+        { id: "cars", name: "Carros" },
+        { id: "motorcycles", name: "Motos" },
+        { id: "trucks", name: "Caminhões" },
+      ];
+      res.json(types);
     } catch (error) {
       console.error("Error fetching FIPE types:", error);
       res.status(500).json({ message: "Erro ao consultar API FIPE" });
@@ -482,14 +479,20 @@ export async function registerRoutes(
   app.get("/api/fipe/brands/:typeId", isAuthenticated, async (req, res) => {
     try {
       const { typeId } = req.params;
-      const response = await fetch(`${FIPE_API_URL}/${typeId}`, {
-        headers: { "X-Api-Key": FIPE_API_KEY || "" },
+      const response = await fetch(`${FIPE_API_URL}/${typeId}/brands`, {
+        headers: { accept: "application/json" },
       });
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("FIPE brands error:", errorText);
         return res.status(response.status).json({ message: "Erro ao buscar marcas" });
       }
       const data = await response.json();
-      res.json(data);
+      const formatted = data.map((item: { code: string; name: string }) => ({
+        id: item.code,
+        name: item.name,
+      }));
+      res.json(formatted);
     } catch (error) {
       console.error("Error fetching FIPE brands:", error);
       res.status(500).json({ message: "Erro ao consultar API FIPE" });
@@ -499,14 +502,20 @@ export async function registerRoutes(
   app.get("/api/fipe/models/:typeId/:brandId", isAuthenticated, async (req, res) => {
     try {
       const { typeId, brandId } = req.params;
-      const response = await fetch(`${FIPE_API_URL}/${typeId}/${brandId}`, {
-        headers: { "X-Api-Key": FIPE_API_KEY || "" },
+      const response = await fetch(`${FIPE_API_URL}/${typeId}/brands/${brandId}/models`, {
+        headers: { accept: "application/json" },
       });
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("FIPE models error:", errorText);
         return res.status(response.status).json({ message: "Erro ao buscar modelos" });
       }
       const data = await response.json();
-      res.json(data);
+      const formatted = data.map((item: { code: string; name: string }) => ({
+        id: item.code,
+        name: item.name,
+      }));
+      res.json(formatted);
     } catch (error) {
       console.error("Error fetching FIPE models:", error);
       res.status(500).json({ message: "Erro ao consultar API FIPE" });
@@ -516,14 +525,26 @@ export async function registerRoutes(
   app.get("/api/fipe/years/:typeId/:brandId/:modelId", isAuthenticated, async (req, res) => {
     try {
       const { typeId, brandId, modelId } = req.params;
-      const response = await fetch(`${FIPE_API_URL}/${typeId}/${brandId}/${modelId}`, {
-        headers: { "X-Api-Key": FIPE_API_KEY || "" },
+      const response = await fetch(`${FIPE_API_URL}/${typeId}/brands/${brandId}/models/${modelId}/years`, {
+        headers: { accept: "application/json" },
       });
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("FIPE years error:", errorText);
         return res.status(response.status).json({ message: "Erro ao buscar anos" });
       }
       const data = await response.json();
-      res.json(data);
+      const formatted = data.map((item: { code: string; name: string }) => {
+        const parts = item.name.split(" ");
+        const year = parts[0];
+        const fuel = parts.slice(1).join(" ") || "Gasolina";
+        return {
+          id: item.code,
+          year: year,
+          fuel: fuel,
+        };
+      });
+      res.json(formatted);
     } catch (error) {
       console.error("Error fetching FIPE years:", error);
       res.status(500).json({ message: "Erro ao consultar API FIPE" });
@@ -533,14 +554,26 @@ export async function registerRoutes(
   app.get("/api/fipe/price/:typeId/:brandId/:modelId/:yearId", isAuthenticated, async (req, res) => {
     try {
       const { typeId, brandId, modelId, yearId } = req.params;
-      const response = await fetch(`${FIPE_API_URL}/${typeId}/${brandId}/${modelId}/${yearId}`, {
-        headers: { "X-Api-Key": FIPE_API_KEY || "" },
+      const response = await fetch(`${FIPE_API_URL}/${typeId}/brands/${brandId}/models/${modelId}/years/${yearId}`, {
+        headers: { accept: "application/json" },
       });
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error("FIPE price error:", errorText);
         return res.status(response.status).json({ message: "Erro ao buscar preço" });
       }
       const data = await response.json();
-      res.json(data);
+      const priceStr = data.price?.replace(/[^\d,]/g, "").replace(",", ".") || "0";
+      const priceValue = parseFloat(priceStr) || 0;
+      res.json({
+        brand: { id: brandId, name: data.brand },
+        model: { id: modelId, name: data.model },
+        year: { id: yearId, name: `${data.modelYear} ${data.fuel}` },
+        type: { id: typeId, name: typeId },
+        price: priceValue,
+        id: data.codeFipe,
+        referenceMonth: data.referenceMonth,
+      });
     } catch (error) {
       console.error("Error fetching FIPE price:", error);
       res.status(500).json({ message: "Erro ao consultar API FIPE" });

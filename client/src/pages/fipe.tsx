@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Search, Car, Bike, Truck, DollarSign, Calendar, Fuel, Loader2 } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Search, Car, Bike, Truck, DollarSign, Calendar, Loader2, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { apiRequest } from "@/lib/queryClient";
 
 interface FipeType {
   id: string;
@@ -42,6 +44,7 @@ interface FipePrice {
   type: { id: string; name: string };
   price: number;
   id: string;
+  referenceMonth?: string;
 }
 
 function formatCurrency(value: number): string {
@@ -82,29 +85,41 @@ export default function FipePage() {
   const [selectedBrand, setSelectedBrand] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<string>("");
   const [selectedYear, setSelectedYear] = useState<string>("");
+  const [priceResult, setPriceResult] = useState<FipePrice | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const { data: types, isLoading: loadingTypes } = useQuery<FipeType[]>({
     queryKey: ["/api/fipe/types"],
   });
 
-  const { data: brands, isLoading: loadingBrands } = useQuery<FipeBrand[]>({
+  const { data: brands, isLoading: loadingBrands, isError: brandsError } = useQuery<FipeBrand[]>({
     queryKey: ["/api/fipe/brands", selectedType],
     enabled: !!selectedType,
   });
 
-  const { data: models, isLoading: loadingModels } = useQuery<FipeModel[]>({
+  const { data: models, isLoading: loadingModels, isError: modelsError } = useQuery<FipeModel[]>({
     queryKey: ["/api/fipe/models", selectedType, selectedBrand],
     enabled: !!selectedType && !!selectedBrand,
   });
 
-  const { data: years, isLoading: loadingYears } = useQuery<FipeYear[]>({
+  const { data: years, isLoading: loadingYears, isError: yearsError } = useQuery<FipeYear[]>({
     queryKey: ["/api/fipe/years", selectedType, selectedBrand, selectedModel],
     enabled: !!selectedType && !!selectedBrand && !!selectedModel,
   });
 
-  const { data: priceData, isLoading: loadingPrice, refetch: refetchPrice } = useQuery<FipePrice>({
-    queryKey: ["/api/fipe/price", selectedType, selectedBrand, selectedModel, selectedYear],
-    enabled: false,
+  const priceMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("GET", `/api/fipe/price/${selectedType}/${selectedBrand}/${selectedModel}/${selectedYear}`);
+      return response.json();
+    },
+    onSuccess: (data: FipePrice) => {
+      setPriceResult(data);
+      setError(null);
+    },
+    onError: () => {
+      setError("Erro ao consultar preço. Tente novamente.");
+      setPriceResult(null);
+    },
   });
 
   const handleTypeChange = (value: string) => {
@@ -112,30 +127,39 @@ export default function FipePage() {
     setSelectedBrand("");
     setSelectedModel("");
     setSelectedYear("");
+    setPriceResult(null);
+    setError(null);
   };
 
   const handleBrandChange = (value: string) => {
     setSelectedBrand(value);
     setSelectedModel("");
     setSelectedYear("");
+    setPriceResult(null);
+    setError(null);
   };
 
   const handleModelChange = (value: string) => {
     setSelectedModel(value);
     setSelectedYear("");
+    setPriceResult(null);
+    setError(null);
   };
 
   const handleYearChange = (value: string) => {
     setSelectedYear(value);
+    setPriceResult(null);
+    setError(null);
   };
 
   const handleSearch = () => {
     if (selectedType && selectedBrand && selectedModel && selectedYear) {
-      refetchPrice();
+      priceMutation.mutate();
     }
   };
 
   const canSearch = selectedType && selectedBrand && selectedModel && selectedYear;
+  const hasQueryError = brandsError || modelsError || yearsError;
 
   return (
     <div className="space-y-6">
@@ -147,6 +171,16 @@ export default function FipePage() {
           Consulte o valor de mercado de veículos pela tabela FIPE
         </p>
       </div>
+
+      {(error || hasQueryError) && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Erro</AlertTitle>
+          <AlertDescription>
+            {error || "Ocorreu um erro ao carregar os dados. Verifique sua conexão e tente novamente."}
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -168,7 +202,7 @@ export default function FipePage() {
                     <SelectItem key={type.id} value={type.id}>
                       <div className="flex items-center gap-2">
                         {getVehicleTypeIcon(type.id)}
-                        {getVehicleTypeName(type.id)}
+                        {type.name}
                       </div>
                     </SelectItem>
                   ))}
@@ -181,14 +215,14 @@ export default function FipePage() {
               <Select 
                 value={selectedBrand} 
                 onValueChange={handleBrandChange}
-                disabled={!selectedType}
+                disabled={!selectedType || loadingBrands}
               >
                 <SelectTrigger id="brand" data-testid="select-fipe-brand">
                   <SelectValue placeholder={loadingBrands ? "Carregando..." : "Selecione a marca"} />
                 </SelectTrigger>
                 <SelectContent>
                   {brands?.map((brand) => (
-                    <SelectItem key={brand.id} value={brand.id}>
+                    <SelectItem key={brand.id} value={String(brand.id)}>
                       {brand.name}
                     </SelectItem>
                   ))}
@@ -201,14 +235,14 @@ export default function FipePage() {
               <Select 
                 value={selectedModel} 
                 onValueChange={handleModelChange}
-                disabled={!selectedBrand}
+                disabled={!selectedBrand || loadingModels}
               >
                 <SelectTrigger id="model" data-testid="select-fipe-model">
                   <SelectValue placeholder={loadingModels ? "Carregando..." : "Selecione o modelo"} />
                 </SelectTrigger>
                 <SelectContent>
                   {models?.map((model) => (
-                    <SelectItem key={model.id} value={model.id}>
+                    <SelectItem key={model.id} value={String(model.id)}>
                       {model.name}
                     </SelectItem>
                   ))}
@@ -221,14 +255,14 @@ export default function FipePage() {
               <Select 
                 value={selectedYear} 
                 onValueChange={handleYearChange}
-                disabled={!selectedModel}
+                disabled={!selectedModel || loadingYears}
               >
                 <SelectTrigger id="year" data-testid="select-fipe-year">
                   <SelectValue placeholder={loadingYears ? "Carregando..." : "Selecione o ano"} />
                 </SelectTrigger>
                 <SelectContent>
                   {years?.map((year) => (
-                    <SelectItem key={year.id} value={year.id}>
+                    <SelectItem key={year.id} value={String(year.id)}>
                       {year.year} - {year.fuel}
                     </SelectItem>
                   ))}
@@ -240,11 +274,11 @@ export default function FipePage() {
 
             <Button 
               onClick={handleSearch} 
-              disabled={!canSearch || loadingPrice}
+              disabled={!canSearch || priceMutation.isPending}
               className="w-full"
               data-testid="button-search-fipe"
             >
-              {loadingPrice ? (
+              {priceMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Consultando...
@@ -267,20 +301,25 @@ export default function FipePage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {priceData ? (
+            {priceResult ? (
               <div className="space-y-6">
                 <div className="text-center p-6 bg-secondary rounded-lg">
                   <p className="text-sm text-muted-foreground mb-2">Valor FIPE</p>
                   <p className="text-4xl font-bold text-primary heading-premium" data-testid="text-fipe-price">
-                    {formatCurrency(priceData.price)}
+                    {formatCurrency(priceResult.price)}
                   </p>
+                  {priceResult.referenceMonth && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Referência: {priceResult.referenceMonth}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Tipo</span>
                     <Badge variant="secondary">
-                      {getVehicleTypeName(priceData.type?.id || selectedType)}
+                      {getVehicleTypeName(priceResult.type?.id || selectedType)}
                     </Badge>
                   </div>
                   
@@ -288,14 +327,14 @@ export default function FipePage() {
                   
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Marca</span>
-                    <span className="font-medium">{priceData.brand?.name}</span>
+                    <span className="font-medium">{priceResult.brand?.name}</span>
                   </div>
                   
                   <Separator />
                   
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Modelo</span>
-                    <span className="font-medium">{priceData.model?.name}</span>
+                    <span className="font-medium text-right max-w-[200px]">{priceResult.model?.name}</span>
                   </div>
                   
                   <Separator />
@@ -305,14 +344,14 @@ export default function FipePage() {
                       <Calendar className="h-4 w-4" />
                       Ano
                     </span>
-                    <span className="font-medium">{priceData.year?.name}</span>
+                    <span className="font-medium">{priceResult.year?.name}</span>
                   </div>
                   
                   <Separator />
                   
                   <div className="flex items-center justify-between">
                     <span className="text-muted-foreground">Código FIPE</span>
-                    <code className="text-sm bg-muted px-2 py-1 rounded">{priceData.id}</code>
+                    <code className="text-sm bg-muted px-2 py-1 rounded">{priceResult.id}</code>
                   </div>
                 </div>
               </div>
