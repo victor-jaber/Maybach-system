@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { registerAuthRoutes, isAuthenticated, seedAdminUser } from "./auth";
+import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import {
   insertBrandSchema,
   insertCategorySchema,
@@ -23,6 +24,9 @@ export async function registerRoutes(
 ): Promise<Server> {
   // Setup JWT authentication routes
   registerAuthRoutes(app);
+  
+  // Setup object storage routes for file uploads
+  registerObjectStorageRoutes(app);
   
   // Seed default admin user
   await seedAdminUser();

@@ -67,9 +67,9 @@ const vehicleFormSchema = z.object({
   color: z.string().min(1, "Cor é obrigatória"),
   mileage: z.number().min(0, "Quilometragem inválida"),
   price: z.string().min(1, "Preço é obrigatório"),
-  renavam: z.string().optional(),
-  plate: z.string().optional(),
-  chassis: z.string().optional(),
+  renavam: z.string().max(11, "Renavam deve ter no máximo 11 dígitos").optional(),
+  plate: z.string().max(7, "Placa deve ter no máximo 7 caracteres").optional(),
+  chassis: z.string().max(17, "Chassi deve ter no máximo 17 caracteres").optional(),
   fuel: z.string().optional(),
   transmission: z.string().optional(),
   doors: z.number().optional(),
@@ -486,7 +486,7 @@ export default function VehiclesPage() {
                     <FormItem>
                       <FormLabel>Renavam</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="11 dígitos" data-testid="input-renavam" />
+                        <Input {...field} placeholder="11 dígitos" maxLength={11} data-testid="input-renavam" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -499,7 +499,7 @@ export default function VehiclesPage() {
                     <FormItem>
                       <FormLabel>Placa</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Ex: ABC1D23" data-testid="input-plate" />
+                        <Input {...field} placeholder="Ex: ABC1D23" maxLength={7} className="uppercase" data-testid="input-plate" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -512,7 +512,7 @@ export default function VehiclesPage() {
                     <FormItem>
                       <FormLabel>Chassi</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="17 caracteres" data-testid="input-chassis" />
+                        <Input {...field} placeholder="17 caracteres" maxLength={17} className="uppercase" data-testid="input-chassis" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
