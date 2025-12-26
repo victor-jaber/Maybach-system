@@ -43,19 +43,9 @@ const mainNavItems = [
     icon: Car,
   },
   {
-    title: "Clientes",
-    url: "/admin/customers",
-    icon: Users,
-  },
-  {
     title: "Vendas",
     url: "/admin/sales",
     icon: ShoppingCart,
-  },
-  {
-    title: "Consulta FIPE",
-    url: "/admin/fipe",
-    icon: Search,
   },
   {
     title: "Contratos",
@@ -63,18 +53,29 @@ const mainNavItems = [
     icon: FileText,
   },
   {
-    title: "Débitos",
-    url: "/admin/debts",
-    icon: AlertTriangle,
-  },
-  {
     title: "Relatórios",
     url: "/admin/reports",
     icon: BarChart3,
   },
+  {
+    title: "Consulta FIPE",
+    url: "/admin/fipe",
+    icon: Search,
+  },
+  {
+    title: "Débitos (Em Breve)",
+    url: "/admin/debts",
+    icon: AlertTriangle,
+    disabled: true,
+  },
 ];
 
 const configNavItems = [
+  {
+    title: "Clientes",
+    url: "/admin/customers",
+    icon: Users,
+  },
   {
     title: "Marcas",
     url: "/admin/brands",
@@ -134,15 +135,25 @@ export function AppSidebar() {
             <SidebarMenu>
               {mainNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location === item.url}
-                  >
-                    <Link href={item.url} data-testid={`link-nav-${item.title.toLowerCase()}`}>
+                  {item.disabled ? (
+                    <SidebarMenuButton
+                      disabled
+                      className="opacity-50 cursor-not-allowed"
+                    >
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
+                    </SidebarMenuButton>
+                  ) : (
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location === item.url}
+                    >
+                      <Link href={item.url} data-testid={`link-nav-${item.title.toLowerCase().replace(/\s+/g, '-')}`}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
