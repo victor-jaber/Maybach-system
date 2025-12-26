@@ -1143,6 +1143,15 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Cliente não possui email cadastrado" });
       }
 
+      // Check if customer has valid CPF/CNPJ for validation
+      const cpfCnpj = contract.customer.cpfCnpj?.replace(/\D/g, "") || "";
+      if (cpfCnpj.length !== 11 && cpfCnpj.length !== 14) {
+        return res.status(400).json({ message: "CPF/CNPJ do cliente inválido ou não cadastrado" });
+      }
+
+      // Invalidate any existing pending signatures for this contract
+      await storage.invalidateContractSignatures(contractId);
+
       // Generate unique token
       const token = crypto.randomBytes(32).toString("hex");
       const tokenExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
@@ -1216,6 +1225,10 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Link inválido ou expirado" });
       }
 
+      if (signature.status === "invalidated") {
+        return res.status(410).json({ message: "Link inválido. Um novo link foi gerado." });
+      }
+
       if (new Date() > new Date(signature.tokenExpiresAt)) {
         return res.status(410).json({ message: "Link expirado. Solicite um novo link." });
       }
@@ -1253,6 +1266,10 @@ export async function registerRoutes(
 
       if (!signature) {
         return res.status(404).json({ message: "Link inválido" });
+      }
+
+      if (signature.status === "invalidated") {
+        return res.status(410).json({ message: "Link inválido. Um novo link foi gerado." });
       }
 
       if (new Date() > new Date(signature.tokenExpiresAt)) {
@@ -1317,6 +1334,10 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Link inválido" });
       }
 
+      if (signature.status === "invalidated") {
+        return res.status(410).json({ message: "Link inválido. Um novo link foi gerado." });
+      }
+
       if (signature.status !== "validated" && signature.status !== "signed") {
         return res.status(403).json({ message: "Validação pendente" });
       }
@@ -1352,6 +1373,10 @@ export async function registerRoutes(
 
       if (!signature) {
         return res.status(404).json({ message: "Link inválido" });
+      }
+
+      if (signature.status === "invalidated") {
+        return res.status(410).json({ message: "Link inválido. Um novo link foi gerado." });
       }
 
       if (signature.status === "signed") {

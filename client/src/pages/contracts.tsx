@@ -60,7 +60,14 @@ import {
   CheckCircle,
   XCircle,
   Loader2,
+  Mail,
+  PenTool,
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -358,6 +365,26 @@ export default function ContractsPage() {
       toast({
         title: "Erro",
         description: "Não foi possível gerar o PDF do contrato.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const sendSignatureEmailMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return apiRequest("POST", `/api/contracts/${id}/send-signature`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/contracts"] });
+      toast({
+        title: "Email enviado",
+        description: "O link de assinatura foi enviado para o cliente.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao enviar email",
+        description: error.message || "Não foi possível enviar o email de assinatura.",
         variant: "destructive",
       });
     },
@@ -1216,6 +1243,30 @@ export default function ContractsPage() {
                             <FileDown className="h-4 w-4" />
                           )}
                         </Button>
+                        {contract.status !== "cancelled" && contract.status !== "signed" && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => sendSignatureEmailMutation.mutate(contract.id)}
+                                disabled={sendSignatureEmailMutation.isPending || !contract.customer?.email}
+                                data-testid={`button-send-signature-${contract.id}`}
+                              >
+                                {sendSignatureEmailMutation.isPending ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Mail className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {contract.customer?.email 
+                                ? "Enviar email de assinatura" 
+                                : "Cliente sem email cadastrado"}
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -1364,14 +1415,30 @@ export default function ContractsPage() {
                   </Button>
                 )}
                 {(viewingContract.status === "draft" || viewingContract.status === "generated") && (
-                  <Button
-                    variant="destructive"
-                    onClick={() => updateStatusMutation.mutate({ id: viewingContract.id, status: "cancelled" })}
-                    disabled={updateStatusMutation.isPending}
-                  >
-                    <XCircle className="mr-2 h-4 w-4" />
-                    Cancelar Contrato
-                  </Button>
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={() => sendSignatureEmailMutation.mutate(viewingContract.id)}
+                      disabled={sendSignatureEmailMutation.isPending || !viewingContract.customer?.email}
+                    >
+                      {sendSignatureEmailMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <PenTool className="mr-2 h-4 w-4" />
+                      )}
+                      {viewingContract.customer?.email 
+                        ? "Enviar para Assinatura" 
+                        : "Sem email do cliente"}
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => updateStatusMutation.mutate({ id: viewingContract.id, status: "cancelled" })}
+                      disabled={updateStatusMutation.isPending}
+                    >
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Cancelar Contrato
+                    </Button>
+                  </>
                 )}
                 <Button
                   variant="outline"

@@ -126,6 +126,7 @@ export interface IStorage {
   createContractSignature(signature: InsertContractSignature): Promise<ContractSignature>;
   updateContractSignature(id: number, data: Partial<InsertContractSignature>): Promise<ContractSignature | undefined>;
   incrementValidationAttempts(id: number): Promise<void>;
+  invalidateContractSignatures(contractId: number): Promise<void>;
 
   // Reports & Statistics
   getDashboardStats(): Promise<DashboardStats>;
@@ -617,6 +618,15 @@ export class DatabaseStorage implements IStorage {
     await db.update(contractSignatures)
       .set({ validationAttempts: sql`${contractSignatures.validationAttempts} + 1` })
       .where(eq(contractSignatures.id, id));
+  }
+
+  async invalidateContractSignatures(contractId: number): Promise<void> {
+    await db.update(contractSignatures)
+      .set({ status: "invalidated" })
+      .where(and(
+        eq(contractSignatures.contractId, contractId),
+        eq(contractSignatures.status, "pending")
+      ));
   }
 
   // ========== Reports & Statistics ==========
