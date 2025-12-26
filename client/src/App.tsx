@@ -25,6 +25,7 @@ import ContractsPage from "@/pages/contracts";
 import StoreSettingsPage from "@/pages/store-settings";
 import ReportsPage from "@/pages/reports";
 import VehicleDebtsPage from "@/pages/vehicle-debts";
+import SignContractPage from "@/pages/sign-contract";
 import NotFound from "@/pages/not-found";
 
 function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -169,6 +170,7 @@ function Router() {
           </AdminLayout>
         </ProtectedRoute>
       </Route>
+      <Route path="/assinar/:token" component={SignContractPage} />
       <Route component={NotFound} />
     </Switch>
   );
