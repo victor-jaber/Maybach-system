@@ -283,7 +283,14 @@ export const insertContractApiSchema = z.object({
   vehicleId: z.coerce.number(),
   saleId: z.coerce.number().optional().nullable(),
   relatedContractId: z.coerce.number().optional().nullable(),
-  contractType: z.enum(["entry_complement", "purchase_sale"]),
+  contractType: z.enum([
+    "entry_complement",
+    "purchase_sale",
+    "vehicle_purchase",
+    "consignment",
+    "delivery_protocol",
+    "consignment_withdrawal"
+  ]),
   status: z.enum(["draft", "generated", "signed", "cancelled"]).default("draft"),
   entradaTotal: z.string().optional().nullable(),
   entradaPaga: z.string().optional().nullable(),

@@ -440,3 +440,585 @@ function formatPaymentMethod(method: string | null): string {
   };
   return methods[method || ""] || "a definir";
 }
+
+
+// ==================== CONTRATO DE COMPRA DE VEÍCULO (LOJA COMPRANDO) ====================
+export function getVehiclePurchaseContract(data: ContractData): string {
+  return `
+CONTRATO PARTICULAR DE COMPRA E VENDA DE VEÍCULO AUTOMOTOR
+(Aquisição de Veículo pela Concessionária)
+
+Pelo presente instrumento particular de compra e venda de veículo automotor, firmado de comum acordo entre as partes abaixo qualificadas, regendo-se pelas cláusulas e condições seguintes e pelas disposições do Código Civil Brasileiro:
+
+COMPRADORA: ${data.razaoSocialLoja}, pessoa jurídica de direito privado, inscrita no CNPJ sob o nº ${data.cnpjLoja}, com sede na ${data.enderecoLoja}, neste ato representada por seu(sua) representante legal ${data.representanteLoja}, inscrito(a) no CPF sob o nº ${data.cpfRepresentanteLoja}, telefone ${data.telefoneLoja}, doravante denominada simplesmente "COMPRADORA";
+
+VENDEDOR(A): ${data.nomeCliente}, inscrito(a) no ${data.tipoDocumentoCliente} sob o nº ${data.cpfCnpjCliente}, ${data.tipoDocumentoCliente === "CPF" ? `portador(a) do RG nº ${data.rgCliente}, CNH nº ${data.cnhCliente}, ` : ""}residente e domiciliado(a) na ${data.enderecoCliente}, telefone ${data.telefoneCliente}, e-mail ${data.emailCliente}, doravante denominado(a) simplesmente "VENDEDOR(A)";
+
+
+CLÁUSULA PRIMEIRA - DO OBJETO
+
+1.1. O(A) VENDEDOR(A), na qualidade de legítimo(a) proprietário(a) e possuidor(a), vende e transfere à COMPRADORA, que aceita e adquire, o veículo automotor abaixo descrito e caracterizado:
+
+    Marca/Modelo: ${data.marca} ${data.modelo}
+    Ano de Fabricação/Modelo: ${data.ano}
+    Cor: ${data.cor}
+    Placa: ${data.placa}
+    Chassi: ${data.chassi}
+    RENAVAM: ${data.renavam}
+    Quilometragem atual: ${data.km} km
+    Combustível: Conforme documento do veículo
+
+1.2. O(A) VENDEDOR(A) declara, sob as penas da lei, que o veículo objeto deste contrato:
+
+    a) É de sua exclusiva e legítima propriedade;
+    b) Encontra-se livre e desembaraçado de quaisquer ônus, gravames, alienações fiduciárias, penhoras, arrestos, sequestros ou quaisquer outros impedimentos legais;
+    c) Não está envolvido em sinistros, acidentes graves, furto, roubo ou fraude;
+    d) Possui procedência lícita e documentação regular.
+
+
+CLÁUSULA SEGUNDA - DO PREÇO E FORMA DE PAGAMENTO
+
+2.1. O preço total e certo ajustado para a presente compra e venda é de ${data.valorVeiculo} (${numberToWords(parseFloat(data.valorVeiculo?.replace(/\D/g, '') || '0') / 100)} reais).
+
+2.2. O pagamento será realizado pela COMPRADORA nas seguintes condições:
+
+    Valor Total: ${data.valorVeiculo}
+    Forma de Pagamento: ${data.formaPagamento === "avista" ? "À vista, mediante transferência bancária (PIX ou TED)" : `Parcelado em ${data.quantidadeParcelas} parcelas de ${data.valorParcela}`}
+    ${data.formaPagamento === "avista" ? `Data do Pagamento: ${data.dataVencimentoAvista}` : `Primeiro vencimento: 30 dias após a assinatura deste contrato`}
+
+2.3. O pagamento será efetuado mediante apresentação de todos os documentos do veículo e assinatura do presente contrato.
+
+2.4. A COMPRADORA emitirá recibo discriminado de todos os valores pagos ao(à) VENDEDOR(A).
+
+
+CLÁUSULA TERCEIRA - DA TRANSFERÊNCIA DE PROPRIEDADE
+
+3.1. O(A) VENDEDOR(A) compromete-se a entregar à COMPRADORA, no ato da assinatura deste contrato, todos os documentos necessários à transferência de propriedade do veículo, incluindo:
+
+    a) Certificado de Registro do Veículo (CRV) devidamente preenchido e com firma reconhecida;
+    b) Documento único de transferência (DUT);
+    c) Comprovante de quitação de débitos até a data desta venda;
+    d) Cópia dos documentos pessoais (RG, CPF e comprovante de residência).
+
+3.2. As despesas com a transferência de propriedade do veículo para o nome da COMPRADORA correrão por conta exclusiva desta.
+
+
+CLÁUSULA QUARTA - DA RESPONSABILIDADE POR MULTAS, TRIBUTOS E ENCARGOS
+
+4.1. O(A) VENDEDOR(A) é integralmente responsável por todas as multas de trânsito, infrações, tributos (IPVA, DPVAT/Seguro Obrigatório), taxas de licenciamento, pedágios não pagos e quaisquer outros encargos ou penalidades incidentes sobre o veículo, cujos fatos geradores tenham ocorrido até a data de ${data.dataEmissao} (data da entrega do veículo).
+
+4.2. O(A) VENDEDOR(A) compromete-se a quitar integralmente todos os débitos pendentes relativos ao veículo antes ou no ato da entrega, apresentando comprovantes de quitação à COMPRADORA.
+
+4.3. Caso seja constatada a existência de débitos anteriores à data da entrega após a efetivação da compra, o(a) VENDEDOR(A) obriga-se a quitá-los no prazo de 05 (cinco) dias úteis após notificação, sob pena de:
+
+    a) Desconto do valor devido na parcela vincenda, se houver;
+    b) Cobrança judicial, acrescida de multa de 10% (dez por cento) sobre o valor devido;
+    c) Responsabilização por perdas e danos.
+
+4.4. A COMPRADORA será responsável por todas as multas, tributos e encargos cujos fatos geradores ocorrerem a partir da data da entrega do veículo.
+
+
+CLÁUSULA QUINTA - DA ENTREGA DO VEÍCULO
+
+5.1. O veículo será entregue à COMPRADORA nas dependências da loja, na data da assinatura deste contrato ou em data a ser acordada entre as partes.
+
+5.2. No ato da entrega, será lavrado PROTOCOLO DE ENTREGA DE VEÍCULO, documento complementar a este contrato, no qual constará:
+
+    a) Data e hora da efetiva entrega;
+    b) Condições gerais do veículo no momento da entrega;
+    c) Checklist de itens entregues (chaves, manuais, acessórios);
+    d) Assinatura de ambas as partes.
+
+5.3. A partir da assinatura do Protocolo de Entrega, a posse e os riscos sobre o veículo transferem-se integralmente para a COMPRADORA.
+
+
+CLÁUSULA SEXTA - DAS DECLARAÇÕES E GARANTIAS DO(A) VENDEDOR(A)
+
+6.1. O(A) VENDEDOR(A) declara e garante que:
+
+    a) É o(a) único(a) e legítimo(a) proprietário(a) do veículo;
+    b) O veículo não está penhorado, arrestado, sequestrado ou envolvido em qualquer litígio judicial;
+    c) Não existem contratos de financiamento, arrendamento mercantil (leasing) ou consórcio pendentes sobre o veículo;
+    d) O veículo não possui adulteração de chassi, motor ou qualquer componente original;
+    e) Todas as informações prestadas neste contrato são verdadeiras e completas.
+
+6.2. O(A) VENDEDOR(A) responderá civil e criminalmente pela veracidade das declarações prestadas, ficando obrigado(a) a indenizar a COMPRADORA por quaisquer prejuízos decorrentes de informações falsas ou omissões.
+
+
+CLÁUSULA SÉTIMA - DA RESCISÃO
+
+7.1. O presente contrato poderá ser rescindido nas seguintes hipóteses:
+
+    a) Por acordo mútuo entre as partes;
+    b) Por inadimplemento de qualquer obrigação contratual;
+    c) Pela constatação de vícios ocultos ou defeitos não informados pelo(a) VENDEDOR(A);
+    d) Pela constatação de falsidade nas declarações do(a) VENDEDOR(A).
+
+7.2. Em caso de rescisão por culpa do(a) VENDEDOR(A), este(a) deverá restituir integralmente os valores recebidos, acrescidos de correção monetária pelo IGP-M/FGV e multa de 10% (dez por cento), no prazo de 05 (cinco) dias úteis.
+
+
+CLÁUSULA OITAVA - DAS DISPOSIÇÕES GERAIS
+
+8.1. O presente contrato obriga as partes contratantes e seus sucessores a qualquer título.
+
+8.2. A tolerância de qualquer das partes quanto ao descumprimento de obrigações pela outra não implicará novação, renúncia ou alteração das condições pactuadas.
+
+8.3. Qualquer alteração deste contrato somente terá validade se formalizada por escrito e assinada por ambas as partes.
+
+8.4. As partes declaram ter lido e compreendido integralmente todas as cláusulas deste contrato, aceitando-as de livre e espontânea vontade.
+
+
+CLÁUSULA NONA - DO FORO
+
+9.1. Fica eleito o foro da Comarca de ${data.cidadeForo}, Estado de ${data.cidadeForo === "São Paulo" ? "São Paulo" : "correspondente"}, para dirimir quaisquer dúvidas ou litígios decorrentes deste contrato, com renúncia expressa a qualquer outro, por mais privilegiado que seja.
+
+
+E, por estarem assim justas e contratadas, as partes firmam o presente instrumento em 02 (duas) vias de igual teor e forma, na presença de duas testemunhas abaixo assinadas, para que produza seus jurídicos e legais efeitos.
+
+
+${data.cidadeForo}, ${data.dataEmissao}
+
+
+
+
+_____________________________________________
+${data.razaoSocialLoja}
+CNPJ: ${data.cnpjLoja}
+COMPRADORA
+
+
+
+
+_____________________________________________
+${data.nomeCliente}
+${data.tipoDocumentoCliente}: ${data.cpfCnpjCliente}
+VENDEDOR(A)
+
+
+
+
+TESTEMUNHAS:
+
+
+1. _____________________________________________
+   Nome:
+   CPF:
+
+
+2. _____________________________________________
+   Nome:
+   CPF:
+`;
+}
+
+
+// ==================== CONTRATO DE CONSIGNAÇÃO DE VEÍCULO ====================
+export function getConsignmentContract(data: ContractData & { 
+  valorMinimoVenda?: string;
+  comissaoLoja?: string;
+  prazoConsignacao?: number;
+  multaRetiradaAntecipada?: string;
+}): string {
+  return `
+CONTRATO PARTICULAR DE CONSIGNAÇÃO DE VEÍCULO AUTOMOTOR
+
+Pelo presente instrumento particular de consignação de veículo automotor, firmado de comum acordo entre as partes abaixo qualificadas, regendo-se pelas cláusulas e condições seguintes e pelas disposições do Código Civil Brasileiro:
+
+CONSIGNATÁRIA: ${data.razaoSocialLoja}, pessoa jurídica de direito privado, inscrita no CNPJ sob o nº ${data.cnpjLoja}, com sede na ${data.enderecoLoja}, neste ato representada por seu(sua) representante legal ${data.representanteLoja}, inscrito(a) no CPF sob o nº ${data.cpfRepresentanteLoja}, telefone ${data.telefoneLoja}, doravante denominada simplesmente "CONSIGNATÁRIA" ou "LOJA";
+
+CONSIGNANTE: ${data.nomeCliente}, inscrito(a) no ${data.tipoDocumentoCliente} sob o nº ${data.cpfCnpjCliente}, ${data.tipoDocumentoCliente === "CPF" ? `portador(a) do RG nº ${data.rgCliente}, CNH nº ${data.cnhCliente}, ` : ""}residente e domiciliado(a) na ${data.enderecoCliente}, telefone ${data.telefoneCliente}, e-mail ${data.emailCliente}, doravante denominado(a) simplesmente "CONSIGNANTE" ou "PROPRIETÁRIO(A)";
+
+
+CLÁUSULA PRIMEIRA - DO OBJETO
+
+1.1. O presente contrato tem por objeto a consignação do veículo automotor abaixo descrito e caracterizado, de propriedade do(a) CONSIGNANTE, para exposição e venda pela CONSIGNATÁRIA:
+
+    Marca/Modelo: ${data.marca} ${data.modelo}
+    Ano de Fabricação/Modelo: ${data.ano}
+    Cor: ${data.cor}
+    Placa: ${data.placa}
+    Chassi: ${data.chassi}
+    RENAVAM: ${data.renavam}
+    Quilometragem atual: ${data.km} km
+    Combustível: Conforme documento do veículo
+
+1.2. O(A) CONSIGNANTE declara ser o(a) legítimo(a) proprietário(a) do veículo, que se encontra livre e desembaraçado de quaisquer ônus, gravames, alienações fiduciárias ou impedimentos legais.
+
+1.3. O veículo somente será aceito em consignação após cadastro completo no sistema da CONSIGNATÁRIA e inclusão formal no estoque da loja.
+
+
+CLÁUSULA SEGUNDA - DO VALOR MÍNIMO DE VENDA
+
+2.1. O valor mínimo de venda do veículo fica estabelecido em ${data.valorMinimoVenda || data.valorVeiculo} (${numberToWords(parseFloat((data.valorMinimoVenda || data.valorVeiculo)?.replace(/\D/g, '') || '0') / 100)} reais).
+
+2.2. A CONSIGNATÁRIA poderá negociar valores superiores ao mínimo estabelecido, revertendo o excedente em favor do(a) CONSIGNANTE, após dedução da comissão.
+
+2.3. Qualquer venda por valor inferior ao mínimo estabelecido deverá ser previamente autorizada, por escrito, pelo(a) CONSIGNANTE.
+
+
+CLÁUSULA TERCEIRA - DA COMISSÃO
+
+3.1. Pela intermediação da venda, a CONSIGNATÁRIA fará jus à comissão de ${data.comissaoLoja || "10%"} (${numberToWords(parseFloat((data.comissaoLoja || "10")?.replace(/\D/g, '') || '10'))} por cento) sobre o valor efetivo da venda.
+
+3.2. A comissão será descontada do valor da venda no momento do repasse ao(à) CONSIGNANTE.
+
+3.3. A comissão remunera todos os serviços prestados pela CONSIGNATÁRIA, incluindo:
+
+    a) Exposição do veículo em suas dependências;
+    b) Divulgação e publicidade;
+    c) Atendimento a interessados;
+    d) Intermediação da negociação;
+    e) Assessoria na documentação de transferência.
+
+
+CLÁUSULA QUARTA - DO PRAZO
+
+4.1. O prazo de consignação é de ${data.prazoConsignacao || 60} (${numberToWords(data.prazoConsignacao || 60)}) dias corridos, contados a partir da data de assinatura deste contrato.
+
+4.2. Findo o prazo sem que haja venda, o contrato poderá ser:
+
+    a) Prorrogado por igual período, mediante acordo entre as partes;
+    b) Encerrado, com a devolução do veículo ao(à) CONSIGNANTE.
+
+4.3. A prorrogação deverá ser formalizada por escrito, mediante aditivo contratual.
+
+
+CLÁUSULA QUINTA - DAS OBRIGAÇÕES DA CONSIGNATÁRIA
+
+5.1. A CONSIGNATÁRIA obriga-se a:
+
+    a) Manter o veículo em local coberto e seguro, em suas dependências;
+    b) Zelar pela conservação e integridade do veículo durante o período de consignação;
+    c) Expor o veículo em condições adequadas de apresentação;
+    d) Promover a divulgação e publicidade do veículo;
+    e) Informar ao(à) CONSIGNANTE sobre o andamento das negociações, quando solicitado;
+    f) Não utilizar o veículo para test-drives sem autorização prévia do(a) CONSIGNANTE;
+    g) Comunicar imediatamente ao(à) CONSIGNANTE sobre a venda do veículo;
+    h) Repassar o valor da venda ao(à) CONSIGNANTE no prazo de 05 (cinco) dias úteis após o recebimento integral.
+
+5.2. A CONSIGNATÁRIA não se responsabiliza por danos decorrentes de eventos de força maior ou caso fortuito, tais como enchentes, incêndios, furtos ou roubos ocorridos em suas dependências.
+
+
+CLÁUSULA SEXTA - DAS OBRIGAÇÕES DO(A) CONSIGNANTE
+
+6.1. O(A) CONSIGNANTE obriga-se a:
+
+    a) Entregar o veículo em perfeitas condições de funcionamento e apresentação;
+    b) Fornecer todos os documentos do veículo (CRV, CRLV, manual, chaves);
+    c) Manter em dia todos os tributos, taxas e encargos incidentes sobre o veículo durante a consignação;
+    d) Comunicar imediatamente à CONSIGNATÁRIA sobre qualquer alteração na situação jurídica do veículo;
+    e) Providenciar toda a documentação necessária para a transferência, quando da venda;
+    f) Não negociar ou anunciar o veículo por conta própria durante a vigência deste contrato.
+
+
+CLÁUSULA SÉTIMA - DA RESPONSABILIDADE POR MULTAS E ENCARGOS
+
+7.1. O(A) CONSIGNANTE é integralmente responsável por todas as multas de trânsito, infrações, tributos (IPVA, DPVAT), taxas de licenciamento e quaisquer outros encargos ou penalidades incidentes sobre o veículo, cujos fatos geradores tenham ocorrido até a data de entrega do veículo à CONSIGNATÁRIA.
+
+7.2. Durante o período de consignação, permanecendo o veículo nas dependências da CONSIGNATÁRIA, esta será responsável apenas por danos decorrentes de sua culpa comprovada.
+
+7.3. Após a retirada do veículo pelo(a) CONSIGNANTE ou venda a terceiros, todas as multas, tributos e encargos passarão a ser de responsabilidade de quem estiver na posse do veículo.
+
+
+CLÁUSULA OITAVA - DA RETIRADA ANTECIPADA
+
+8.1. O(A) CONSIGNANTE poderá retirar o veículo antes do término do prazo de consignação, mediante comunicação prévia de 03 (três) dias úteis.
+
+8.2. Em caso de retirada antecipada antes de decorridos 30 (trinta) dias da consignação, o(a) CONSIGNANTE pagará à CONSIGNATÁRIA multa compensatória no valor de ${data.multaRetiradaAntecipada || "R$ 500,00"} (${numberToWords(parseFloat((data.multaRetiradaAntecipada || "500")?.replace(/\D/g, '') || '500'))} reais), a título de ressarcimento pelos custos de exposição e divulgação.
+
+8.3. A multa não será devida se a retirada decorrer de:
+
+    a) Descumprimento contratual pela CONSIGNATÁRIA;
+    b) Acordo entre as partes;
+    c) Motivo de força maior devidamente comprovado.
+
+
+CLÁUSULA NONA - DO PROTOCOLO DE RETIRADA
+
+9.1. Ao encerramento da consignação, seja por venda, término do prazo ou retirada antecipada, será lavrado PROTOCOLO DE RETIRADA DE VEÍCULO CONSIGNADO, documento complementar a este contrato.
+
+9.2. O Protocolo de Retirada conterá:
+
+    a) Data e hora da retirada;
+    b) Condições do veículo no momento da devolução;
+    c) Declaração de encerramento da consignação;
+    d) Assinatura de ambas as partes.
+
+
+CLÁUSULA DÉCIMA - DA RESCISÃO
+
+10.1. O presente contrato poderá ser rescindido nas seguintes hipóteses:
+
+    a) Pela venda do veículo;
+    b) Pelo término do prazo sem prorrogação;
+    c) Por acordo mútuo entre as partes;
+    d) Por inadimplemento de qualquer obrigação contratual;
+    e) Pela constatação de irregularidades na documentação ou propriedade do veículo.
+
+10.2. Em caso de rescisão por culpa do(a) CONSIGNANTE, este(a) pagará à CONSIGNATÁRIA a multa prevista na Cláusula Oitava.
+
+10.3. Em caso de rescisão por culpa da CONSIGNATÁRIA, esta deverá devolver o veículo nas mesmas condições em que o recebeu, ressalvado o desgaste natural.
+
+
+CLÁUSULA DÉCIMA PRIMEIRA - DAS DISPOSIÇÕES GERAIS
+
+11.1. Este contrato não constitui vínculo empregatício entre as partes.
+
+11.2. A CONSIGNATÁRIA age como mera intermediária na venda, não assumindo a propriedade do veículo consignado.
+
+11.3. As partes declaram ter lido e compreendido integralmente todas as cláusulas deste contrato.
+
+
+CLÁUSULA DÉCIMA SEGUNDA - DO FORO
+
+12.1. Fica eleito o foro da Comarca de ${data.cidadeForo} para dirimir quaisquer dúvidas ou litígios decorrentes deste contrato, com renúncia expressa a qualquer outro, por mais privilegiado que seja.
+
+
+E, por estarem assim justas e contratadas, as partes firmam o presente instrumento em 02 (duas) vias de igual teor e forma, na presença de duas testemunhas.
+
+
+${data.cidadeForo}, ${data.dataEmissao}
+
+
+
+
+_____________________________________________
+${data.razaoSocialLoja}
+CNPJ: ${data.cnpjLoja}
+CONSIGNATÁRIA
+
+
+
+
+_____________________________________________
+${data.nomeCliente}
+${data.tipoDocumentoCliente}: ${data.cpfCnpjCliente}
+CONSIGNANTE
+
+
+
+
+TESTEMUNHAS:
+
+
+1. _____________________________________________
+   Nome:
+   CPF:
+
+
+2. _____________________________________________
+   Nome:
+   CPF:
+`;
+}
+
+
+// ==================== PROTOCOLO DE ENTREGA DE VEÍCULO ====================
+export function getDeliveryProtocol(data: ContractData & {
+  dataHoraEntrega?: string;
+  chavePrincipal?: boolean;
+  chaveReserva?: boolean;
+  manual?: boolean;
+  condicaoGeral?: string;
+}): string {
+  const dataHora = data.dataHoraEntrega || new Date().toLocaleString("pt-BR");
+  
+  return `
+PROTOCOLO DE ENTREGA DE VEÍCULO
+
+IDENTIFICAÇÃO DAS PARTES
+
+ENTREGANTE: ${data.nomeCliente}
+${data.tipoDocumentoCliente}: ${data.cpfCnpjCliente}
+Endereço: ${data.enderecoCliente}
+Telefone: ${data.telefoneCliente}
+
+RECEBEDOR: ${data.razaoSocialLoja}
+CNPJ: ${data.cnpjLoja}
+Endereço: ${data.enderecoLoja}
+Representante: ${data.representanteLoja}
+CPF do Representante: ${data.cpfRepresentanteLoja}
+
+
+IDENTIFICAÇÃO DO VEÍCULO
+
+Marca/Modelo: ${data.marca} ${data.modelo}
+Ano de Fabricação/Modelo: ${data.ano}
+Cor: ${data.cor}
+Placa: ${data.placa}
+Chassi: ${data.chassi}
+RENAVAM: ${data.renavam}
+Quilometragem: ${data.km} km
+
+
+DATA E HORA DA ENTREGA
+
+Data: ${dataHora.split(",")[0] || data.dataEmissao}
+Hora: ${dataHora.split(",")[1]?.trim() || "___:___"}
+
+
+CHECKLIST DE ENTREGA
+
+[ ${data.chavePrincipal !== false ? "X" : " "} ] Chave Principal
+[ ${data.chaveReserva ? "X" : " "} ] Chave Reserva
+[ ${data.manual ? "X" : " "} ] Manual do Proprietário
+[ ] Certificado de Registro do Veículo (CRV)
+[ ] Certificado de Registro e Licenciamento do Veículo (CRLV)
+[ ] Triângulo de Segurança
+[ ] Macaco
+[ ] Chave de Roda
+[ ] Estepe
+
+Outros itens entregues: _______________________________________________
+
+
+CONDIÇÃO GERAL DO VEÍCULO
+
+${data.condicaoGeral || "[ ] Excelente   [ ] Boa   [ ] Regular   [ ] Necessita reparos"}
+
+Observações sobre o estado do veículo:
+_______________________________________________________________________
+_______________________________________________________________________
+_______________________________________________________________________
+
+
+DECLARAÇÃO
+
+Por meio deste protocolo, declaro que estou entregando/recebendo o veículo acima identificado nas condições descritas.
+
+DECLARO ESTAR CIENTE de que, a partir desta data e hora (${dataHora}), TODAS AS MULTAS DE TRÂNSITO, TRIBUTOS (IPVA, DPVAT/SEGURO OBRIGATÓRIO), TAXAS DE LICENCIAMENTO, PEDÁGIOS E QUAISQUER OUTRAS RESPONSABILIDADES incidentes sobre o veículo passam a ser de integral responsabilidade do RECEBEDOR.
+
+O ENTREGANTE é responsável por todos os débitos e infrações cujos fatos geradores tenham ocorrido até a presente data e hora.
+
+
+ASSINATURAS
+
+
+${data.cidadeForo}, ${data.dataEmissao}
+
+
+
+
+_____________________________________________
+ENTREGANTE
+Nome: ${data.nomeCliente}
+${data.tipoDocumentoCliente}: ${data.cpfCnpjCliente}
+
+
+
+
+_____________________________________________
+RECEBEDOR
+${data.razaoSocialLoja}
+CNPJ: ${data.cnpjLoja}
+Representante: ${data.representanteLoja}
+`;
+}
+
+
+// ==================== PROTOCOLO DE RETIRADA DE VEÍCULO CONSIGNADO ====================
+export function getConsignmentWithdrawalProtocol(data: ContractData & {
+  dataHoraRetirada?: string;
+  motivoRetirada?: string;
+  condicaoVeiculo?: string;
+}): string {
+  const dataHora = data.dataHoraRetirada || new Date().toLocaleString("pt-BR");
+  
+  return `
+PROTOCOLO DE RETIRADA DE VEÍCULO CONSIGNADO
+
+IDENTIFICAÇÃO DAS PARTES
+
+CONSIGNATÁRIA (Que está devolvendo): ${data.razaoSocialLoja}
+CNPJ: ${data.cnpjLoja}
+Endereço: ${data.enderecoLoja}
+Representante: ${data.representanteLoja}
+CPF do Representante: ${data.cpfRepresentanteLoja}
+
+CONSIGNANTE/PROPRIETÁRIO(A) (Que está retirando): ${data.nomeCliente}
+${data.tipoDocumentoCliente}: ${data.cpfCnpjCliente}
+Endereço: ${data.enderecoCliente}
+Telefone: ${data.telefoneCliente}
+
+
+IDENTIFICAÇÃO DO VEÍCULO
+
+Marca/Modelo: ${data.marca} ${data.modelo}
+Ano de Fabricação/Modelo: ${data.ano}
+Cor: ${data.cor}
+Placa: ${data.placa}
+Chassi: ${data.chassi}
+RENAVAM: ${data.renavam}
+Quilometragem: ${data.km} km
+
+
+DATA E HORA DA RETIRADA
+
+Data: ${dataHora.split(",")[0] || data.dataEmissao}
+Hora: ${dataHora.split(",")[1]?.trim() || "___:___"}
+
+
+MOTIVO DA RETIRADA
+
+[ ] Término do prazo de consignação sem venda
+[ ] Retirada antecipada a pedido do proprietário
+[ ] Acordo entre as partes
+[ ] Outro: ${data.motivoRetirada || "_______________________________________"}
+
+
+CONDIÇÃO DO VEÍCULO NA RETIRADA
+
+O veículo encontra-se em: ${data.condicaoVeiculo || "[ ] Mesmas condições da entrega   [ ] Com alterações (descrever abaixo)"}
+
+Observações sobre o estado do veículo:
+_______________________________________________________________________
+_______________________________________________________________________
+
+
+ITENS DEVOLVIDOS
+
+[ ] Chave Principal
+[ ] Chave Reserva (se foi entregue)
+[ ] Manual do Proprietário (se foi entregue)
+[ ] CRV (Certificado de Registro do Veículo)
+[ ] CRLV (Certificado de Registro e Licenciamento)
+[ ] Demais acessórios/documentos conforme protocolo de entrega
+
+
+DECLARAÇÃO DE ENCERRAMENTO DA CONSIGNAÇÃO
+
+Por meio deste protocolo, as partes declaram que:
+
+1. O CONTRATO DE CONSIGNAÇÃO firmado entre as partes fica ENCERRADO a partir desta data.
+
+2. O veículo foi devolvido ao(à) PROPRIETÁRIO(A)/CONSIGNANTE nas condições acima descritas.
+
+3. Não há pendências financeiras entre as partes relativas ao contrato de consignação.
+   (Se houver pendências, descrever): _______________________________________
+
+4. A partir desta data e hora (${dataHora}), TODAS AS MULTAS DE TRÂNSITO, TRIBUTOS (IPVA, DPVAT/SEGURO OBRIGATÓRIO), TAXAS DE LICENCIAMENTO e QUAISQUER OUTRAS RESPONSABILIDADES incidentes sobre o veículo passam a ser de integral responsabilidade do(a) PROPRIETÁRIO(A)/CONSIGNANTE que retira o veículo.
+
+
+ASSINATURAS
+
+
+${data.cidadeForo}, ${data.dataEmissao}
+
+
+
+
+_____________________________________________
+CONSIGNATÁRIA (Que está devolvendo)
+${data.razaoSocialLoja}
+CNPJ: ${data.cnpjLoja}
+Representante: ${data.representanteLoja}
+
+
+
+
+_____________________________________________
+CONSIGNANTE/PROPRIETÁRIO(A) (Que está retirando)
+Nome: ${data.nomeCliente}
+${data.tipoDocumentoCliente}: ${data.cpfCnpjCliente}
+`;
+}

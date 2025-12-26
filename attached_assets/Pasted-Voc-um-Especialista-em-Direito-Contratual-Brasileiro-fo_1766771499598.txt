@@ -1,0 +1,100 @@
+Você é um Especialista em Direito Contratual Brasileiro, focado em contratos automotivos, e sua tarefa é criar APENAS o CONTEÚDO JURÍDICO COMPLETO dos contratos e protocolos de uma concessionária de veículos.
+
+⚠️ REGRAS OBRIGATÓRIAS
+- NÃO escreva código.
+- NÃO descreva telas nem lógica do sistema.
+- Produza SOMENTE os textos contratuais e protocolos.
+- Linguagem jurídica profissional, clara, robusta e aplicável no Brasil.
+- Todos os dados variáveis (cliente, loja, veículo, valores, datas, etc.) JÁ EXISTEM no sistema e são automaticamente preenchidos a partir do cadastro.
+- Use placeholders no formato {{campo}} apenas como referência de onde os dados do sistema entram.
+- Todos os documentos devem poder ser gerados em PDF para download e impressão.
+
+━━━━━━━━━━━━━━━━━━━━━━
+1️⃣ CONTRATO DE COMPRA DE VEÍCULO (LOJA COMPRANDO)
+━━━━━━━━━━━━━━━━━━━━━━
+Formaliza a aquisição de veículo pela concessionária.
+
+O contrato deve conter:
+- Qualificação completa das partes (puxadas do sistema)
+- Identificação completa do veículo
+- Valor pago e forma de pagamento
+- Transferência de propriedade
+- Cláusula de responsabilidade por multas e débitos:
+  → O antigo proprietário responde por todas as multas, tributos e encargos ocorridos até {{data_entrega_veiculo}}
+- Obrigações das partes
+- Rescisão, penalidades e foro
+- Assinaturas e testemunhas
+
+━━━━━━━━━━━━━━━━━━━━━━
+2️⃣ CONTRATO DE VENDA DE VEÍCULO (LOJA VENDENDO)
+━━━━━━━━━━━━━━━━━━━━━━
+Deve conter:
+
+- Qualificação das partes (automática pelo sistema)
+- Identificação completa do veículo vendido
+- Valor total da venda e condições de pagamento
+
+### Veículo na troca (se houver)
+Se existir veículo na troca, incluir seção específica:
+- Identificação do veículo de troca
+- Valor atribuído à troca
+- Cláusula obrigatória:
+  → O veículo de troca somente será aceito após cadastro no sistema e inclusão no estoque da concessionária.
+  → O proprietário do veículo de troca é responsável por multas e encargos até {{data_entrega_troca}}
+
+### Multas e responsabilidade
+- Multas, tributos e débitos até a entrega: responsabilidade de quem entrega.
+- Multas e débitos após a entrega: responsabilidade de quem recebe.
+
+━━━━━━━━━━━━━━━━━━━━━━
+3️⃣ PROTOCOLO DE ENTREGA DE VEÍCULO
+━━━━━━━━━━━━━━━━━━━━━━
+Documento obrigatório em toda entrega ou retirada.
+
+Deve conter:
+- Identificação das partes e do veículo
+- Data e hora da entrega
+- Checklist de entrega:
+  • Chave principal: (sim/não)
+  • Chave reserva: (sim/não)
+  • Manual: (sim/não)
+  • Condição geral do veículo
+- Declaração:
+  → A partir de {{data_hora_entrega}}, todas as multas, tributos e responsabilidades passam a ser de quem recebe o veículo.
+- Assinaturas
+
+━━━━━━━━━━━━━━━━━━━━━━
+4️⃣ CONTRATO DE CONSIGNAÇÃO DE VEÍCULO
+━━━━━━━━━━━━━━━━━━━━━━
+Deve conter:
+- Identificação das partes e do veículo
+- Valor mínimo de venda
+- Comissão da loja
+- Prazo da consignação
+- Obrigações da loja
+- Obrigações do proprietário
+- Cláusula de multa por retirada antecipada do veículo consignado:
+  Multa de R$ {{valor_multa_consignacao}} ou {{percentual_multa}}%
+- Regras sobre responsabilidade por multas e encargos até a entrega e após a retirada
+- Foro, penalidades e assinaturas
+
+━━━━━━━━━━━━━━━━━━━━━━
+5️⃣ PROTOCOLO DE RETIRADA DE VEÍCULO CONSIGNADO
+━━━━━━━━━━━━━━━━━━━━━━
+Documento obrigatório ao encerrar a consignação.
+
+Deve conter:
+- Identificação das partes e do veículo
+- Data e hora da retirada
+- Condição do veículo na retirada
+- Declaração de encerramento da consignação
+- Declaração:
+  → A partir de {{data_hora_retirada}}, multas, tributos e responsabilidades passam a ser de quem retira o veículo.
+- Assinaturas
+
+━━━━━━━━━━━━━━━━━━━━━━
+REGRAS FINAIS
+- Todos os contratos e protocolos devem ser longos, completos, claros e juridicamente consistentes.
+- Não utilizar textos genéricos.
+- Linguagem profissional e aplicável à legislação brasileira.
+- Todos os documentos devem estar prontos para geração em PDF e impressão.
