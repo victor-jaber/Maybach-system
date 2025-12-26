@@ -185,7 +185,13 @@ async function generateSignedPdfBuffer(
     doc.on("error", reject);
 
     const lines = contractText.trim().split("\n");
-    for (const line of lines) {
+    const storeRoles = ["VENDEDORA", "CONSIGNATÁRIA", "RECEBEDOR", "COMPRADORA"];
+    const customerRoles = ["COMPRADOR", "CONSIGNANTE", "PROPRIETÁRIO", "ENTREGANTE", "RETIRANTE"];
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const nextLine = i < lines.length - 1 ? lines[i + 1] : "";
+      
       if (line.trim() === "") {
         doc.moveDown(0.5);
       } else if (line.match(/^CLÁUSULA|^CONTRATO PARTICULAR|^PROTOCOLO DE/)) {
@@ -201,35 +207,37 @@ async function generateSignedPdfBuffer(
         doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "left", indent: 20 });
       } else if (line.trim().startsWith("[ ]") || line.trim().startsWith("[X]") || line.trim().startsWith("[ X ]")) {
         doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "left", indent: 10 });
-      } else if (line.includes("_____") && (line.includes("VENDEDORA") || line.includes("CONSIGNATÁRIA") || line.includes("RECEBEDOR"))) {
-        // Store signature section (seller/consignee/receiver)
+      } else if (line.includes("_____")) {
+        // Check if next line contains a role for signature
+        const isStoreSignature = storeRoles.some(role => nextLine.includes(role) && !customerRoles.some(cr => nextLine.includes(cr)));
+        const isCustomerSignature = customerRoles.some(role => nextLine.includes(role));
+        
         doc.moveDown(1);
-        if (signatureInfo.storeSigned) {
+        
+        if (isStoreSignature && signatureInfo.storeSigned) {
+          // Store signature - render digital signature
           doc.fontSize(10).font("Helvetica-Bold").text("ASSINADO DIGITALMENTE", { align: "center" });
           doc.fontSize(9).font("Helvetica").text(`${store?.razaoSocial || "MayBack Cars"}`, { align: "center" });
           doc.fontSize(8).font("Helvetica").text(`CNPJ: ${formatCNPJ(store?.cnpj)}`, { align: "center" });
-          const roleMatch = line.match(/(VENDEDORA|CONSIGNATÁRIA|RECEBEDOR)/);
+          const roleMatch = nextLine.match(/(VENDEDORA|CONSIGNATÁRIA|RECEBEDOR|COMPRADORA)/);
           const role = roleMatch ? roleMatch[1] : "VENDEDORA";
           doc.fontSize(8).font("Helvetica").text(`Data: ${formatDate(signatureInfo.storeSignedAt)} | ${role}`, { align: "center" });
-        } else {
-          doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "center" });
-        }
-      } else if (line.includes("_____") && (line.includes("COMPRADOR") || line.includes("CONSIGNANTE") || line.includes("PROPRIETÁRIO") || line.includes("ENTREGANTE") || line.includes("RETIRANTE"))) {
-        // Customer signature section (buyer/consignor/owner/deliverer/withdrawer)
-        doc.moveDown(1);
-        if (signatureInfo.customerSigned) {
+          // Skip the next line (role label) since we included it
+          i++;
+        } else if (isCustomerSignature && signatureInfo.customerSigned) {
+          // Customer signature - render digital signature
           doc.fontSize(10).font("Helvetica-Bold").text("ASSINADO DIGITALMENTE", { align: "center" });
           doc.fontSize(9).font("Helvetica").text(`${signatureInfo.customerName}`, { align: "center" });
           doc.fontSize(8).font("Helvetica").text(`${signatureInfo.customerDocument}`, { align: "center" });
-          const roleMatch = line.match(/(COMPRADOR|CONSIGNANTE|PROPRIETÁRIO|ENTREGANTE|RETIRANTE)/);
+          const roleMatch = nextLine.match(/(COMPRADOR|CONSIGNANTE|PROPRIETÁRIO|ENTREGANTE|RETIRANTE)/);
           const role = roleMatch ? roleMatch[1] : "COMPRADOR";
           doc.fontSize(8).font("Helvetica").text(`Data: ${formatDate(signatureInfo.customerSignedAt)} | IP: ${signatureInfo.customerIp} | ${role}`, { align: "center" });
+          // Skip the next line (role label) since we included it
+          i++;
         } else {
+          // No signature - render the underscore line as is
           doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "center" });
         }
-      } else if (line.includes("_____")) {
-        doc.moveDown(1);
-        doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "center" });
       } else if (line.trim().match(/^(VENDEDORA|COMPRADOR|CONSIGNATÁRIA|CONSIGNANTE|ENTREGANTE|RECEBEDOR):/)) {
         doc.fontSize(10).font("Helvetica-Bold").text(line.trim(), { align: "left" });
         doc.font("Helvetica");
