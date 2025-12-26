@@ -982,12 +982,33 @@ export async function registerRoutes(
 
       const store = await storage.getStore();
 
-      // Generate PDF with store signature pre-applied
-      const signatureInfoData: SignatureInfo = {
-        storeSigned: true,
-        storeSignedAt: new Date(),
-        customerSigned: false,
-      };
+      // Check if contract is signed to include customer signature
+      let signatureInfoData: SignatureInfo;
+      
+      if (contract.status === "signed") {
+        // Get signature info for signed contracts
+        const signatures = await storage.getContractSignaturesByContractId(id);
+        const signedSignature = signatures.find(s => s.status === "signed");
+        
+        signatureInfoData = {
+          storeSigned: true,
+          storeSignedAt: contract.createdAt || new Date(),
+          customerSigned: !!signedSignature,
+          customerSignedAt: signedSignature?.signedAt || new Date(),
+          customerName: contract.customer?.name || "Cliente",
+          customerDocument: contract.customer?.cpfCnpj?.length === 11 
+            ? `CPF: ${formatCPF(contract.customer?.cpfCnpj)}` 
+            : `CNPJ: ${formatCNPJ(contract.customer?.cpfCnpj)}`,
+          customerIp: signedSignature?.signedIp || "N/A",
+        };
+      } else {
+        // Generate PDF with store signature pre-applied only
+        signatureInfoData = {
+          storeSigned: true,
+          storeSignedAt: new Date(),
+          customerSigned: false,
+        };
+      }
 
       const { buffer: pdfBuffer, fileName } = await generateSignedPdfBuffer(contract, store, signatureInfoData);
       
