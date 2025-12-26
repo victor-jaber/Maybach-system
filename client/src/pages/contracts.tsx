@@ -110,6 +110,15 @@ const contractFormSchema = z.object({
   formaPagamentoParcelas: z.string().optional(),
   multaAtraso: z.string().optional(),
   jurosAtraso: z.string().optional(),
+  valorMinimoVenda: z.string().optional(),
+  comissaoLoja: z.string().optional(),
+  prazoConsignacao: z.string().optional(),
+  multaRetiradaAntecipada: z.string().optional(),
+  chavePrincipal: z.boolean().optional(),
+  chaveReserva: z.boolean().optional(),
+  manual: z.boolean().optional(),
+  condicaoGeral: z.string().optional(),
+  observacoesEntrega: z.string().optional(),
 });
 
 type ContractFormData = z.infer<typeof contractFormSchema>;
@@ -149,6 +158,15 @@ export default function ContractsPage() {
       formaPagamentoParcelas: "",
       multaAtraso: "2",
       jurosAtraso: "1",
+      valorMinimoVenda: "",
+      comissaoLoja: "10",
+      prazoConsignacao: "60",
+      multaRetiradaAntecipada: "R$ 500,00",
+      chavePrincipal: true,
+      chaveReserva: false,
+      manual: false,
+      condicaoGeral: "",
+      observacoesEntrega: "",
     },
   });
 
@@ -156,6 +174,7 @@ export default function ContractsPage() {
   const watchedFormaPagamento = form.watch("formaPagamentoRestante");
   const watchedEntradaTotal = form.watch("entradaTotal");
   const watchedEntradaPaga = form.watch("entradaPaga");
+  const watchedContractType = form.watch("contractType");
 
   const selectedVehicle = vehicles.find(v => v.id.toString() === watchedVehicleId);
   
@@ -428,88 +447,295 @@ export default function ContractsPage() {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={form.control}
-                      name="valorVenda"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Valor da Venda</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="R$ 0,00"
-                              data-testid="input-valor-venda"
-                              onChange={(e) => {
-                                const formatted = formatCurrencyInput(e.target.value);
-                                field.onChange(formatted);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {(watchedContractType === "purchase_sale" || watchedContractType === "entry_complement" || watchedContractType === "vehicle_purchase") && (
+                      <FormField
+                        control={form.control}
+                        name="valorVenda"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{watchedContractType === "vehicle_purchase" ? "Valor de Compra" : "Valor da Venda"}</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder="R$ 0,00"
+                                data-testid="input-valor-venda"
+                                onChange={(e) => {
+                                  const formatted = formatCurrencyInput(e.target.value);
+                                  field.onChange(formatted);
+                                }}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </div>
                 </div>
 
-                <Separator />
-
-                <div className="space-y-4">
-                  <h4 className="text-sm font-medium text-muted-foreground">Valores da Entrada</h4>
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <FormField
-                      control={form.control}
-                      name="entradaTotal"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Entrada Total</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="R$ 0,00"
-                              data-testid="input-entrada-total"
-                              onChange={(e) => {
-                                const formatted = formatCurrencyInput(e.target.value);
-                                field.onChange(formatted);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="entradaPaga"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Entrada Paga</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="R$ 0,00"
-                              data-testid="input-entrada-paga"
-                              onChange={(e) => {
-                                const formatted = formatCurrencyInput(e.target.value);
-                                field.onChange(formatted);
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="space-y-2">
-                      <Label>Entrada Restante</Label>
-                      <div className="flex items-center h-9 px-3 rounded-md border bg-muted text-muted-foreground">
-                        {formatCurrency(entradaRestante)}
+                {(watchedContractType === "purchase_sale" || watchedContractType === "entry_complement") && (
+                  <>
+                    <Separator />
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-medium text-muted-foreground">Valores da Entrada</h4>
+                      <div className="grid gap-4 sm:grid-cols-3">
+                        <FormField
+                          control={form.control}
+                          name="entradaTotal"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Entrada Total</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder="R$ 0,00"
+                                  data-testid="input-entrada-total"
+                                  onChange={(e) => {
+                                    const formatted = formatCurrencyInput(e.target.value);
+                                    field.onChange(formatted);
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="entradaPaga"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Entrada Paga</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder="R$ 0,00"
+                                  data-testid="input-entrada-paga"
+                                  onChange={(e) => {
+                                    const formatted = formatCurrencyInput(e.target.value);
+                                    field.onChange(formatted);
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="space-y-2">
+                          <Label>Entrada Restante</Label>
+                          <div className="flex items-center h-9 px-3 rounded-md border bg-muted text-muted-foreground">
+                            {formatCurrency(entradaRestante)}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                <Separator />
+                    <Separator />
 
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-medium text-muted-foreground">Forma de Pagamento do Restante</h4>
+                    </div>
+                  </>
+                )}
+
+                {watchedContractType === "consignment" && (
+                  <>
+                    <Separator />
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-medium text-muted-foreground">Dados da Consignação</h4>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <FormField
+                          control={form.control}
+                          name="valorMinimoVenda"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Valor Mínimo de Venda</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder="R$ 0,00"
+                                  data-testid="input-valor-minimo"
+                                  onChange={(e) => {
+                                    const formatted = formatCurrencyInput(e.target.value);
+                                    field.onChange(formatted);
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="comissaoLoja"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Comissão da Loja (%)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  max="100"
+                                  step="0.5"
+                                  {...field}
+                                  data-testid="input-comissao"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="prazoConsignacao"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Prazo de Consignação (dias)</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  max="365"
+                                  {...field}
+                                  data-testid="input-prazo"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="multaRetiradaAntecipada"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Multa por Retirada Antecipada</FormLabel>
+                              <FormControl>
+                                <Input
+                                  {...field}
+                                  placeholder="R$ 500,00"
+                                  data-testid="input-multa-retirada"
+                                  onChange={(e) => {
+                                    const formatted = formatCurrencyInput(e.target.value);
+                                    field.onChange(formatted);
+                                  }}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {(watchedContractType === "delivery_protocol" || watchedContractType === "consignment_withdrawal") && (
+                  <>
+                    <Separator />
+                    <div className="space-y-4">
+                      <h4 className="text-sm font-medium text-muted-foreground">Checklist de Entrega/Retirada</h4>
+                      <div className="grid gap-4 sm:grid-cols-3">
+                        <FormField
+                          control={form.control}
+                          name="chavePrincipal"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  checked={field.value}
+                                  onChange={field.onChange}
+                                  className="h-4 w-4 rounded border-gray-300"
+                                  data-testid="checkbox-chave-principal"
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal">Chave Principal</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="chaveReserva"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  checked={field.value}
+                                  onChange={field.onChange}
+                                  className="h-4 w-4 rounded border-gray-300"
+                                  data-testid="checkbox-chave-reserva"
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal">Chave Reserva</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="manual"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  checked={field.value}
+                                  onChange={field.onChange}
+                                  className="h-4 w-4 rounded border-gray-300"
+                                  data-testid="checkbox-manual"
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal">Manual do Proprietário</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <FormField
+                        control={form.control}
+                        name="condicaoGeral"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Condição Geral do Veículo</FormLabel>
+                            <Select value={field.value} onValueChange={field.onChange}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-condicao">
+                                  <SelectValue placeholder="Selecione a condição" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="excelente">Excelente</SelectItem>
+                                <SelectItem value="boa">Boa</SelectItem>
+                                <SelectItem value="regular">Regular</SelectItem>
+                                <SelectItem value="reparos">Necessita Reparos</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="observacoesEntrega"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Observações</FormLabel>
+                            <FormControl>
+                              <Input
+                                {...field}
+                                placeholder="Observações sobre o estado do veículo..."
+                                data-testid="input-observacoes"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {(watchedContractType === "purchase_sale" || watchedContractType === "entry_complement") && (
                 <div className="space-y-4">
                   <h4 className="text-sm font-medium text-muted-foreground">Forma de Pagamento do Restante</h4>
                   <FormField
@@ -681,6 +907,7 @@ export default function ContractsPage() {
                     </div>
                   )}
                 </div>
+                )}
 
                 <DialogFooter>
                   <Button variant="outline" type="button" onClick={() => setIsCreateDialogOpen(false)}>
