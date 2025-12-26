@@ -1282,6 +1282,25 @@ export async function registerRoutes(
         return res.status(400).json({ message: "CPF/CNPJ do cliente inválido ou não cadastrado" });
       }
 
+      // Get store info for PDF generation
+      const store = await storage.getStore();
+      if (!store) {
+        return res.status(400).json({ message: "Configurações da loja não encontradas" });
+      }
+
+      // Create a file record pointing to the dynamic PDF endpoint (with store signature pre-applied)
+      const fileName = `contrato_${contract.id}_${Date.now()}.pdf`;
+      const fileUrl = `/api/public/contracts/${contract.id}/pdf`;
+      
+      // Save PDF file record
+      await storage.createContractFile({
+        contractId: contract.id,
+        fileUrl,
+        fileName,
+        version: 1,
+        generatedBy: "signature_request",
+      });
+
       // Invalidate any existing pending signatures for this contract
       await storage.invalidateContractSignatures(contractId);
 
@@ -1305,6 +1324,7 @@ export async function registerRoutes(
       if (emailSent) {
         // Update contract status
         await storage.updateContract(contractId, { status: "generated" });
+        console.log(`Signature email sent to ${customerEmail} for contract #${contractId}`);
         res.json({ message: "Email de assinatura enviado com sucesso", emailSent: true });
       } else {
         // Email not configured but signature record created
@@ -1345,6 +1365,40 @@ export async function registerRoutes(
     } catch (error) {
       console.error("Error getting signature status:", error);
       res.status(500).json({ message: "Erro ao buscar status da assinatura" });
+    }
+  });
+
+  // Public route: Serve contract PDF for signature (with store signature pre-applied)
+  app.get("/api/public/contracts/:id/pdf", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const contract = await storage.getContract(id);
+      
+      if (!contract) {
+        return res.status(404).json({ message: "Contrato não encontrado" });
+      }
+
+      const store = await storage.getStore();
+      if (!store) {
+        return res.status(400).json({ message: "Configurações da loja não encontradas" });
+      }
+
+      // Generate PDF with store signature pre-applied
+      const signatureInfoData: SignatureInfo = {
+        storeSigned: true,
+        storeSignedAt: new Date(),
+        storeSignedBy: store.representanteLegal || store.nomeFantasia || undefined,
+        customerSigned: false,
+      };
+
+      const { buffer: pdfBuffer, fileName } = await generateSignedPdfBuffer(contract, store, signatureInfoData);
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `inline; filename=${fileName}`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error("Error generating public PDF:", error);
+      res.status(500).json({ message: "Erro ao gerar PDF do contrato" });
     }
   });
 
