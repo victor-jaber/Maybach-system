@@ -119,6 +119,10 @@ const contractFormSchema = z.object({
   manual: z.boolean().optional(),
   condicaoGeral: z.string().optional(),
   observacoesEntrega: z.string().optional(),
+  hasTradeIn: z.boolean().optional(),
+  tradeInPlate: z.string().optional(),
+  tradeInValue: z.string().optional(),
+  tradeInNotes: z.string().optional(),
 });
 
 type ContractFormData = z.infer<typeof contractFormSchema>;
@@ -167,14 +171,23 @@ export default function ContractsPage() {
       manual: false,
       condicaoGeral: "",
       observacoesEntrega: "",
+      hasTradeIn: false,
+      tradeInPlate: "",
+      tradeInValue: "",
+      tradeInNotes: "",
     },
   });
+
+  const [tradeInVehicle, setTradeInVehicle] = useState<VehicleWithRelations | null>(null);
+  const [tradeInSearching, setTradeInSearching] = useState(false);
+  const [tradeInNotFound, setTradeInNotFound] = useState(false);
 
   const watchedVehicleId = form.watch("vehicleId");
   const watchedFormaPagamento = form.watch("formaPagamentoRestante");
   const watchedEntradaTotal = form.watch("entradaTotal");
   const watchedEntradaPaga = form.watch("entradaPaga");
   const watchedContractType = form.watch("contractType");
+  const watchedHasTradeIn = form.watch("hasTradeIn");
 
   const selectedVehicle = vehicles.find(v => v.id.toString() === watchedVehicleId);
   
@@ -184,12 +197,42 @@ export default function ContractsPage() {
     return Math.max(0, total - paga);
   })();
 
+  const searchTradeInVehicle = async (plate: string) => {
+    if (!plate || plate.length < 7) return;
+    setTradeInSearching(true);
+    setTradeInNotFound(false);
+    setTradeInVehicle(null);
+    
+    try {
+      const response = await fetch(`/api/vehicles/search/plate/${encodeURIComponent(plate)}`, {
+        headers: {
+          Authorization: `Bearer ${getAuthToken()}`,
+        },
+      });
+      
+      if (response.ok) {
+        const vehicle = await response.json();
+        setTradeInVehicle(vehicle);
+        setTradeInNotFound(false);
+      } else {
+        setTradeInNotFound(true);
+      }
+    } catch (error) {
+      console.error("Error searching trade-in vehicle:", error);
+      setTradeInNotFound(true);
+    } finally {
+      setTradeInSearching(false);
+    }
+  };
+
   const createMutation = useMutation({
     mutationFn: async (data: ContractFormData) => {
       const entradaTotalNum = data.entradaTotal ? String(parseCurrencyToNumber(data.entradaTotal)) : null;
       const entradaPagaNum = data.entradaPaga ? String(parseCurrencyToNumber(data.entradaPaga)) : null;
       const valorVendaNum = data.valorVenda ? String(parseCurrencyToNumber(data.valorVenda)) : null;
       const valorParcelaNum = data.valorParcela ? String(parseCurrencyToNumber(data.valorParcela)) : null;
+      
+      const tradeInValueNum = data.tradeInValue ? String(parseCurrencyToNumber(data.tradeInValue)) : null;
       
       return apiRequest("POST", "/api/contracts", {
         customerId: parseInt(data.customerId),
@@ -209,6 +252,9 @@ export default function ContractsPage() {
         formaPagamentoParcelas: data.formaPagamentoParcelas || null,
         multaAtraso: data.multaAtraso || null,
         jurosAtraso: data.jurosAtraso || null,
+        tradeInVehicleId: data.hasTradeIn && tradeInVehicle ? tradeInVehicle.id : null,
+        tradeInValue: data.hasTradeIn ? tradeInValueNum : null,
+        tradeInNotes: data.hasTradeIn && data.tradeInNotes ? data.tradeInNotes : null,
       });
     },
     onSuccess: () => {
@@ -219,6 +265,8 @@ export default function ContractsPage() {
       });
       setIsCreateDialogOpen(false);
       form.reset();
+      setTradeInVehicle(null);
+      setTradeInNotFound(false);
     },
     onError: () => {
       toast({
@@ -530,6 +578,149 @@ export default function ContractsPage() {
                       </div>
                     </div>
 
+                    <Separator />
+
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-medium text-muted-foreground">Veículo na Troca (Opcional)</h4>
+                        <FormField
+                          control={form.control}
+                          name="hasTradeIn"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                              <FormControl>
+                                <input
+                                  type="checkbox"
+                                  checked={field.value}
+                                  onChange={(e) => {
+                                    field.onChange(e.target.checked);
+                                    if (!e.target.checked) {
+                                      setTradeInVehicle(null);
+                                      setTradeInNotFound(false);
+                                      form.setValue("tradeInPlate", "");
+                                      form.setValue("tradeInValue", "");
+                                      form.setValue("tradeInNotes", "");
+                                    }
+                                  }}
+                                  className="h-4 w-4 rounded border-gray-300"
+                                  data-testid="checkbox-has-trade-in"
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal">Cliente dará veículo na troca</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {watchedHasTradeIn && (
+                        <div className="space-y-4 p-4 rounded-md border bg-muted/30">
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <FormField
+                              control={form.control}
+                              name="tradeInPlate"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Placa do Veículo</FormLabel>
+                                  <div className="flex gap-2">
+                                    <FormControl>
+                                      <Input
+                                        {...field}
+                                        placeholder="ABC1D23"
+                                        maxLength={7}
+                                        data-testid="input-trade-in-plate"
+                                        onChange={(e) => {
+                                          const value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                                          field.onChange(value);
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      disabled={tradeInSearching || !field.value || field.value.length < 7}
+                                      onClick={() => searchTradeInVehicle(field.value || "")}
+                                      data-testid="button-search-trade-in"
+                                    >
+                                      {tradeInSearching ? (
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                      ) : (
+                                        "Buscar"
+                                      )}
+                                    </Button>
+                                  </div>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="tradeInValue"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Valor da Troca</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      {...field}
+                                      placeholder="R$ 0,00"
+                                      data-testid="input-trade-in-value"
+                                      onChange={(e) => {
+                                        const formatted = formatCurrencyInput(e.target.value);
+                                        field.onChange(formatted);
+                                      }}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          {tradeInVehicle && (
+                            <div className="p-3 rounded-md bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                              <div className="flex items-center gap-2 text-green-700 dark:text-green-300 mb-2">
+                                <CheckCircle className="h-4 w-4" />
+                                <span className="font-medium">Veículo encontrado no sistema</span>
+                              </div>
+                              <div className="text-sm text-muted-foreground">
+                                <p><strong>{tradeInVehicle.brand?.name} {tradeInVehicle.model}</strong> - {tradeInVehicle.year}</p>
+                                <p>Placa: {tradeInVehicle.plate} | Cor: {tradeInVehicle.color}</p>
+                                {tradeInVehicle.mileage && <p>Km: {tradeInVehicle.mileage.toLocaleString("pt-BR")}</p>}
+                              </div>
+                            </div>
+                          )}
+
+                          {tradeInNotFound && (
+                            <div className="p-3 rounded-md bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800">
+                              <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-300 mb-2">
+                                <XCircle className="h-4 w-4" />
+                                <span className="font-medium">Veículo não cadastrado</span>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                Este veículo não está cadastrado no sistema. Você precisará cadastrá-lo separadamente em "Veículos" antes de finalizar o contrato.
+                              </p>
+                            </div>
+                          )}
+
+                          <FormField
+                            control={form.control}
+                            name="tradeInNotes"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Observações sobre a Troca</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    placeholder="Condições do veículo, pendências, etc..."
+                                    data-testid="input-trade-in-notes"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </>
                 )}
 
