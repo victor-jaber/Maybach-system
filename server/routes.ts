@@ -5,7 +5,7 @@ import crypto from "crypto";
 import { storage } from "./storage";
 import { registerAuthRoutes, isAuthenticated, seedAdminUser } from "./auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
-import { sendSignatureEmail, isEmailConfigured } from "./email";
+import { sendSignatureEmail, sendSignedContractEmail, isEmailConfigured } from "./email";
 import { 
   getEntryComplementContract, 
   getPurchaseSaleContract, 
@@ -51,6 +51,230 @@ function formatDate(date: Date | string | null | undefined): string {
   if (!date) return "";
   const d = new Date(date);
   return d.toLocaleDateString("pt-BR");
+}
+
+interface SignatureInfo {
+  storeSigned: boolean;
+  storeSignedAt?: Date;
+  storeSignedBy?: string;
+  customerSigned: boolean;
+  customerSignedAt?: Date;
+  customerName?: string;
+  customerDocument?: string;
+  customerIp?: string;
+}
+
+async function generateSignedPdfBuffer(
+  contract: any,
+  store: any,
+  signatureInfo: SignatureInfo
+): Promise<{ buffer: Buffer; fileName: string }> {
+  const buildAddress = (obj: { street?: string | null; number?: string | null; complement?: string | null; neighborhood?: string | null; city?: string | null; state?: string | null; cep?: string | null }) => {
+    const parts = [];
+    if (obj.street) parts.push(obj.street);
+    if (obj.number) parts.push(`nº ${obj.number}`);
+    if (obj.complement) parts.push(obj.complement);
+    if (obj.neighborhood) parts.push(`Bairro ${obj.neighborhood}`);
+    if (obj.city && obj.state) parts.push(`${obj.city}/${obj.state}`);
+    if (obj.cep) parts.push(`CEP ${obj.cep}`);
+    return parts.join(", ") || "Não informado";
+  };
+
+  const contractData: ContractData = {
+    razaoSocialLoja: store?.razaoSocial || "Não informado",
+    cnpjLoja: formatCNPJ(store?.cnpj) || "Não informado",
+    enderecoLoja: store ? buildAddress(store) : "Não informado",
+    representanteLoja: store?.representanteLegal || "Não informado",
+    cpfRepresentanteLoja: formatCPF(store?.cpfRepresentante) || "Não informado",
+    telefoneLoja: store?.phone || "Não informado",
+    
+    nomeCliente: contract.customer?.name || "Não informado",
+    cpfCnpjCliente: contract.customer?.cpfCnpj?.length === 11 
+      ? formatCPF(contract.customer.cpfCnpj) 
+      : formatCNPJ(contract.customer?.cpfCnpj),
+    tipoDocumentoCliente: (contract.customer?.cpfCnpj?.replace(/\D/g, "").length === 11 ? "CPF" : "CNPJ") as "CPF" | "CNPJ",
+    rgCliente: contract.customer?.rg || "Não informado",
+    cnhCliente: contract.customer?.cnh || "Não informado",
+    enderecoCliente: contract.customer ? buildAddress(contract.customer) : "Não informado",
+    telefoneCliente: contract.customer?.phone || "Não informado",
+    emailCliente: contract.customer?.email || "Não informado",
+    
+    marca: contract.vehicle?.brand?.name || "Não informado",
+    modelo: contract.vehicle?.model || "Não informado",
+    ano: contract.vehicle?.year?.toString() || "Não informado",
+    cor: contract.vehicle?.color || "Não informado",
+    placa: contract.vehicle?.plate || "Não informado",
+    chassi: contract.vehicle?.chassis || "Não informado",
+    renavam: contract.vehicle?.renavam || "Não informado",
+    km: contract.vehicle?.mileage?.toLocaleString("pt-BR") || "0",
+    
+    valorVeiculo: formatCurrency(contract.valorVenda),
+    entradaTotal: formatCurrency(contract.entradaTotal),
+    entradaPaga: formatCurrency(contract.entradaPaga),
+    entradaRestante: formatCurrency(contract.entradaRestante),
+    valorFinanciado: formatCurrency(contract.valorFinanciado),
+    bancoFinanciador: contract.bancoFinanciamento || "",
+    
+    formaPagamento: (contract.formaPagamentoRestante as "avista" | "parcelado") || "avista",
+    dataVencimentoAvista: formatDate(contract.dataVencimentoAvista),
+    quantidadeParcelas: contract.quantidadeParcelas || 0,
+    valorParcela: formatCurrency(contract.valorParcela),
+    diaVencimento: contract.diaVencimento || 1,
+    formaPagamentoParcelas: contract.formaPagamentoParcelas || "",
+    
+    multaPercentual: contract.multaAtraso?.toString() || "2",
+    jurosMensal: contract.jurosAtraso?.toString() || "1",
+    
+    cidadeForo: store?.city || "São Paulo",
+    dataEmissao: formatDate(new Date()),
+    
+    tradeInMarca: contract.tradeInVehicle?.brand?.name || undefined,
+    tradeInModelo: contract.tradeInVehicle?.model || undefined,
+    tradeInAno: contract.tradeInVehicle?.year?.toString() || undefined,
+    tradeInCor: contract.tradeInVehicle?.color || undefined,
+    tradeInPlaca: contract.tradeInVehicle?.plate || undefined,
+    tradeInChassi: contract.tradeInVehicle?.chassis || undefined,
+    tradeInRenavam: contract.tradeInVehicle?.renavam || undefined,
+    tradeInKm: contract.tradeInVehicle?.mileage?.toLocaleString("pt-BR") || undefined,
+    tradeInValor: contract.tradeInValue ? formatCurrency(contract.tradeInValue) : undefined,
+    tradeInObservacoes: contract.tradeInNotes || undefined,
+  };
+
+  let contractText = "";
+  let contractFileName = "contrato";
+  
+  switch (contract.contractType) {
+    case "entry_complement":
+      contractText = getEntryComplementContract(contractData);
+      contractFileName = "complemento_entrada";
+      break;
+    case "purchase_sale":
+      contractText = getPurchaseSaleContract(contractData);
+      contractFileName = "compra_venda";
+      break;
+    case "vehicle_purchase":
+      contractText = getVehiclePurchaseContract(contractData);
+      contractFileName = "aquisicao_veiculo";
+      break;
+    case "consignment":
+      contractText = getConsignmentContract(contractData);
+      contractFileName = "consignacao";
+      break;
+    case "delivery_protocol":
+      contractText = getDeliveryProtocol(contractData);
+      contractFileName = "protocolo_entrega";
+      break;
+    case "consignment_withdrawal":
+      contractText = getConsignmentWithdrawalProtocol(contractData);
+      contractFileName = "protocolo_retirada";
+      break;
+    default:
+      contractText = getPurchaseSaleContract(contractData);
+      contractFileName = "contrato";
+  }
+
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ margin: 50, size: "A4" });
+    const chunks: Buffer[] = [];
+
+    doc.on("data", (chunk) => chunks.push(chunk));
+    doc.on("end", () => {
+      const pdfBuffer = Buffer.concat(chunks);
+      resolve({ buffer: pdfBuffer, fileName: `${contractFileName}_${contract.id}.pdf` });
+    });
+    doc.on("error", reject);
+
+    const lines = contractText.trim().split("\n");
+    for (const line of lines) {
+      if (line.trim() === "") {
+        doc.moveDown(0.5);
+      } else if (line.match(/^CLÁUSULA|^CONTRATO PARTICULAR|^PROTOCOLO DE/)) {
+        doc.fontSize(11).font("Helvetica-Bold").text(line.trim(), { align: "left" });
+        doc.font("Helvetica").fontSize(10);
+      } else if (line.match(/^IDENTIFICAÇÃO|^DATA E HORA|^CHECKLIST|^CONDIÇÃO|^DECLARAÇÃO|^ASSINATURAS|^MOTIVO|^ITENS/)) {
+        doc.moveDown(0.5);
+        doc.fontSize(10).font("Helvetica-Bold").text(line.trim(), { align: "left" });
+        doc.font("Helvetica").fontSize(10);
+      } else if (line.match(/^\d+\.\d+\./)) {
+        doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "justify", indent: 0 });
+      } else if (line.trim().startsWith("a)") || line.trim().startsWith("b)") || line.trim().startsWith("c)") || line.trim().startsWith("d)") || line.trim().startsWith("e)")) {
+        doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "left", indent: 20 });
+      } else if (line.trim().startsWith("[ ]") || line.trim().startsWith("[X]") || line.trim().startsWith("[ X ]")) {
+        doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "left", indent: 10 });
+      } else if (line.includes("_____") && (line.includes("VENDEDORA") || line.includes("CONSIGNATÁRIA") || line.includes("RECEBEDOR"))) {
+        // Store signature section (seller/consignee/receiver)
+        doc.moveDown(1);
+        if (signatureInfo.storeSigned) {
+          doc.fontSize(10).font("Helvetica-Bold").text("ASSINADO DIGITALMENTE", { align: "center" });
+          doc.fontSize(9).font("Helvetica").text(`${store?.razaoSocial || "MayBack Cars"}`, { align: "center" });
+          doc.fontSize(8).font("Helvetica").text(`CNPJ: ${formatCNPJ(store?.cnpj)}`, { align: "center" });
+          const roleMatch = line.match(/(VENDEDORA|CONSIGNATÁRIA|RECEBEDOR)/);
+          const role = roleMatch ? roleMatch[1] : "VENDEDORA";
+          doc.fontSize(8).font("Helvetica").text(`Data: ${formatDate(signatureInfo.storeSignedAt)} | ${role}`, { align: "center" });
+        } else {
+          doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "center" });
+        }
+      } else if (line.includes("_____") && (line.includes("COMPRADOR") || line.includes("CONSIGNANTE") || line.includes("PROPRIETÁRIO") || line.includes("ENTREGANTE") || line.includes("RETIRANTE"))) {
+        // Customer signature section (buyer/consignor/owner/deliverer/withdrawer)
+        doc.moveDown(1);
+        if (signatureInfo.customerSigned) {
+          doc.fontSize(10).font("Helvetica-Bold").text("ASSINADO DIGITALMENTE", { align: "center" });
+          doc.fontSize(9).font("Helvetica").text(`${signatureInfo.customerName}`, { align: "center" });
+          doc.fontSize(8).font("Helvetica").text(`${signatureInfo.customerDocument}`, { align: "center" });
+          const roleMatch = line.match(/(COMPRADOR|CONSIGNANTE|PROPRIETÁRIO|ENTREGANTE|RETIRANTE)/);
+          const role = roleMatch ? roleMatch[1] : "COMPRADOR";
+          doc.fontSize(8).font("Helvetica").text(`Data: ${formatDate(signatureInfo.customerSignedAt)} | IP: ${signatureInfo.customerIp} | ${role}`, { align: "center" });
+        } else {
+          doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "center" });
+        }
+      } else if (line.includes("_____")) {
+        doc.moveDown(1);
+        doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "center" });
+      } else if (line.trim().match(/^(VENDEDORA|COMPRADOR|CONSIGNATÁRIA|CONSIGNANTE|ENTREGANTE|RECEBEDOR):/)) {
+        doc.fontSize(10).font("Helvetica-Bold").text(line.trim(), { align: "left" });
+        doc.font("Helvetica");
+      } else if (line.trim().startsWith("TESTEMUNHAS:")) {
+        doc.moveDown(1);
+        doc.fontSize(10).font("Helvetica-Bold").text(line.trim(), { align: "left" });
+        doc.font("Helvetica");
+      } else if (line.trim().startsWith("DECLARO") || line.trim().startsWith("Por meio deste")) {
+        doc.fontSize(10).font("Helvetica-Bold").text(line.trim(), { align: "justify" });
+        doc.font("Helvetica");
+      } else {
+        doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "justify" });
+      }
+    }
+
+    // Add digital signature attestation at the end
+    if (signatureInfo.storeSigned || signatureInfo.customerSigned) {
+      doc.moveDown(2);
+      doc.fontSize(8).font("Helvetica-Bold").text("CERTIFICADO DE ASSINATURA DIGITAL", { align: "center" });
+      doc.moveDown(0.5);
+      doc.fontSize(7).font("Helvetica").text(
+        "Este documento foi assinado digitalmente conforme a Medida Provisória nº 2.200-2/2001, " +
+        "que instituiu a Infraestrutura de Chaves Públicas Brasileira (ICP-Brasil). " +
+        "A assinatura digital tem a mesma validade jurídica de uma assinatura manuscrita.",
+        { align: "center" }
+      );
+      doc.moveDown(1);
+      
+      if (signatureInfo.storeSigned) {
+        doc.fontSize(7).font("Helvetica").text(
+          `Assinatura VENDEDORA: ${store?.razaoSocial} - ${formatDate(signatureInfo.storeSignedAt)}`,
+          { align: "left" }
+        );
+      }
+      
+      if (signatureInfo.customerSigned) {
+        doc.fontSize(7).font("Helvetica").text(
+          `Assinatura COMPRADOR: ${signatureInfo.customerName} - ${formatDate(signatureInfo.customerSignedAt)} - IP: ${signatureInfo.customerIp}`,
+          { align: "left" }
+        );
+      }
+    }
+
+    doc.end();
+  });
 }
 
 const updateAdminUserSchema = z.object({
@@ -749,161 +973,70 @@ export async function registerRoutes(
       }
 
       const store = await storage.getStore();
-      
-      const buildAddress = (obj: { street?: string | null; number?: string | null; complement?: string | null; neighborhood?: string | null; city?: string | null; state?: string | null; cep?: string | null }) => {
-        const parts = [];
-        if (obj.street) parts.push(obj.street);
-        if (obj.number) parts.push(`nº ${obj.number}`);
-        if (obj.complement) parts.push(obj.complement);
-        if (obj.neighborhood) parts.push(`Bairro ${obj.neighborhood}`);
-        if (obj.city && obj.state) parts.push(`${obj.city}/${obj.state}`);
-        if (obj.cep) parts.push(`CEP ${obj.cep}`);
-        return parts.join(", ") || "Não informado";
+
+      // Generate PDF with store signature pre-applied
+      const signatureInfoData: SignatureInfo = {
+        storeSigned: true,
+        storeSignedAt: new Date(),
+        customerSigned: false,
       };
 
-      const contractData: ContractData = {
-        razaoSocialLoja: store?.razaoSocial || "Não informado",
-        cnpjLoja: formatCNPJ(store?.cnpj) || "Não informado",
-        enderecoLoja: store ? buildAddress(store) : "Não informado",
-        representanteLoja: store?.representanteLegal || "Não informado",
-        cpfRepresentanteLoja: formatCPF(store?.cpfRepresentante) || "Não informado",
-        telefoneLoja: store?.phone || "Não informado",
-        
-        nomeCliente: contract.customer?.name || "Não informado",
-        cpfCnpjCliente: contract.customer?.cpfCnpj?.length === 11 
-          ? formatCPF(contract.customer.cpfCnpj) 
-          : formatCNPJ(contract.customer?.cpfCnpj),
-        tipoDocumentoCliente: (contract.customer?.cpfCnpj?.replace(/\D/g, "").length === 11 ? "CPF" : "CNPJ") as "CPF" | "CNPJ",
-        rgCliente: contract.customer?.rg || "Não informado",
-        cnhCliente: contract.customer?.cnh || "Não informado",
-        enderecoCliente: contract.customer ? buildAddress(contract.customer) : "Não informado",
-        telefoneCliente: contract.customer?.phone || "Não informado",
-        emailCliente: contract.customer?.email || "Não informado",
-        
-        marca: contract.vehicle?.brand?.name || "Não informado",
-        modelo: contract.vehicle?.model || "Não informado",
-        ano: contract.vehicle?.year?.toString() || "Não informado",
-        cor: contract.vehicle?.color || "Não informado",
-        placa: contract.vehicle?.plate || "Não informado",
-        chassi: contract.vehicle?.chassis || "Não informado",
-        renavam: contract.vehicle?.renavam || "Não informado",
-        km: contract.vehicle?.mileage?.toLocaleString("pt-BR") || "0",
-        
-        valorVeiculo: formatCurrency(contract.valorVenda),
-        entradaTotal: formatCurrency(contract.entradaTotal),
-        entradaPaga: formatCurrency(contract.entradaPaga),
-        entradaRestante: formatCurrency(contract.entradaRestante),
-        valorFinanciado: formatCurrency(contract.valorFinanciado),
-        bancoFinanciador: contract.bancoFinanciamento || "",
-        
-        formaPagamento: (contract.formaPagamentoRestante as "avista" | "parcelado") || "avista",
-        dataVencimentoAvista: formatDate(contract.dataVencimentoAvista),
-        quantidadeParcelas: contract.quantidadeParcelas || 0,
-        valorParcela: formatCurrency(contract.valorParcela),
-        diaVencimento: contract.diaVencimento || 1,
-        formaPagamentoParcelas: contract.formaPagamentoParcelas || "",
-        
-        multaPercentual: contract.multaAtraso?.toString() || "2",
-        jurosMensal: contract.jurosAtraso?.toString() || "1",
-        
-        cidadeForo: store?.city || "São Paulo",
-        dataEmissao: formatDate(new Date()),
-        
-        tradeInMarca: contract.tradeInVehicle?.brand?.name || undefined,
-        tradeInModelo: contract.tradeInVehicle?.model || undefined,
-        tradeInAno: contract.tradeInVehicle?.year?.toString() || undefined,
-        tradeInCor: contract.tradeInVehicle?.color || undefined,
-        tradeInPlaca: contract.tradeInVehicle?.plate || undefined,
-        tradeInChassi: contract.tradeInVehicle?.chassis || undefined,
-        tradeInRenavam: contract.tradeInVehicle?.renavam || undefined,
-        tradeInKm: contract.tradeInVehicle?.mileage?.toLocaleString("pt-BR") || undefined,
-        tradeInValor: contract.tradeInValue ? formatCurrency(contract.tradeInValue) : undefined,
-        tradeInObservacoes: contract.tradeInNotes || undefined,
-      };
-
-      let contractText = "";
-      let contractFileName = "contrato";
+      const { buffer: pdfBuffer, fileName } = await generateSignedPdfBuffer(contract, store, signatureInfoData);
       
-      switch (contract.contractType) {
-        case "entry_complement":
-          contractText = getEntryComplementContract(contractData);
-          contractFileName = "complemento_entrada";
-          break;
-        case "purchase_sale":
-          contractText = getPurchaseSaleContract(contractData);
-          contractFileName = "compra_venda";
-          break;
-        case "vehicle_purchase":
-          contractText = getVehiclePurchaseContract(contractData);
-          contractFileName = "aquisicao_veiculo";
-          break;
-        case "consignment":
-          contractText = getConsignmentContract(contractData);
-          contractFileName = "consignacao";
-          break;
-        case "delivery_protocol":
-          contractText = getDeliveryProtocol(contractData);
-          contractFileName = "protocolo_entrega";
-          break;
-        case "consignment_withdrawal":
-          contractText = getConsignmentWithdrawalProtocol(contractData);
-          contractFileName = "protocolo_retirada";
-          break;
-        default:
-          contractText = getPurchaseSaleContract(contractData);
-          contractFileName = "contrato";
-      }
-
-      const doc = new PDFDocument({ margin: 50, size: "A4" });
-      const chunks: Buffer[] = [];
-
-      doc.on("data", (chunk) => chunks.push(chunk));
-      doc.on("end", () => {
-        const pdfBuffer = Buffer.concat(chunks);
-        res.setHeader("Content-Type", "application/pdf");
-        res.setHeader("Content-Disposition", `attachment; filename=${contractFileName}_${id}.pdf`);
-        res.send(pdfBuffer);
-      });
-
-      const lines = contractText.trim().split("\n");
-      for (const line of lines) {
-        if (line.trim() === "") {
-          doc.moveDown(0.5);
-        } else if (line.match(/^CLÁUSULA|^CONTRATO PARTICULAR|^PROTOCOLO DE/)) {
-          doc.fontSize(11).font("Helvetica-Bold").text(line.trim(), { align: "left" });
-          doc.font("Helvetica").fontSize(10);
-        } else if (line.match(/^IDENTIFICAÇÃO|^DATA E HORA|^CHECKLIST|^CONDIÇÃO|^DECLARAÇÃO|^ASSINATURAS|^MOTIVO|^ITENS/)) {
-          doc.moveDown(0.5);
-          doc.fontSize(10).font("Helvetica-Bold").text(line.trim(), { align: "left" });
-          doc.font("Helvetica").fontSize(10);
-        } else if (line.match(/^\d+\.\d+\./)) {
-          doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "justify", indent: 0 });
-        } else if (line.trim().startsWith("a)") || line.trim().startsWith("b)") || line.trim().startsWith("c)") || line.trim().startsWith("d)") || line.trim().startsWith("e)")) {
-          doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "left", indent: 20 });
-        } else if (line.trim().startsWith("[ ]") || line.trim().startsWith("[X]") || line.trim().startsWith("[ X ]")) {
-          doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "left", indent: 10 });
-        } else if (line.includes("_____")) {
-          doc.moveDown(1);
-          doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "center" });
-        } else if (line.trim().match(/^(VENDEDORA|COMPRADOR|CONSIGNATÁRIA|CONSIGNANTE|ENTREGANTE|RECEBEDOR):/)) {
-          doc.fontSize(10).font("Helvetica-Bold").text(line.trim(), { align: "left" });
-          doc.font("Helvetica");
-        } else if (line.trim().startsWith("TESTEMUNHAS:")) {
-          doc.moveDown(1);
-          doc.fontSize(10).font("Helvetica-Bold").text(line.trim(), { align: "left" });
-          doc.font("Helvetica");
-        } else if (line.trim().startsWith("DECLARO") || line.trim().startsWith("Por meio deste")) {
-          doc.fontSize(10).font("Helvetica-Bold").text(line.trim(), { align: "justify" });
-          doc.font("Helvetica");
-        } else {
-          doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "justify" });
-        }
-      }
-
-      doc.end();
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
+      res.send(pdfBuffer);
     } catch (error) {
       console.error("Error generating PDF:", error);
       res.status(500).json({ message: "Erro ao gerar PDF do contrato" });
+    }
+  });
+
+  // Serve signed PDF (regenerates on demand with stored signature data)
+  app.get("/api/contracts/:id/pdf/signed", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const contract = await storage.getContract(id);
+      if (!contract) {
+        return res.status(404).json({ message: "Contrato não encontrado" });
+      }
+
+      // Check if contract is signed
+      if (contract.status !== "signed") {
+        return res.status(400).json({ message: "Este contrato ainda não foi assinado digitalmente" });
+      }
+
+      // Get signature info
+      const signatures = await storage.getContractSignaturesByContractId(id);
+      const signedSignature = signatures.find(s => s.status === "signed");
+      
+      if (!signedSignature) {
+        return res.status(400).json({ message: "Assinatura não encontrada" });
+      }
+
+      const store = await storage.getStore();
+
+      // Generate PDF with both signatures
+      const signatureInfoData: SignatureInfo = {
+        storeSigned: true,
+        storeSignedAt: contract.createdAt || new Date(),
+        customerSigned: true,
+        customerSignedAt: signedSignature.signedAt || new Date(),
+        customerName: contract.customer?.name || "Cliente",
+        customerDocument: contract.customer?.cpfCnpj?.length === 11 
+          ? `CPF: ${formatCPF(contract.customer?.cpfCnpj)}` 
+          : `CNPJ: ${formatCNPJ(contract.customer?.cpfCnpj)}`,
+        customerIp: signedSignature.signedIp || "N/A",
+      };
+
+      const { buffer: pdfBuffer, fileName } = await generateSignedPdfBuffer(contract, store, signatureInfoData);
+      
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("Content-Disposition", `attachment; filename=assinado_${fileName}`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error("Error generating signed PDF:", error);
+      res.status(500).json({ message: "Erro ao gerar PDF assinado do contrato" });
     }
   });
 
@@ -1387,17 +1520,93 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Validação pendente" });
       }
 
+      const signedAt = new Date();
+
       // Update signature record
       await storage.updateContractSignature(signature.id, {
         status: "signed",
-        signedAt: new Date(),
+        signedAt,
         signedIp: clientIp,
       });
 
       // Update contract status
       await storage.updateContract(signature.contractId, { status: "signed" });
 
-      res.json({ message: "Contrato assinado com sucesso!", signed: true });
+      // Get contract data for PDF regeneration
+      const contract = await storage.getContract(signature.contractId);
+      const store = await storage.getStore();
+
+      let pdfGenerated = false;
+      let emailSent = false;
+
+      if (contract && contract.customer) {
+        // Generate signed PDF with both signatures
+        const signatureInfoData: SignatureInfo = {
+          storeSigned: true,
+          storeSignedAt: contract.createdAt || new Date(),
+          customerSigned: true,
+          customerSignedAt: signedAt,
+          customerName: contract.customer.name,
+          customerDocument: contract.customer.cpfCnpj?.length === 11 
+            ? `CPF: ${formatCPF(contract.customer.cpfCnpj)}` 
+            : `CNPJ: ${formatCNPJ(contract.customer.cpfCnpj)}`,
+          customerIp: clientIp,
+        };
+
+        try {
+          const { buffer: pdfBuffer, fileName } = await generateSignedPdfBuffer(contract, store, signatureInfoData);
+          pdfGenerated = true;
+
+          // Save the signed PDF record with valid API URL for retrieval
+          await storage.createContractFile({
+            contractId: contract.id,
+            fileUrl: `/api/contracts/${contract.id}/pdf/signed`,
+            fileName: `contrato_assinado_${contract.id}.pdf`,
+            version: 2,
+            generatedBy: "digital_signature",
+          });
+
+          // Send signed contract email to customer
+          if (contract.customer.email) {
+            emailSent = await sendSignedContractEmail(
+              contract,
+              contract.customer.email,
+              pdfBuffer,
+              fileName
+            );
+          }
+        } catch (pdfError) {
+          console.error("Error generating signed PDF:", pdfError);
+        }
+      }
+
+      // Return appropriate response based on success/failure
+      if (!pdfGenerated) {
+        return res.status(207).json({ 
+          message: "Contrato assinado, porém houve falha ao gerar o PDF assinado. Tente novamente.", 
+          signed: true,
+          pdfGenerated: false,
+          emailSent: false,
+          partialSuccess: true,
+        });
+      }
+
+      if (!emailSent && contract?.customer?.email) {
+        return res.status(207).json({ 
+          message: "Contrato assinado com sucesso, porém houve falha ao enviar o email. O PDF assinado está disponível para download.", 
+          signed: true,
+          pdfGenerated: true,
+          emailSent: false,
+          partialSuccess: true,
+        });
+      }
+
+      res.json({ 
+        message: "Contrato assinado com sucesso!", 
+        signed: true,
+        pdfGenerated,
+        emailSent: emailSent || !contract?.customer?.email,
+      });
     } catch (error) {
       console.error("Error signing contract:", error);
       res.status(500).json({ message: "Erro ao assinar contrato" });

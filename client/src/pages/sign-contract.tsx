@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { FileCheck, Shield, Car, User, AlertCircle, CheckCircle2, Lock, Loader2 } from "lucide-react";
+import { FileCheck, Shield, Car, User, AlertCircle, CheckCircle2, Lock, Loader2, FileText, Download, ExternalLink } from "lucide-react";
 import type { ContractWithRelations, Store, ContractFile } from "@shared/schema";
 
 interface SignatureInfo {
@@ -30,6 +30,7 @@ interface ContractData {
   files: ContractFile[];
   isSigned: boolean;
   signedAt: Date | null;
+  pdfUrl?: string;
 }
 
 const contractTypeNames: Record<string, string> = {
@@ -58,6 +59,7 @@ export default function SignContractPage() {
   const [validationCode, setValidationCode] = useState("");
   const [step, setStep] = useState<"loading" | "validate" | "sign" | "signed" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState("");
+  const [showPdf, setShowPdf] = useState(false);
 
   const { data: signatureInfo, isLoading: isLoadingInfo, error: infoError } = useQuery<SignatureInfo>({
     queryKey: ["/api/public/signature", token],
@@ -86,11 +88,29 @@ export default function SignContractPage() {
 
   const signMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", `/api/public/signature/${token}/sign`, {});
-      return res.json();
+      const res = await fetch(`/api/public/signature/${token}/sign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json();
+      if (res.status === 207) {
+        return { ...data, partialSuccess: true };
+      }
+      if (!res.ok) {
+        throw new Error(data.message || "Erro ao assinar contrato");
+      }
+      return data;
     },
-    onSuccess: () => {
-      toast({ title: "Contrato assinado!", description: "Sua assinatura foi registrada com sucesso." });
+    onSuccess: (data: { message?: string; partialSuccess?: boolean }) => {
+      if (data.partialSuccess) {
+        toast({ 
+          title: "Contrato assinado", 
+          description: data.message || "Sua assinatura foi registrada, mas alguns serviços falharam.",
+        });
+      } else {
+        toast({ title: "Contrato assinado!", description: "Sua assinatura foi registrada com sucesso." });
+      }
       setStep("signed");
     },
     onError: (error: Error) => {
@@ -226,7 +246,7 @@ export default function SignContractPage() {
               <div className="flex items-center gap-2">
                 <FileCheck className="h-4 w-4 text-muted-foreground" />
                 <Badge variant="outline" className="text-xs">
-                  {contractTypeNames[signatureInfo?.contractType] || signatureInfo?.contractType}
+                  {signatureInfo?.contractType ? contractTypeNames[signatureInfo.contractType] || signatureInfo.contractType : ""}
                 </Badge>
               </div>
             </div>
@@ -279,6 +299,8 @@ export default function SignContractPage() {
   if (step === "sign") {
     const contract = contractData?.contract;
     const store = contractData?.store;
+    const files = contractData?.files || [];
+    const pdfFile = files.find(f => f.fileName?.endsWith(".pdf"));
 
     if (isLoadingContract || !contract) {
       return (
@@ -299,7 +321,7 @@ export default function SignContractPage() {
 
     return (
       <div className="min-h-screen bg-background p-4">
-        <div className="max-w-3xl mx-auto space-y-6">
+        <div className="max-w-4xl mx-auto space-y-6">
           <Card>
             <CardHeader className="text-center border-b">
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
@@ -313,6 +335,63 @@ export default function SignContractPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
+              {/* PDF Viewer */}
+              {pdfFile && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <h4 className="font-semibold text-sm text-muted-foreground flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      CONTRATO COMPLETO
+                    </h4>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setShowPdf(!showPdf)}
+                        data-testid="button-toggle-pdf"
+                      >
+                        {showPdf ? "Ocultar PDF" : "Visualizar PDF"}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        asChild
+                      >
+                        <a 
+                          href={pdfFile.fileUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          data-testid="button-download-pdf"
+                        >
+                          <Download className="h-4 w-4 mr-1" />
+                          Baixar PDF
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                  {showPdf && (
+                    <div className="border rounded-lg overflow-hidden">
+                      <iframe 
+                        src={pdfFile.fileUrl} 
+                        className="w-full h-[600px]"
+                        title="Contrato PDF"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {!pdfFile && (
+                <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-4 text-center">
+                  <p className="text-sm text-amber-700">
+                    O PDF do contrato ainda não foi gerado. Entre em contato com a loja.
+                  </p>
+                </div>
+              )}
+
+              <Separator />
+
+              {/* Summary Section */}
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <h4 className="font-semibold text-sm text-muted-foreground">COMPRADOR</h4>
@@ -419,7 +498,7 @@ export default function SignContractPage() {
                   size="lg" 
                   className="w-full" 
                   onClick={handleSign}
-                  disabled={signMutation.isPending}
+                  disabled={signMutation.isPending || !pdfFile}
                   data-testid="button-sign-contract"
                 >
                   {signMutation.isPending ? (

@@ -156,6 +156,125 @@ MayBack Cars
   }
 }
 
+export async function sendSignedContractEmail(
+  contract: ContractWithRelations,
+  customerEmail: string,
+  pdfBuffer: Buffer,
+  fileName: string
+): Promise<boolean> {
+  const transporter = createTransporter();
+  if (!transporter) {
+    console.log("Email not configured, skipping signed contract email");
+    return false;
+  }
+
+  const contractTypeNames: Record<string, string> = {
+    entry_complement: "Complemento de Entrada",
+    purchase_sale: "Compra e Venda",
+    vehicle_purchase: "Aquisição de Veículo",
+    consignment: "Consignação",
+    delivery_protocol: "Protocolo de Entrega",
+    consignment_withdrawal: "Retirada em Consignação",
+  };
+
+  const contractTypeName = contractTypeNames[contract.contractType] || contract.contractType;
+  const vehicleDescription = `${contract.vehicle.brand.name} ${contract.vehicle.model} ${contract.vehicle.year}`;
+  const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER;
+
+  const mailOptions = {
+    from: `"MayBack Cars" <${fromEmail}>`,
+    to: customerEmail,
+    subject: `Contrato Assinado - ${contractTypeName} - ${vehicleDescription}`,
+    attachments: [
+      {
+        filename: fileName,
+        content: pdfBuffer,
+        contentType: "application/pdf",
+      },
+    ],
+    html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { text-align: center; padding: 20px; background: #0D0D0C; color: #C1A36A; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .content { padding: 30px 20px; background: #f9f9f9; }
+    .success-box { background: #d4edda; border: 1px solid #c3e6cb; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; }
+    .success-box h2 { color: #155724; margin: 0 0 10px 0; }
+    .vehicle-info { background: white; padding: 15px; border-radius: 8px; margin: 20px 0; }
+    .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>MayBack Cars</h1>
+    </div>
+    <div class="content">
+      <div class="success-box">
+        <h2>Contrato Assinado com Sucesso!</h2>
+        <p>Sua assinatura digital foi registrada.</p>
+      </div>
+      
+      <p>Prezado(a) <strong>${contract.customer.name}</strong>,</p>
+      
+      <p>Seu contrato de <strong>${contractTypeName}</strong> foi assinado digitalmente com sucesso.</p>
+      
+      <div class="vehicle-info">
+        <strong>Veículo:</strong> ${vehicleDescription}<br>
+        <strong>Placa:</strong> ${contract.vehicle.plate || "N/A"}<br>
+        <strong>Contrato:</strong> #${contract.id}<br>
+        <strong>Data da Assinatura:</strong> ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")}
+      </div>
+      
+      <p>Em anexo você encontra uma cópia do contrato assinado para seus registros.</p>
+      
+      <p>Guarde este documento para futuras referências.</p>
+      
+      <p>Obrigado por escolher a MayBack Cars!</p>
+    </div>
+    <div class="footer">
+      <p>MayBack Cars - Qualidade e Confiança</p>
+      <p>Este é um email automático, não responda.</p>
+    </div>
+  </div>
+</body>
+</html>
+    `,
+    text: `
+Contrato Assinado com Sucesso!
+
+Prezado(a) ${contract.customer.name},
+
+Seu contrato de ${contractTypeName} foi assinado digitalmente com sucesso.
+
+Veículo: ${vehicleDescription}
+Placa: ${contract.vehicle.plate || "N/A"}
+Contrato: #${contract.id}
+Data da Assinatura: ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR")}
+
+Em anexo você encontra uma cópia do contrato assinado para seus registros.
+
+Guarde este documento para futuras referências.
+
+Obrigado por escolher a MayBack Cars!
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Signed contract email sent to ${customerEmail} for contract #${contract.id}`);
+    return true;
+  } catch (error) {
+    console.error("Failed to send signed contract email:", error);
+    return false;
+  }
+}
+
 export function isEmailConfigured(): boolean {
   return getEmailConfig() !== null;
 }

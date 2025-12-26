@@ -55,6 +55,14 @@ O sistema está funcional com as seguintes funcionalidades:
 O projeto usa o workflow "Start application" que executa `npm run dev` para iniciar o servidor Express com Vite.
 
 ## Recent Changes
+- 26/12/2024: Electronic Signature PDF Auto-Generation & Email
+  - Store signature pre-applied when generating contract PDFs
+  - After customer signs, PDF regenerated with both signatures embedded
+  - Signed contract automatically emailed to customer as attachment
+  - Digital signature certificate attestation added to PDF (MP 2.200-2/2001)
+  - `generateSignedPdfBuffer` helper function for signed PDF generation
+  - `sendSignedContractEmail` function for sending signed contracts
+
 - 26/12/2024: Electronic Signature Security Hardening
   - Added invalidated status check to all public signature routes
   - Tokens are automatically invalidated when new signature requests are sent

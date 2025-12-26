@@ -122,6 +122,7 @@ export interface IStorage {
 
   // Contract Signatures
   getContractSignature(contractId: number): Promise<ContractSignature | undefined>;
+  getContractSignaturesByContractId(contractId: number): Promise<ContractSignature[]>;
   getContractSignatureByToken(token: string): Promise<ContractSignature | undefined>;
   createContractSignature(signature: InsertContractSignature): Promise<ContractSignature>;
   updateContractSignature(id: number, data: Partial<InsertContractSignature>): Promise<ContractSignature | undefined>;
@@ -593,6 +594,12 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(contractSignatures.createdAt))
       .limit(1);
     return signature;
+  }
+
+  async getContractSignaturesByContractId(contractId: number): Promise<ContractSignature[]> {
+    return db.select().from(contractSignatures)
+      .where(eq(contractSignatures.contractId, contractId))
+      .orderBy(desc(contractSignatures.createdAt));
   }
 
   async getContractSignatureByToken(token: string): Promise<ContractSignature | undefined> {
