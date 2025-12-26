@@ -578,6 +578,11 @@ export default function ContractsPage() {
                       </div>
                     </div>
 
+                  </>
+                )}
+
+                {watchedContractType === "purchase_sale" && (
+                  <>
                     <Separator />
 
                     <div className="space-y-4">
