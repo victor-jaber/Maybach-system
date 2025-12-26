@@ -10,6 +10,7 @@ import {
   contracts,
   contractInstallments,
   contractFiles,
+  contractSignatures,
   vehicleDebts,
   type Brand,
   type InsertBrand,
@@ -34,6 +35,8 @@ import {
   type InsertContractInstallment,
   type ContractFile,
   type InsertContractFile,
+  type ContractSignature,
+  type InsertContractSignature,
   type VehicleDebt,
   type InsertVehicleDebt,
 } from "@shared/schema";
@@ -116,6 +119,13 @@ export interface IStorage {
   // Contract Files
   getContractFiles(contractId: number): Promise<ContractFile[]>;
   createContractFile(file: InsertContractFile): Promise<ContractFile>;
+
+  // Contract Signatures
+  getContractSignature(contractId: number): Promise<ContractSignature | undefined>;
+  getContractSignatureByToken(token: string): Promise<ContractSignature | undefined>;
+  createContractSignature(signature: InsertContractSignature): Promise<ContractSignature>;
+  updateContractSignature(id: number, data: Partial<InsertContractSignature>): Promise<ContractSignature | undefined>;
+  incrementValidationAttempts(id: number): Promise<void>;
 
   // Reports & Statistics
   getDashboardStats(): Promise<DashboardStats>;
@@ -573,6 +583,40 @@ export class DatabaseStorage implements IStorage {
   async createContractFile(file: InsertContractFile): Promise<ContractFile> {
     const [newFile] = await db.insert(contractFiles).values(file).returning();
     return newFile;
+  }
+
+  // Contract Signatures
+  async getContractSignature(contractId: number): Promise<ContractSignature | undefined> {
+    const [signature] = await db.select().from(contractSignatures)
+      .where(eq(contractSignatures.contractId, contractId))
+      .orderBy(desc(contractSignatures.createdAt))
+      .limit(1);
+    return signature;
+  }
+
+  async getContractSignatureByToken(token: string): Promise<ContractSignature | undefined> {
+    const [signature] = await db.select().from(contractSignatures)
+      .where(eq(contractSignatures.token, token));
+    return signature;
+  }
+
+  async createContractSignature(signature: InsertContractSignature): Promise<ContractSignature> {
+    const [newSignature] = await db.insert(contractSignatures).values(signature).returning();
+    return newSignature;
+  }
+
+  async updateContractSignature(id: number, data: Partial<InsertContractSignature>): Promise<ContractSignature | undefined> {
+    const [updated] = await db.update(contractSignatures)
+      .set(data)
+      .where(eq(contractSignatures.id, id))
+      .returning();
+    return updated;
+  }
+
+  async incrementValidationAttempts(id: number): Promise<void> {
+    await db.update(contractSignatures)
+      .set({ validationAttempts: sql`${contractSignatures.validationAttempts} + 1` })
+      .where(eq(contractSignatures.id, id));
   }
 
   // ========== Reports & Statistics ==========
