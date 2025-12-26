@@ -55,6 +55,22 @@ O sistema está funcional com as seguintes funcionalidades:
 O projeto usa o workflow "Start application" que executa `npm run dev` para iniciar o servidor Express com Vite.
 
 ## Recent Changes
+- 26/12/2024: Electronic Signature Security Hardening
+  - Added invalidated status check to all public signature routes
+  - Tokens are automatically invalidated when new signature requests are sent
+  - CPF/CNPJ validation required before sending signature emails
+  - 5-attempt limit for validation codes with automatic lockout
+  - IP address tracking for validation and signing actions
+  - Token expiration enforced (48 hours)
+
+- 26/12/2024: Electronic Signature Feature Complete
+  - Added contract_signatures table for tracking signature requests
+  - Implemented email service with SMTP configuration
+  - Created public signature page with multi-step flow
+  - Identity verification using last 3 CPF digits or first 3 CNPJ digits
+  - Contract review with PDF display before signing
+  - Signature button integrated into contracts management page
+
 - 24/12/2024: Consulta de Débitos Veiculares
   - Adicionada tabela vehicle_debts para armazenar débitos
   - Implementada consulta de IPVA, multas, licenciamento e seguro
