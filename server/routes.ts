@@ -1,9 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import PDFDocument from "pdfkit";
+import crypto from "crypto";
 import { storage } from "./storage";
 import { registerAuthRoutes, isAuthenticated, seedAdminUser } from "./auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+import { sendSignatureEmail, isEmailConfigured } from "./email";
 import { 
   getEntryComplementContract, 
   getPurchaseSaleContract, 
@@ -1122,6 +1124,264 @@ export async function registerRoutes(
       console.error("Error fetching debts summary:", error);
       res.status(500).json({ message: "Erro ao buscar resumo de débitos" });
     }
+  });
+
+  // ========== Contract Signature Public Routes ==========
+
+  // Send signature request email for a contract
+  app.post("/api/contracts/:id/send-signature", isAuthenticated, async (req, res) => {
+    try {
+      const contractId = parseInt(req.params.id);
+      const contract = await storage.getContract(contractId);
+      
+      if (!contract) {
+        return res.status(404).json({ message: "Contrato não encontrado" });
+      }
+
+      const customerEmail = contract.customer.email;
+      if (!customerEmail) {
+        return res.status(400).json({ message: "Cliente não possui email cadastrado" });
+      }
+
+      // Generate unique token
+      const token = crypto.randomBytes(32).toString("hex");
+      const tokenExpiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+
+      // Create signature record
+      await storage.createContractSignature({
+        contractId,
+        token,
+        tokenExpiresAt,
+        status: "pending",
+        validationAttempts: 0,
+        customerEmail,
+      });
+
+      // Send email
+      const emailSent = await sendSignatureEmail(contract, token, customerEmail);
+      
+      if (emailSent) {
+        // Update contract status
+        await storage.updateContract(contractId, { status: "generated" });
+        res.json({ message: "Email de assinatura enviado com sucesso", emailSent: true });
+      } else {
+        // Email not configured but signature record created
+        const baseUrl = process.env.REPLIT_DEV_DOMAIN 
+          ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+          : process.env.BASE_URL || "http://localhost:5000";
+        const signatureUrl = `${baseUrl}/assinar/${token}`;
+        
+        res.json({ 
+          message: "Link de assinatura gerado. Email não configurado.", 
+          emailSent: false,
+          signatureUrl 
+        });
+      }
+    } catch (error) {
+      console.error("Error sending signature email:", error);
+      res.status(500).json({ message: "Erro ao enviar email de assinatura" });
+    }
+  });
+
+  // Get signature status for a contract
+  app.get("/api/contracts/:id/signature", isAuthenticated, async (req, res) => {
+    try {
+      const contractId = parseInt(req.params.id);
+      const signature = await storage.getContractSignature(contractId);
+      
+      if (!signature) {
+        return res.json({ hasSignature: false });
+      }
+
+      res.json({
+        hasSignature: true,
+        status: signature.status,
+        signedAt: signature.signedAt,
+        validatedAt: signature.validatedAt,
+        emailSentAt: signature.emailSentAt,
+      });
+    } catch (error) {
+      console.error("Error getting signature status:", error);
+      res.status(500).json({ message: "Erro ao buscar status da assinatura" });
+    }
+  });
+
+  // Public route: Get contract info by token (for signature page)
+  app.get("/api/public/signature/:token", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const signature = await storage.getContractSignatureByToken(token);
+
+      if (!signature) {
+        return res.status(404).json({ message: "Link inválido ou expirado" });
+      }
+
+      if (new Date() > new Date(signature.tokenExpiresAt)) {
+        return res.status(410).json({ message: "Link expirado. Solicite um novo link." });
+      }
+
+      const contract = await storage.getContract(signature.contractId);
+      if (!contract) {
+        return res.status(404).json({ message: "Contrato não encontrado" });
+      }
+
+      // Return limited info until validated
+      res.json({
+        status: signature.status,
+        isValidated: signature.status === "validated" || signature.status === "signed",
+        isSigned: signature.status === "signed",
+        contractId: contract.id,
+        contractType: contract.contractType,
+        customerName: contract.customer.name,
+        vehicleInfo: `${contract.vehicle.brand.name} ${contract.vehicle.model} ${contract.vehicle.year}`,
+        cpfCnpjLength: contract.customer.cpfCnpj?.replace(/\D/g, "").length || 0,
+      });
+    } catch (error) {
+      console.error("Error fetching signature info:", error);
+      res.status(500).json({ message: "Erro ao buscar informações" });
+    }
+  });
+
+  // Public route: Validate customer identity
+  app.post("/api/public/signature/:token/validate", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const { code } = req.body;
+      const clientIp = req.ip || req.socket.remoteAddress || "unknown";
+
+      const signature = await storage.getContractSignatureByToken(token);
+
+      if (!signature) {
+        return res.status(404).json({ message: "Link inválido" });
+      }
+
+      if (new Date() > new Date(signature.tokenExpiresAt)) {
+        return res.status(410).json({ message: "Link expirado" });
+      }
+
+      if (signature.status === "signed") {
+        return res.status(400).json({ message: "Contrato já assinado" });
+      }
+
+      if (signature.validationAttempts >= 5) {
+        return res.status(429).json({ message: "Muitas tentativas. Link bloqueado." });
+      }
+
+      const contract = await storage.getContract(signature.contractId);
+      if (!contract) {
+        return res.status(404).json({ message: "Contrato não encontrado" });
+      }
+
+      const cpfCnpj = contract.customer.cpfCnpj?.replace(/\D/g, "") || "";
+      let isValid = false;
+
+      // CPF: check last 3 digits, CNPJ: check first 3 digits
+      if (cpfCnpj.length === 11) {
+        // CPF - last 3 digits
+        isValid = cpfCnpj.slice(-3) === code;
+      } else if (cpfCnpj.length === 14) {
+        // CNPJ - first 3 digits
+        isValid = cpfCnpj.slice(0, 3) === code;
+      }
+
+      if (!isValid) {
+        await storage.incrementValidationAttempts(signature.id);
+        const remaining = 5 - (signature.validationAttempts + 1);
+        return res.status(400).json({ 
+          message: `Código inválido. ${remaining} tentativas restantes.`,
+          remaining
+        });
+      }
+
+      // Mark as validated
+      await storage.updateContractSignature(signature.id, {
+        status: "validated",
+        validatedAt: new Date(),
+        validatedIp: clientIp,
+      });
+
+      res.json({ message: "Identidade validada com sucesso", validated: true });
+    } catch (error) {
+      console.error("Error validating signature:", error);
+      res.status(500).json({ message: "Erro ao validar identidade" });
+    }
+  });
+
+  // Public route: Get full contract data after validation
+  app.get("/api/public/signature/:token/contract", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const signature = await storage.getContractSignatureByToken(token);
+
+      if (!signature) {
+        return res.status(404).json({ message: "Link inválido" });
+      }
+
+      if (signature.status !== "validated" && signature.status !== "signed") {
+        return res.status(403).json({ message: "Validação pendente" });
+      }
+
+      const contract = await storage.getContract(signature.contractId);
+      if (!contract) {
+        return res.status(404).json({ message: "Contrato não encontrado" });
+      }
+
+      const store = await storage.getStore();
+      const files = await storage.getContractFiles(contract.id);
+
+      res.json({
+        contract,
+        store,
+        files,
+        isSigned: signature.status === "signed",
+        signedAt: signature.signedAt,
+      });
+    } catch (error) {
+      console.error("Error fetching contract for signature:", error);
+      res.status(500).json({ message: "Erro ao buscar contrato" });
+    }
+  });
+
+  // Public route: Sign the contract
+  app.post("/api/public/signature/:token/sign", async (req, res) => {
+    try {
+      const { token } = req.params;
+      const clientIp = req.ip || req.socket.remoteAddress || "unknown";
+
+      const signature = await storage.getContractSignatureByToken(token);
+
+      if (!signature) {
+        return res.status(404).json({ message: "Link inválido" });
+      }
+
+      if (signature.status === "signed") {
+        return res.status(400).json({ message: "Contrato já assinado" });
+      }
+
+      if (signature.status !== "validated") {
+        return res.status(403).json({ message: "Validação pendente" });
+      }
+
+      // Update signature record
+      await storage.updateContractSignature(signature.id, {
+        status: "signed",
+        signedAt: new Date(),
+        signedIp: clientIp,
+      });
+
+      // Update contract status
+      await storage.updateContract(signature.contractId, { status: "signed" });
+
+      res.json({ message: "Contrato assinado com sucesso!", signed: true });
+    } catch (error) {
+      console.error("Error signing contract:", error);
+      res.status(500).json({ message: "Erro ao assinar contrato" });
+    }
+  });
+
+  // Check if email is configured
+  app.get("/api/email-status", isAuthenticated, async (req, res) => {
+    res.json({ configured: isEmailConfigured() });
   });
 
   return httpServer;
