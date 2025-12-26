@@ -74,7 +74,11 @@ import {
 
 const contractTypeLabels: Record<string, string> = {
   entry_complement: "Complemento de Entrada",
-  purchase_sale: "Compra e Venda",
+  purchase_sale: "Compra e Venda (Loja Vendendo)",
+  vehicle_purchase: "Compra de Veículo (Loja Comprando)",
+  consignment: "Consignação de Veículo",
+  delivery_protocol: "Protocolo de Entrega",
+  consignment_withdrawal: "Protocolo de Retirada (Consignação)",
 };
 
 const contractStatusLabels: Record<string, string> = {
@@ -412,8 +416,12 @@ export default function ContractsPage() {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
+                              <SelectItem value="purchase_sale">Compra e Venda (Loja Vendendo)</SelectItem>
                               <SelectItem value="entry_complement">Complemento de Entrada</SelectItem>
-                              <SelectItem value="purchase_sale">Compra e Venda Completo</SelectItem>
+                              <SelectItem value="vehicle_purchase">Compra de Veículo (Loja Comprando)</SelectItem>
+                              <SelectItem value="consignment">Consignação de Veículo</SelectItem>
+                              <SelectItem value="delivery_protocol">Protocolo de Entrega</SelectItem>
+                              <SelectItem value="consignment_withdrawal">Protocolo de Retirada (Consignação)</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
