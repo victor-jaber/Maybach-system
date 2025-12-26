@@ -206,6 +206,20 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/vehicles/search/plate/:plate", isAuthenticated, async (req, res) => {
+    try {
+      const plate = req.params.plate;
+      const vehicle = await storage.getVehicleByPlate(plate);
+      if (!vehicle) {
+        return res.status(404).json({ message: "Vehicle not found", found: false });
+      }
+      res.json({ ...vehicle, found: true });
+    } catch (error) {
+      console.error("Error searching vehicle by plate:", error);
+      res.status(500).json({ message: "Failed to search vehicle" });
+    }
+  });
+
   app.get("/api/vehicles/:id", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);

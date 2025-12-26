@@ -472,6 +472,12 @@ export class DatabaseStorage implements IStorage {
             images: true,
           },
         },
+        tradeInVehicle: {
+          with: {
+            brand: true,
+            category: true,
+          },
+        },
         sale: true,
         installments: true,
         files: true,
@@ -493,12 +499,30 @@ export class DatabaseStorage implements IStorage {
             images: true,
           },
         },
+        tradeInVehicle: {
+          with: {
+            brand: true,
+            category: true,
+          },
+        },
         sale: true,
         installments: true,
         files: true,
       },
     });
     return result as ContractWithRelations | undefined;
+  }
+
+  async getVehicleByPlate(plate: string): Promise<VehicleWithRelations | undefined> {
+    const result = await db.query.vehicles.findFirst({
+      where: eq(vehicles.plate, plate.toUpperCase().replace(/[^A-Z0-9]/g, '')),
+      with: {
+        brand: true,
+        category: true,
+        images: true,
+      },
+    });
+    return result as VehicleWithRelations | undefined;
   }
 
   async createContract(contract: InsertContract): Promise<Contract> {
