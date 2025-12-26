@@ -43,6 +43,21 @@ export interface ContractData {
   
   cidadeForo: string;
   dataEmissao: string;
+  
+  valorMinimoVenda?: string;
+  comissaoLoja?: string;
+  prazoConsignacao?: number;
+  multaRetiradaAntecipada?: string;
+  
+  dataHoraEntrega?: string;
+  chavePrincipal?: boolean;
+  chaveReserva?: boolean;
+  manual?: boolean;
+  condicaoGeral?: string;
+  
+  dataHoraRetirada?: string;
+  motivoRetirada?: string;
+  condicaoVeiculo?: string;
 }
 
 export function getEntryComplementContract(data: ContractData): string {
@@ -613,12 +628,7 @@ TESTEMUNHAS:
 
 
 // ==================== CONTRATO DE CONSIGNAÇÃO DE VEÍCULO ====================
-export function getConsignmentContract(data: ContractData & { 
-  valorMinimoVenda?: string;
-  comissaoLoja?: string;
-  prazoConsignacao?: number;
-  multaRetiradaAntecipada?: string;
-}): string {
+export function getConsignmentContract(data: ContractData): string {
   return `
 CONTRATO PARTICULAR DE CONSIGNAÇÃO DE VEÍCULO AUTOMOTOR
 
@@ -814,13 +824,7 @@ TESTEMUNHAS:
 
 
 // ==================== PROTOCOLO DE ENTREGA DE VEÍCULO ====================
-export function getDeliveryProtocol(data: ContractData & {
-  dataHoraEntrega?: string;
-  chavePrincipal?: boolean;
-  chaveReserva?: boolean;
-  manual?: boolean;
-  condicaoGeral?: string;
-}): string {
+export function getDeliveryProtocol(data: ContractData): string {
   const dataHora = data.dataHoraEntrega || new Date().toLocaleString("pt-BR");
   
   return `
@@ -917,11 +921,7 @@ Representante: ${data.representanteLoja}
 
 
 // ==================== PROTOCOLO DE RETIRADA DE VEÍCULO CONSIGNADO ====================
-export function getConsignmentWithdrawalProtocol(data: ContractData & {
-  dataHoraRetirada?: string;
-  motivoRetirada?: string;
-  condicaoVeiculo?: string;
-}): string {
+export function getConsignmentWithdrawalProtocol(data: ContractData): string {
   const dataHora = data.dataHoraRetirada || new Date().toLocaleString("pt-BR");
   
   return `

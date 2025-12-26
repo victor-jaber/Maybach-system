@@ -4,7 +4,15 @@ import PDFDocument from "pdfkit";
 import { storage } from "./storage";
 import { registerAuthRoutes, isAuthenticated, seedAdminUser } from "./auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
-import { getEntryComplementContract, getPurchaseSaleContract, type ContractData } from "./contract-templates";
+import { 
+  getEntryComplementContract, 
+  getPurchaseSaleContract, 
+  getVehiclePurchaseContract,
+  getConsignmentContract,
+  getDeliveryProtocol,
+  getConsignmentWithdrawalProtocol,
+  type ContractData 
+} from "./contract-templates";
 import {
   insertBrandSchema,
   insertCategorySchema,
@@ -787,10 +795,36 @@ export async function registerRoutes(
       };
 
       let contractText = "";
-      if (contract.contractType === "entry_complement") {
-        contractText = getEntryComplementContract(contractData);
-      } else {
-        contractText = getPurchaseSaleContract(contractData);
+      let contractFileName = "contrato";
+      
+      switch (contract.contractType) {
+        case "entry_complement":
+          contractText = getEntryComplementContract(contractData);
+          contractFileName = "complemento_entrada";
+          break;
+        case "purchase_sale":
+          contractText = getPurchaseSaleContract(contractData);
+          contractFileName = "compra_venda";
+          break;
+        case "vehicle_purchase":
+          contractText = getVehiclePurchaseContract(contractData);
+          contractFileName = "aquisicao_veiculo";
+          break;
+        case "consignment":
+          contractText = getConsignmentContract(contractData);
+          contractFileName = "consignacao";
+          break;
+        case "delivery_protocol":
+          contractText = getDeliveryProtocol(contractData);
+          contractFileName = "protocolo_entrega";
+          break;
+        case "consignment_withdrawal":
+          contractText = getConsignmentWithdrawalProtocol(contractData);
+          contractFileName = "protocolo_retirada";
+          break;
+        default:
+          contractText = getPurchaseSaleContract(contractData);
+          contractFileName = "contrato";
       }
 
       const doc = new PDFDocument({ margin: 50, size: "A4" });
@@ -800,7 +834,7 @@ export async function registerRoutes(
       doc.on("end", () => {
         const pdfBuffer = Buffer.concat(chunks);
         res.setHeader("Content-Type", "application/pdf");
-        res.setHeader("Content-Disposition", `attachment; filename=contrato_${id}.pdf`);
+        res.setHeader("Content-Disposition", `attachment; filename=${contractFileName}_${id}.pdf`);
         res.send(pdfBuffer);
       });
 
@@ -808,22 +842,31 @@ export async function registerRoutes(
       for (const line of lines) {
         if (line.trim() === "") {
           doc.moveDown(0.5);
-        } else if (line.match(/^CLÁUSULA|^CONTRATO PARTICULAR/)) {
+        } else if (line.match(/^CLÁUSULA|^CONTRATO PARTICULAR|^PROTOCOLO DE/)) {
           doc.fontSize(11).font("Helvetica-Bold").text(line.trim(), { align: "left" });
+          doc.font("Helvetica").fontSize(10);
+        } else if (line.match(/^IDENTIFICAÇÃO|^DATA E HORA|^CHECKLIST|^CONDIÇÃO|^DECLARAÇÃO|^ASSINATURAS|^MOTIVO|^ITENS/)) {
+          doc.moveDown(0.5);
+          doc.fontSize(10).font("Helvetica-Bold").text(line.trim(), { align: "left" });
           doc.font("Helvetica").fontSize(10);
         } else if (line.match(/^\d+\.\d+\./)) {
           doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "justify", indent: 0 });
         } else if (line.trim().startsWith("a)") || line.trim().startsWith("b)") || line.trim().startsWith("c)") || line.trim().startsWith("d)") || line.trim().startsWith("e)")) {
           doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "left", indent: 20 });
+        } else if (line.trim().startsWith("[ ]") || line.trim().startsWith("[X]") || line.trim().startsWith("[ X ]")) {
+          doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "left", indent: 10 });
         } else if (line.includes("_____")) {
           doc.moveDown(1);
           doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "center" });
-        } else if (line.trim().startsWith("VENDEDORA:") || line.trim().startsWith("COMPRADOR")) {
+        } else if (line.trim().match(/^(VENDEDORA|COMPRADOR|CONSIGNATÁRIA|CONSIGNANTE|ENTREGANTE|RECEBEDOR):/)) {
           doc.fontSize(10).font("Helvetica-Bold").text(line.trim(), { align: "left" });
           doc.font("Helvetica");
         } else if (line.trim().startsWith("TESTEMUNHAS:")) {
           doc.moveDown(1);
           doc.fontSize(10).font("Helvetica-Bold").text(line.trim(), { align: "left" });
+          doc.font("Helvetica");
+        } else if (line.trim().startsWith("DECLARO") || line.trim().startsWith("Por meio deste")) {
+          doc.fontSize(10).font("Helvetica-Bold").text(line.trim(), { align: "justify" });
           doc.font("Helvetica");
         } else {
           doc.fontSize(10).font("Helvetica").text(line.trim(), { align: "justify" });
