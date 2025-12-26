@@ -262,6 +262,9 @@ export const contracts = pgTable("contracts", {
   bancoFinanciamento: varchar("banco_financiamento", { length: 100 }),
   numeroContratoFinanciamento: varchar("numero_contrato_financiamento", { length: 50 }),
   parcelasFinanciamento: integer("parcelas_financiamento"),
+  tradeInVehicleId: integer("trade_in_vehicle_id").references(() => vehicles.id),
+  tradeInValue: decimal("trade_in_value", { precision: 12, scale: 2 }),
+  tradeInNotes: text("trade_in_notes"),
   createdBy: varchar("created_by", { length: 100 }),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -272,6 +275,7 @@ export const contractsRelations = relations(contracts, ({ one, many }) => ({
   vehicle: one(vehicles, { fields: [contracts.vehicleId], references: [vehicles.id] }),
   sale: one(sales, { fields: [contracts.saleId], references: [sales.id] }),
   relatedContract: one(contracts, { fields: [contracts.relatedContractId], references: [contracts.id] }),
+  tradeInVehicle: one(vehicles, { fields: [contracts.tradeInVehicleId], references: [vehicles.id] }),
   installments: many(contractInstallments),
   files: many(contractFiles),
 }));
@@ -311,6 +315,9 @@ export const insertContractApiSchema = z.object({
   bancoFinanciamento: z.string().optional().nullable(),
   numeroContratoFinanciamento: z.string().optional().nullable(),
   parcelasFinanciamento: z.coerce.number().optional().nullable(),
+  tradeInVehicleId: z.coerce.number().optional().nullable(),
+  tradeInValue: z.string().optional().nullable(),
+  tradeInNotes: z.string().optional().nullable(),
   createdBy: z.string().optional().nullable(),
 });
 
@@ -400,6 +407,7 @@ export type ContractWithRelations = Contract & {
   vehicle: VehicleWithRelations;
   sale?: Sale | null;
   relatedContract?: Contract | null;
+  tradeInVehicle?: VehicleWithRelations | null;
   installments?: ContractInstallment[];
   files?: ContractFile[];
 };

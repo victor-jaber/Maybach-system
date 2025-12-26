@@ -530,11 +530,6 @@ export default function ContractsPage() {
                       </div>
                     </div>
 
-                    <Separator />
-
-                    <div className="space-y-4">
-                      <h4 className="text-sm font-medium text-muted-foreground">Forma de Pagamento do Restante</h4>
-                    </div>
                   </>
                 )}
 
