@@ -1310,6 +1310,38 @@ export default function ContractsPage() {
                 </>
               )}
 
+              {viewingContract.tradeInVehicleId && (
+                <>
+                  <Separator />
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-medium text-muted-foreground">Veículo na Troca</h4>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <Label className="text-muted-foreground">Veículo</Label>
+                        <p className="font-medium">
+                          {viewingContract.tradeInVehicle?.brand?.name} {viewingContract.tradeInVehicle?.model} - {viewingContract.tradeInVehicle?.year}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Placa: {viewingContract.tradeInVehicle?.plate}
+                        </p>
+                      </div>
+                      <div>
+                        <Label className="text-muted-foreground">Valor da Troca</Label>
+                        <p className="font-medium">
+                          {viewingContract.tradeInValue ? formatCurrency(parseFloat(viewingContract.tradeInValue)) : "-"}
+                        </p>
+                      </div>
+                    </div>
+                    {viewingContract.tradeInNotes && (
+                      <div>
+                        <Label className="text-muted-foreground">Observações</Label>
+                        <p className="text-sm">{viewingContract.tradeInNotes}</p>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+
               <Separator />
 
               <div className="flex flex-wrap gap-2">

@@ -58,6 +58,17 @@ export interface ContractData {
   dataHoraRetirada?: string;
   motivoRetirada?: string;
   condicaoVeiculo?: string;
+  
+  tradeInMarca?: string;
+  tradeInModelo?: string;
+  tradeInAno?: string;
+  tradeInCor?: string;
+  tradeInPlaca?: string;
+  tradeInChassi?: string;
+  tradeInRenavam?: string;
+  tradeInKm?: string;
+  tradeInValor?: string;
+  tradeInObservacoes?: string;
 }
 
 export function getEntryComplementContract(data: ContractData): string {
@@ -244,6 +255,34 @@ export function getPurchaseSaleContract(data: ContractData): string {
 `
     : '';
 
+  const tradeInSection = data.tradeInPlaca && data.tradeInValor
+    ? `
+
+CLÁUSULA COMPLEMENTAR - DO VEÍCULO DADO EM TROCA
+
+C.1. Como parte do pagamento, o COMPRADOR entrega à VENDEDORA, em regime de dação em pagamento, o seguinte veículo:
+
+    Marca: ${data.tradeInMarca || '-'}
+    Modelo: ${data.tradeInModelo || '-'}
+    Ano de Fabricação/Modelo: ${data.tradeInAno || '-'}
+    Cor: ${data.tradeInCor || '-'}
+    Placa: ${data.tradeInPlaca || '-'}
+    Chassi: ${data.tradeInChassi || '-'}
+    RENAVAM: ${data.tradeInRenavam || '-'}
+    Quilometragem: ${data.tradeInKm || '-'} km
+
+C.2. O valor atribuído ao veículo dado em troca é de ${data.tradeInValor}, que será abatido do preço total do veículo objeto desta compra e venda.
+
+C.3. O COMPRADOR declara ser o legítimo proprietário do veículo dado em troca, garantindo que o mesmo encontra-se livre e desembaraçado de quaisquer ônus, gravames, débitos de multas, IPVA, licenciamento ou quaisquer outras pendências.
+
+C.4. O COMPRADOR compromete-se a entregar toda a documentação necessária à transferência de propriedade do veículo dado em troca, devidamente preenchida e assinada, no prazo de até 05 (cinco) dias úteis contados da assinatura deste contrato.
+
+C.5. Caso sejam constatados débitos, multas, gravames ou quaisquer ônus sobre o veículo dado em troca não declarados pelo COMPRADOR, este se obriga a quitá-los imediatamente ou autoriza a VENDEDORA a descontá-los do valor atribuído ao veículo em troca.
+
+${data.tradeInObservacoes ? `C.6. Observações sobre o veículo em troca: ${data.tradeInObservacoes}` : ''}
+`
+    : '';
+
   return `
 CONTRATO PARTICULAR DE COMPRA E VENDA DE VEÍCULO AUTOMOTOR
 
@@ -300,6 +339,7 @@ CLÁUSULA TERCEIRA - DA FORMA DE PAGAMENTO
 
 ${financiamentoSection}
 ${complementoEntradaSection}
+${tradeInSection}
 
 CLÁUSULA QUARTA - DA ENTREGA DO VEÍCULO
 

@@ -806,6 +806,17 @@ export async function registerRoutes(
         
         cidadeForo: store?.city || "São Paulo",
         dataEmissao: formatDate(new Date()),
+        
+        tradeInMarca: contract.tradeInVehicle?.brand?.name || undefined,
+        tradeInModelo: contract.tradeInVehicle?.model || undefined,
+        tradeInAno: contract.tradeInVehicle?.year?.toString() || undefined,
+        tradeInCor: contract.tradeInVehicle?.color || undefined,
+        tradeInPlaca: contract.tradeInVehicle?.plate || undefined,
+        tradeInChassi: contract.tradeInVehicle?.chassis || undefined,
+        tradeInRenavam: contract.tradeInVehicle?.renavam || undefined,
+        tradeInKm: contract.tradeInVehicle?.mileage?.toLocaleString("pt-BR") || undefined,
+        tradeInValor: contract.tradeInValue ? formatCurrency(contract.tradeInValue) : undefined,
+        tradeInObservacoes: contract.tradeInNotes || undefined,
       };
 
       let contractText = "";
