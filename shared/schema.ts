@@ -278,6 +278,7 @@ export const contractsRelations = relations(contracts, ({ one, many }) => ({
   tradeInVehicle: one(vehicles, { fields: [contracts.tradeInVehicleId], references: [vehicles.id] }),
   installments: many(contractInstallments),
   files: many(contractFiles),
+  signatures: many(contractSignatures),
 }));
 
 export const insertContractSchema = createInsertSchema(contracts).omit({ id: true, createdAt: true, updatedAt: true });
@@ -365,6 +366,31 @@ export const insertContractFileSchema = createInsertSchema(contractFiles).omit({
 export type InsertContractFile = z.infer<typeof insertContractFileSchema>;
 export type ContractFile = typeof contractFiles.$inferSelect;
 
+// Assinaturas de Contrato
+export const contractSignatures = pgTable("contract_signatures", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  contractId: integer("contract_id").notNull().references(() => contracts.id, { onDelete: "cascade" }),
+  token: varchar("token", { length: 255 }).notNull().unique(),
+  tokenExpiresAt: timestamp("token_expires_at").notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("pending"),
+  validationAttempts: integer("validation_attempts").notNull().default(0),
+  validatedAt: timestamp("validated_at"),
+  validatedIp: varchar("validated_ip", { length: 45 }),
+  signedAt: timestamp("signed_at"),
+  signedIp: varchar("signed_ip", { length: 45 }),
+  customerEmail: varchar("customer_email", { length: 150 }),
+  emailSentAt: timestamp("email_sent_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const contractSignaturesRelations = relations(contractSignatures, ({ one }) => ({
+  contract: one(contracts, { fields: [contractSignatures.contractId], references: [contracts.id] }),
+}));
+
+export const insertContractSignatureSchema = createInsertSchema(contractSignatures).omit({ id: true, createdAt: true });
+export type InsertContractSignature = z.infer<typeof insertContractSignatureSchema>;
+export type ContractSignature = typeof contractSignatures.$inferSelect;
+
 // Débitos Veiculares (Multas, IPVA, Licenciamento)
 export const vehicleDebts = pgTable("vehicle_debts", {
   id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
@@ -410,4 +436,5 @@ export type ContractWithRelations = Contract & {
   tradeInVehicle?: VehicleWithRelations | null;
   installments?: ContractInstallment[];
   files?: ContractFile[];
+  signatures?: ContractSignature[];
 };
