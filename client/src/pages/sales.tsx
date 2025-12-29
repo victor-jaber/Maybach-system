@@ -9,6 +9,11 @@ import {
   Eye,
   Trash2,
   ShoppingCart,
+  Car,
+  DollarSign,
+  ArrowRightLeft,
+  TrendingUp,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +50,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -58,7 +65,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatCurrency, formatCurrencyInput, parseCurrencyToNumber } from "@/lib/currency";
-import type { SaleWithRelations, VehicleWithRelations, Customer } from "@shared/schema";
+import type { SaleWithRelations, VehicleWithRelations, Customer, VehicleCost } from "@shared/schema";
 
 const saleFormSchema = z.object({
   customerId: z.number({ required_error: "Selecione um cliente" }),
@@ -72,9 +79,21 @@ const saleFormSchema = z.object({
   installmentValue: z.string().optional(),
   financingBank: z.string().optional(),
   notes: z.string().optional(),
+  hasTradeIn: z.boolean().default(false),
+  tradeInVehicleId: z.number().optional(),
+  tradeInValue: z.string().optional(),
 });
 
 type SaleFormValues = z.infer<typeof saleFormSchema>;
+
+const costFormSchema = z.object({
+  description: z.string().min(1, "Descrição é obrigatória"),
+  value: z.string().min(1, "Valor é obrigatório"),
+  date: z.string().min(1, "Data é obrigatória"),
+  notes: z.string().optional(),
+});
+
+type CostFormValues = z.infer<typeof costFormSchema>;
 
 function formatDate(date: string | Date): string {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -85,17 +104,23 @@ function formatDate(date: string | Date): string {
 }
 
 export default function SalesPage() {
-  const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState("sales");
+  const [salesSearch, setSalesSearch] = useState("");
+  const [stockSearch, setStockSearch] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [viewingSale, setViewingSale] = useState<SaleWithRelations | null>(null);
   const [deletingSale, setDeletingSale] = useState<SaleWithRelations | null>(null);
+  const [viewingVehicle, setViewingVehicle] = useState<VehicleWithRelations | null>(null);
+  const [isCostDialogOpen, setIsCostDialogOpen] = useState(false);
+  const [editingCost, setEditingCost] = useState<VehicleCost | null>(null);
+  const [deletingCost, setDeletingCost] = useState<VehicleCost | null>(null);
   const { toast } = useToast();
 
-  const { data: sales, isLoading } = useQuery<SaleWithRelations[]>({
+  const { data: sales, isLoading: salesLoading } = useQuery<SaleWithRelations[]>({
     queryKey: ["/api/sales"],
   });
 
-  const { data: vehicles } = useQuery<VehicleWithRelations[]>({
+  const { data: vehicles, isLoading: vehiclesLoading } = useQuery<VehicleWithRelations[]>({
     queryKey: ["/api/vehicles"],
   });
 
@@ -103,24 +128,52 @@ export default function SalesPage() {
     queryKey: ["/api/customers"],
   });
 
+  const { data: vehicleCosts } = useQuery<VehicleCost[]>({
+    queryKey: ["/api/vehicles", viewingVehicle?.id, "costs"],
+    enabled: !!viewingVehicle,
+    queryFn: async () => {
+      if (!viewingVehicle) return [];
+      const response = await fetch(`/api/vehicles/${viewingVehicle.id}/costs`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch costs");
+      return response.json();
+    },
+  });
+
   const availableVehicles = vehicles?.filter((v) => v.status === "available") || [];
+  const reservedVehicles = vehicles?.filter((v) => v.status === "reserved") || [];
+  const stockVehicles = vehicles?.filter((v) => v.status === "available" || v.status === "reserved") || [];
 
   const form = useForm<SaleFormValues>({
     resolver: zodResolver(saleFormSchema),
     defaultValues: {
       saleDate: new Date().toISOString().split("T")[0],
       paymentType: "cash",
+      hasTradeIn: false,
+    },
+  });
+
+  const costForm = useForm<CostFormValues>({
+    resolver: zodResolver(costFormSchema),
+    defaultValues: {
+      date: new Date().toISOString().split("T")[0],
     },
   });
 
   const paymentType = form.watch("paymentType");
+  const hasTradeIn = form.watch("hasTradeIn");
 
   const createMutation = useMutation({
-    mutationFn: (data: SaleFormValues) =>
-      apiRequest("POST", "/api/sales", {
+    mutationFn: async (data: SaleFormValues) => {
+      const response = await apiRequest("POST", "/api/sales", {
         ...data,
         saleDate: new Date(data.saleDate),
-      }),
+        tradeInVehicleId: data.hasTradeIn ? data.tradeInVehicleId : null,
+        tradeInValue: data.hasTradeIn && data.tradeInValue ? data.tradeInValue : null,
+      });
+      return response;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/sales"] });
       queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
@@ -146,135 +199,376 @@ export default function SalesPage() {
     },
   });
 
+  const createCostMutation = useMutation({
+    mutationFn: async (data: CostFormValues) => {
+      if (!viewingVehicle) throw new Error("No vehicle selected");
+      const response = await fetch(`/api/vehicles/${viewingVehicle.id}/costs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          ...data,
+          value: parseCurrencyToNumber(data.value),
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to create cost");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicles", viewingVehicle?.id, "costs"] });
+      setIsCostDialogOpen(false);
+      costForm.reset({ date: new Date().toISOString().split("T")[0] });
+      toast({ title: "Custo adicionado com sucesso!" });
+    },
+    onError: () => {
+      toast({ title: "Erro ao adicionar custo", variant: "destructive" });
+    },
+  });
+
+  const updateCostMutation = useMutation({
+    mutationFn: async (data: CostFormValues & { id: number }) => {
+      if (!viewingVehicle) throw new Error("No vehicle selected");
+      const response = await fetch(`/api/vehicles/${viewingVehicle.id}/costs/${data.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          description: data.description,
+          value: parseCurrencyToNumber(data.value),
+          date: data.date,
+          notes: data.notes,
+        }),
+      });
+      if (!response.ok) throw new Error("Failed to update cost");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicles", viewingVehicle?.id, "costs"] });
+      setIsCostDialogOpen(false);
+      setEditingCost(null);
+      costForm.reset({ date: new Date().toISOString().split("T")[0] });
+      toast({ title: "Custo atualizado com sucesso!" });
+    },
+    onError: () => {
+      toast({ title: "Erro ao atualizar custo", variant: "destructive" });
+    },
+  });
+
+  const deleteCostMutation = useMutation({
+    mutationFn: async (id: number) => {
+      if (!viewingVehicle) throw new Error("No vehicle selected");
+      const response = await fetch(`/api/vehicles/${viewingVehicle.id}/costs/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to delete cost");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/vehicles", viewingVehicle?.id, "costs"] });
+      setDeletingCost(null);
+      toast({ title: "Custo excluído com sucesso!" });
+    },
+    onError: () => {
+      toast({ title: "Erro ao excluir custo", variant: "destructive" });
+    },
+  });
+
   const handleOpenCreate = () => {
     form.reset({
       saleDate: new Date().toISOString().split("T")[0],
       paymentType: "cash",
+      hasTradeIn: false,
     });
     setIsDialogOpen(true);
+  };
+
+  const handleOpenCostCreate = () => {
+    setEditingCost(null);
+    costForm.reset({ date: new Date().toISOString().split("T")[0] });
+    setIsCostDialogOpen(true);
+  };
+
+  const handleEditCost = (cost: VehicleCost) => {
+    setEditingCost(cost);
+    costForm.reset({
+      description: cost.description,
+      value: formatCurrency(cost.value),
+      date: cost.date ? new Date(cost.date).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
+      notes: cost.notes || "",
+    });
+    setIsCostDialogOpen(true);
   };
 
   const onSubmit = (data: SaleFormValues) => {
     createMutation.mutate(data);
   };
 
+  const onCostSubmit = (data: CostFormValues) => {
+    if (editingCost) {
+      updateCostMutation.mutate({ ...data, id: editingCost.id });
+    } else {
+      createCostMutation.mutate(data);
+    }
+  };
+
   const filteredSales = sales?.filter(
     (sale) =>
-      sale.customer?.name.toLowerCase().includes(search.toLowerCase()) ||
-      sale.vehicle?.model.toLowerCase().includes(search.toLowerCase())
+      sale.customer?.name.toLowerCase().includes(salesSearch.toLowerCase()) ||
+      sale.vehicle?.model.toLowerCase().includes(salesSearch.toLowerCase())
   );
+
+  const filteredStock = stockVehicles?.filter(
+    (vehicle) =>
+      vehicle.model.toLowerCase().includes(stockSearch.toLowerCase()) ||
+      vehicle.brand?.name.toLowerCase().includes(stockSearch.toLowerCase()) ||
+      vehicle.plate?.toLowerCase().includes(stockSearch.toLowerCase())
+  );
+
+  const calculateTotalCosts = (costs: VehicleCost[] | undefined): number => {
+    if (!costs) return 0;
+    return costs.reduce((sum, cost) => sum + parseCurrencyToNumber(String(cost.value)), 0);
+  };
+
+  const calculateProfit = (vehicle: VehicleWithRelations, costs: VehicleCost[] | undefined): number => {
+    const purchasePrice = parseCurrencyToNumber(String(vehicle.purchasePrice || 0));
+    const salePrice = parseCurrencyToNumber(String(vehicle.price));
+    const totalCosts = calculateTotalCosts(costs);
+    return salePrice - purchasePrice - totalCosts;
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight" data-testid="text-page-title">
-            Vendas
+            Vendas e Compras
           </h1>
           <p className="text-muted-foreground">
-            Histórico de vendas realizadas
+            Gerencie vendas e acompanhe seus veículos em estoque
           </p>
-        </div>
-        <Button onClick={handleOpenCreate} data-testid="button-add-sale">
-          <Plus className="mr-2 h-4 w-4" />
-          Nova Venda
-        </Button>
-      </div>
-
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Buscar vendas..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-            data-testid="input-search-sales"
-          />
         </div>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full" />
-          ))}
-        </div>
-      ) : filteredSales?.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <ShoppingCart className="mb-4 h-16 w-16 text-muted-foreground/30" />
-          <h3 className="text-lg font-semibold">Nenhuma venda encontrada</h3>
-          <p className="text-muted-foreground">
-            Registre sua primeira venda para começar
-          </p>
-        </div>
-      ) : (
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Veículo</TableHead>
-                <TableHead>Valor Total</TableHead>
-                <TableHead>Pagamento</TableHead>
-                <TableHead className="w-[100px]">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredSales?.map((sale) => (
-                <TableRow key={sale.id} data-testid={`row-sale-${sale.id}`}>
-                  <TableCell>{formatDate(sale.saleDate)}</TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{sale.customer?.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {sale.customer?.cpfCnpj}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{sale.vehicle?.model}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {sale.vehicle?.brand?.name} • {sale.vehicle?.year}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {formatCurrency(sale.totalValue)}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={sale.paymentType === "cash" ? "default" : sale.paymentType === "credit_card" ? "outline" : "secondary"}>
-                      {sale.paymentType === "cash" ? "À Vista" : sale.paymentType === "credit_card" ? "Cartão de Crédito" : "Financiado"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setViewingSale(sale)}
-                        data-testid={`button-view-sale-${sale.id}`}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setDeletingSale(sale)}
-                        data-testid={`button-delete-sale-${sale.id}`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="sales" data-testid="tab-sales">
+            <ShoppingCart className="mr-2 h-4 w-4" />
+            Vendas
+          </TabsTrigger>
+          <TabsTrigger value="stock" data-testid="tab-stock">
+            <Car className="mr-2 h-4 w-4" />
+            Estoque / Compras
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="sales" className="space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar vendas..."
+                value={salesSearch}
+                onChange={(e) => setSalesSearch(e.target.value)}
+                className="pl-10"
+                data-testid="input-search-sales"
+              />
+            </div>
+            <Button onClick={handleOpenCreate} data-testid="button-add-sale">
+              <Plus className="mr-2 h-4 w-4" />
+              Nova Venda
+            </Button>
+          </div>
+
+          {salesLoading ? (
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full" />
               ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+            </div>
+          ) : filteredSales?.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <ShoppingCart className="mb-4 h-16 w-16 text-muted-foreground/30" />
+              <h3 className="text-lg font-semibold">Nenhuma venda encontrada</h3>
+              <p className="text-muted-foreground">
+                Registre sua primeira venda para começar
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Veículo</TableHead>
+                    <TableHead>Valor Total</TableHead>
+                    <TableHead>Pagamento</TableHead>
+                    <TableHead>Troca</TableHead>
+                    <TableHead className="w-[100px]">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredSales?.map((sale) => (
+                    <TableRow key={sale.id} data-testid={`row-sale-${sale.id}`}>
+                      <TableCell>{formatDate(sale.saleDate)}</TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{sale.customer?.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {sale.customer?.cpfCnpj}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{sale.vehicle?.model}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {sale.vehicle?.brand?.name} - {sale.vehicle?.year}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {formatCurrency(sale.totalValue)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={sale.paymentType === "cash" ? "default" : sale.paymentType === "credit_card" ? "outline" : "secondary"}>
+                          {sale.paymentType === "cash" ? "À Vista" : sale.paymentType === "credit_card" ? "Cartão" : "Financiado"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {sale.tradeInVehicle ? (
+                          <Badge variant="outline">
+                            <ArrowRightLeft className="mr-1 h-3 w-3" />
+                            {sale.tradeInVehicle.brand?.name} {sale.tradeInVehicle.model}
+                          </Badge>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setViewingSale(sale)}
+                            data-testid={`button-view-sale-${sale.id}`}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeletingSale(sale)}
+                            data-testid={`button-delete-sale-${sale.id}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="stock" className="space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Buscar veículos no estoque..."
+                value={stockSearch}
+                onChange={(e) => setStockSearch(e.target.value)}
+                className="pl-10"
+                data-testid="input-search-stock"
+              />
+            </div>
+          </div>
+
+          {vehiclesLoading ? (
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full" />
+              ))}
+            </div>
+          ) : filteredStock?.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <Car className="mb-4 h-16 w-16 text-muted-foreground/30" />
+              <h3 className="text-lg font-semibold">Nenhum veículo no estoque</h3>
+              <p className="text-muted-foreground">
+                Cadastre veículos na página de Veículos
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Veículo</TableHead>
+                    <TableHead>Placa</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Preço Compra</TableHead>
+                    <TableHead>Preço Venda</TableHead>
+                    <TableHead>Lucro Est.</TableHead>
+                    <TableHead className="w-[100px]">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredStock?.map((vehicle) => {
+                    const purchasePrice = parseCurrencyToNumber(String(vehicle.purchasePrice || 0));
+                    const salePrice = parseCurrencyToNumber(String(vehicle.price));
+                    const estimatedProfit = salePrice - purchasePrice;
+                    return (
+                      <TableRow key={vehicle.id} data-testid={`row-stock-${vehicle.id}`}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{vehicle.brand?.name} {vehicle.model}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {vehicle.year} - {vehicle.color}
+                            </p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-mono">{vehicle.plate || "-"}</span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={vehicle.status === "available" ? "default" : "secondary"}>
+                            {vehicle.status === "available" ? "Disponível" : "Reservado"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {vehicle.purchasePrice ? formatCurrency(vehicle.purchasePrice) : "-"}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {formatCurrency(vehicle.price)}
+                        </TableCell>
+                        <TableCell>
+                          <span className={estimatedProfit > 0 ? "text-green-600 dark:text-green-400 font-medium" : "text-red-600 dark:text-red-400 font-medium"}>
+                            {formatCurrency(estimatedProfit)}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setViewingVehicle(vehicle)}
+                            data-testid={`button-view-vehicle-${vehicle.id}`}
+                          >
+                            <TrendingUp className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -324,7 +618,7 @@ export default function SalesPage() {
                             (v) => v.id === parseInt(value)
                           );
                           if (vehicle) {
-                            form.setValue("totalValue", vehicle.price as string);
+                            form.setValue("totalValue", String(vehicle.price));
                           }
                         }}
                         value={field.value?.toString()}
@@ -544,6 +838,92 @@ export default function SalesPage() {
                 </div>
               )}
 
+              <div className="space-y-4 rounded-md border p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium">Veículo de Troca</h3>
+                    <p className="text-sm text-muted-foreground">Cliente oferece veículo como parte do pagamento</p>
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="hasTradeIn"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={(checked) => {
+                              field.onChange(checked);
+                              if (!checked) {
+                                form.setValue("tradeInVehicleId", undefined);
+                                form.setValue("tradeInValue", undefined);
+                              }
+                            }}
+                            data-testid="switch-trade-in"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {hasTradeIn && (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="tradeInVehicleId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Veículo de Troca</FormLabel>
+                          <Select
+                            onValueChange={(value) => field.onChange(parseInt(value))}
+                            value={field.value?.toString()}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-trade-in-vehicle">
+                                <SelectValue placeholder="Selecione o veículo" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {reservedVehicles?.map((vehicle) => (
+                                <SelectItem key={vehicle.id} value={vehicle.id.toString()}>
+                                  {vehicle.brand?.name} {vehicle.model} - {vehicle.year}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Cadastre o veículo de troca primeiro e marque como "Reservado"
+                          </p>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="tradeInValue"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Valor da Troca</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="R$ 0,00"
+                              data-testid="input-trade-in-value"
+                              onChange={(e) => {
+                                const formatted = formatCurrencyInput(e.target.value);
+                                field.onChange(formatted);
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+              </div>
+
               <FormField
                 control={form.control}
                 name="notes"
@@ -617,7 +997,7 @@ export default function SalesPage() {
                       {viewingSale.vehicle?.brand?.name} {viewingSale.vehicle?.model}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      Ano: {viewingSale.vehicle?.year} • Cor: {viewingSale.vehicle?.color}
+                      Ano: {viewingSale.vehicle?.year} - Cor: {viewingSale.vehicle?.color}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Placa: {viewingSale.vehicle?.plate || "N/A"}
@@ -637,7 +1017,7 @@ export default function SalesPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Valor Total</span>
-                    <span className="font-medium text-primary">
+                    <span className="font-medium text-foreground">
                       {formatCurrency(viewingSale.totalValue)}
                     </span>
                   </div>
@@ -685,6 +1065,35 @@ export default function SalesPage() {
                 </CardContent>
               </Card>
 
+              {viewingSale.tradeInVehicle && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">
+                      <ArrowRightLeft className="inline mr-2 h-4 w-4" />
+                      Veículo de Troca
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Veículo</span>
+                      <span className="font-medium">
+                        {viewingSale.tradeInVehicle.brand?.name} {viewingSale.tradeInVehicle.model}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Ano</span>
+                      <span className="font-medium">{viewingSale.tradeInVehicle.year}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Valor da Troca</span>
+                      <span className="font-medium text-green-600 dark:text-green-400">
+                        {formatCurrency(viewingSale.tradeInValue)}
+                      </span>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
               {viewingSale.notes && (
                 <Card>
                   <CardHeader className="pb-2">
@@ -697,6 +1106,238 @@ export default function SalesPage() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!viewingVehicle} onOpenChange={() => setViewingVehicle(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Custos do Veículo</DialogTitle>
+          </DialogHeader>
+          {viewingVehicle && (
+            <div className="space-y-6">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm text-muted-foreground">Informações do Veículo</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="font-medium">{viewingVehicle.brand?.name} {viewingVehicle.model}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Ano: {viewingVehicle.year} - Placa: {viewingVehicle.plate || "N/A"}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">Preço de Compra</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-xl font-bold">
+                      {viewingVehicle.purchasePrice ? formatCurrency(viewingVehicle.purchasePrice) : "N/A"}
+                    </p>
+                    {viewingVehicle.purchaseDate && (
+                      <p className="text-xs text-muted-foreground">
+                        Data: {formatDate(viewingVehicle.purchaseDate)}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">Custos Extras</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-xl font-bold text-orange-600 dark:text-orange-400">
+                      {formatCurrency(calculateTotalCosts(vehicleCosts))}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {vehicleCosts?.length || 0} itens
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-muted-foreground">Lucro Estimado</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className={`text-xl font-bold ${calculateProfit(viewingVehicle, vehicleCosts) >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                      {formatCurrency(calculateProfit(viewingVehicle, vehicleCosts))}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Venda: {formatCurrency(viewingVehicle.price)}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">Custos de Aquisição</h3>
+                  <Button size="sm" onClick={handleOpenCostCreate} data-testid="button-add-cost">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Adicionar Custo
+                  </Button>
+                </div>
+
+                {vehicleCosts?.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <DollarSign className="mx-auto h-12 w-12 opacity-30 mb-2" />
+                    <p>Nenhum custo adicional registrado</p>
+                  </div>
+                ) : (
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Data</TableHead>
+                          <TableHead>Descrição</TableHead>
+                          <TableHead>Valor</TableHead>
+                          <TableHead className="w-[100px]">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {vehicleCosts?.map((cost) => (
+                          <TableRow key={cost.id}>
+                            <TableCell>{cost.date ? formatDate(cost.date) : "-"}</TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{cost.description}</p>
+                                {cost.notes && (
+                                  <p className="text-xs text-muted-foreground">{cost.notes}</p>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {formatCurrency(cost.value)}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEditCost(cost)}
+                                  data-testid={`button-edit-cost-${cost.id}`}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setDeletingCost(cost)}
+                                  data-testid={`button-delete-cost-${cost.id}`}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCostDialogOpen} onOpenChange={setIsCostDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingCost ? "Editar Custo" : "Adicionar Custo"}</DialogTitle>
+          </DialogHeader>
+          <Form {...costForm}>
+            <form onSubmit={costForm.handleSubmit(onCostSubmit)} className="space-y-4">
+              <FormField
+                control={costForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição *</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="Ex: IPVA, Multas, Reparos..." data-testid="input-cost-description" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  control={costForm.control}
+                  name="value"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Valor *</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="R$ 0,00"
+                          data-testid="input-cost-value"
+                          onChange={(e) => {
+                            const formatted = formatCurrencyInput(e.target.value);
+                            field.onChange(formatted);
+                          }}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={costForm.control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data *</FormLabel>
+                      <FormControl>
+                        <Input type="date" {...field} data-testid="input-cost-date" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <FormField
+                control={costForm.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Observações</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="Observações adicionais..."
+                        className="resize-none"
+                        rows={2}
+                        data-testid="textarea-cost-notes"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCostDialogOpen(false)}
+                  data-testid="button-cancel-cost"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={createCostMutation.isPending || updateCostMutation.isPending}
+                  data-testid="button-save-cost"
+                >
+                  {(createCostMutation.isPending || updateCostMutation.isPending) ? "Salvando..." : "Salvar"}
+                </Button>
+              </div>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 
@@ -713,8 +1354,29 @@ export default function SalesPage() {
             <AlertDialogCancel data-testid="button-cancel-delete">Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deletingSale && deleteMutation.mutate(deletingSale.id)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground"
               data-testid="button-confirm-delete"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deletingCost} onOpenChange={() => setDeletingCost(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir este custo? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-cost">Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingCost && deleteCostMutation.mutate(deletingCost.id)}
+              className="bg-destructive text-destructive-foreground"
+              data-testid="button-confirm-delete-cost"
             >
               Excluir
             </AlertDialogAction>
