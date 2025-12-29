@@ -594,6 +594,108 @@ export async function registerRoutes(
     }
   });
 
+  // Vehicle Documents
+  app.get("/api/vehicles/:vehicleId/documents", isAuthenticated, async (req, res) => {
+    try {
+      const vehicleId = parseInt(req.params.vehicleId);
+      const documents = await storage.getVehicleDocuments(vehicleId);
+      res.json(documents);
+    } catch (error) {
+      console.error("Error fetching vehicle documents:", error);
+      res.status(500).json({ message: "Erro ao buscar documentos" });
+    }
+  });
+
+  app.post("/api/vehicles/:vehicleId/documents", isAuthenticated, async (req, res) => {
+    try {
+      const vehicleId = parseInt(req.params.vehicleId);
+      const { documentUrl, documentName, documentType, description } = req.body;
+      const document = await storage.addVehicleDocument({
+        vehicleId,
+        documentUrl,
+        documentName,
+        documentType,
+        description,
+      });
+      res.json(document);
+    } catch (error) {
+      console.error("Error adding vehicle document:", error);
+      res.status(500).json({ message: "Erro ao adicionar documento" });
+    }
+  });
+
+  app.delete("/api/vehicles/:vehicleId/documents/:documentId", isAuthenticated, async (req, res) => {
+    try {
+      const documentId = parseInt(req.params.documentId);
+      await storage.deleteVehicleDocument(documentId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting vehicle document:", error);
+      res.status(500).json({ message: "Erro ao excluir documento" });
+    }
+  });
+
+  // Vehicle Costs (purchase costs)
+  app.get("/api/vehicles/:vehicleId/costs", isAuthenticated, async (req, res) => {
+    try {
+      const vehicleId = parseInt(req.params.vehicleId);
+      const costs = await storage.getVehicleCosts(vehicleId);
+      res.json(costs);
+    } catch (error) {
+      console.error("Error fetching vehicle costs:", error);
+      res.status(500).json({ message: "Erro ao buscar custos" });
+    }
+  });
+
+  app.post("/api/vehicles/:vehicleId/costs", isAuthenticated, async (req, res) => {
+    try {
+      const vehicleId = parseInt(req.params.vehicleId);
+      const { description, value, date, notes } = req.body;
+      const cost = await storage.addVehicleCost({
+        vehicleId,
+        description,
+        value,
+        date: date ? new Date(date) : new Date(),
+        notes,
+      });
+      res.json(cost);
+    } catch (error) {
+      console.error("Error adding vehicle cost:", error);
+      res.status(500).json({ message: "Erro ao adicionar custo" });
+    }
+  });
+
+  app.patch("/api/vehicles/:vehicleId/costs/:costId", isAuthenticated, async (req, res) => {
+    try {
+      const costId = parseInt(req.params.costId);
+      const { description, value, date, notes } = req.body;
+      const updated = await storage.updateVehicleCost(costId, {
+        description,
+        value,
+        date: date ? new Date(date) : undefined,
+        notes,
+      });
+      if (!updated) {
+        return res.status(404).json({ message: "Custo não encontrado" });
+      }
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating vehicle cost:", error);
+      res.status(500).json({ message: "Erro ao atualizar custo" });
+    }
+  });
+
+  app.delete("/api/vehicles/:vehicleId/costs/:costId", isAuthenticated, async (req, res) => {
+    try {
+      const costId = parseInt(req.params.costId);
+      await storage.deleteVehicleCost(costId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting vehicle cost:", error);
+      res.status(500).json({ message: "Erro ao excluir custo" });
+    }
+  });
+
   // Customers
   app.get("/api/customers", isAuthenticated, async (req, res) => {
     try {

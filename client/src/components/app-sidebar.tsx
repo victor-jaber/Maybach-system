@@ -4,15 +4,13 @@ import {
   Car,
   Users,
   ShoppingCart,
-  Tags,
-  FolderTree,
   LogOut,
   UserCog,
   Search,
   FileText,
   Building,
   BarChart3,
-  AlertTriangle,
+  ExternalLink,
 } from "lucide-react";
 import logoImage from "@assets/maybach-logo.png";
 import {
@@ -43,7 +41,7 @@ const mainNavItems = [
     icon: Car,
   },
   {
-    title: "Vendas",
+    title: "Vendas e Compras",
     url: "/admin/sales",
     icon: ShoppingCart,
   },
@@ -63,10 +61,10 @@ const mainNavItems = [
     icon: Search,
   },
   {
-    title: "Débitos (Em Breve)",
-    url: "/admin/debts",
-    icon: AlertTriangle,
-    disabled: true,
+    title: "Consultar Débitos",
+    url: "https://www.ipva.fazenda.sp.gov.br/IPVANET_Consulta/Consulta.aspx",
+    icon: ExternalLink,
+    external: true,
   },
 ];
 
@@ -75,16 +73,6 @@ const configNavItems = [
     title: "Clientes",
     url: "/admin/customers",
     icon: Users,
-  },
-  {
-    title: "Marcas",
-    url: "/admin/brands",
-    icon: Tags,
-  },
-  {
-    title: "Categorias",
-    url: "/admin/categories",
-    icon: FolderTree,
   },
   {
     title: "Usuários",
@@ -135,13 +123,17 @@ export function AppSidebar() {
             <SidebarMenu>
               {mainNavItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  {item.disabled ? (
-                    <SidebarMenuButton
-                      disabled
-                      className="opacity-50 cursor-not-allowed"
-                    >
-                      <item.icon className="h-4 w-4" />
-                      <span>{item.title}</span>
+                  {item.external ? (
+                    <SidebarMenuButton asChild>
+                      <a 
+                        href={item.url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        data-testid={`link-nav-${item.title.toLowerCase().replace(/\s+/g, '-')}`}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </a>
                     </SidebarMenuButton>
                   ) : (
                     <SidebarMenuButton

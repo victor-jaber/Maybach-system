@@ -46,6 +46,8 @@ export const vehicles = pgTable("vehicles", {
   color: varchar("color", { length: 50 }).notNull(),
   mileage: integer("mileage").notNull(),
   price: decimal("price", { precision: 12, scale: 2 }).notNull(),
+  purchasePrice: decimal("purchase_price", { precision: 12, scale: 2 }),
+  purchaseDate: timestamp("purchase_date"),
   renavam: varchar("renavam", { length: 11 }),
   plate: varchar("plate", { length: 8 }),
   chassis: varchar("chassis", { length: 17 }),
@@ -64,6 +66,7 @@ export const vehiclesRelations = relations(vehicles, ({ one, many }) => ({
   category: one(categories, { fields: [vehicles.categoryId], references: [categories.id] }),
   sales: many(sales),
   images: many(vehicleImages),
+  costs: many(vehicleCosts),
 }));
 
 export const insertVehicleSchema = createInsertSchema(vehicles).omit({ id: true, createdAt: true, updatedAt: true });
@@ -77,6 +80,8 @@ export const insertVehicleApiSchema = z.object({
   color: z.string().min(1),
   mileage: z.coerce.number(),
   price: z.string(),
+  purchasePrice: z.string().optional().nullable(),
+  purchaseDate: z.union([z.string(), z.date()]).optional().nullable().transform(val => val ? new Date(val) : null),
   renavam: z.string().optional().nullable(),
   plate: z.string().optional().nullable(),
   chassis: z.string().optional().nullable(),
@@ -160,6 +165,8 @@ export const sales = pgTable("sales", {
   installments: integer("installments"),
   installmentValue: decimal("installment_value", { precision: 12, scale: 2 }),
   financingBank: varchar("financing_bank", { length: 100 }),
+  tradeInVehicleId: integer("trade_in_vehicle_id").references(() => vehicles.id),
+  tradeInValue: decimal("trade_in_value", { precision: 12, scale: 2 }),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -167,6 +174,7 @@ export const sales = pgTable("sales", {
 export const salesRelations = relations(sales, ({ one }) => ({
   customer: one(customers, { fields: [sales.customerId], references: [customers.id] }),
   vehicle: one(vehicles, { fields: [sales.vehicleId], references: [vehicles.id] }),
+  tradeInVehicle: one(vehicles, { fields: [sales.tradeInVehicleId], references: [vehicles.id] }),
 }));
 
 export const insertSaleSchema = createInsertSchema(sales).omit({ id: true, createdAt: true });
@@ -183,6 +191,8 @@ export const insertSaleApiSchema = z.object({
   installments: z.coerce.number().optional().nullable(),
   installmentValue: z.string().optional().nullable(),
   financingBank: z.string().optional().nullable(),
+  tradeInVehicleId: z.coerce.number().optional().nullable(),
+  tradeInValue: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
 });
 
@@ -206,6 +216,25 @@ export const vehicleImagesRelations = relations(vehicleImages, ({ one }) => ({
 export const insertVehicleImageSchema = createInsertSchema(vehicleImages).omit({ id: true, createdAt: true });
 export type InsertVehicleImage = z.infer<typeof insertVehicleImageSchema>;
 export type VehicleImage = typeof vehicleImages.$inferSelect;
+
+// Custos do veículo (para compras)
+export const vehicleCosts = pgTable("vehicle_costs", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  vehicleId: integer("vehicle_id").notNull().references(() => vehicles.id, { onDelete: "cascade" }),
+  description: varchar("description", { length: 200 }).notNull(),
+  value: decimal("value", { precision: 12, scale: 2 }).notNull(),
+  date: timestamp("date").defaultNow(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const vehicleCostsRelations = relations(vehicleCosts, ({ one }) => ({
+  vehicle: one(vehicles, { fields: [vehicleCosts.vehicleId], references: [vehicles.id] }),
+}));
+
+export const insertVehicleCostSchema = createInsertSchema(vehicleCosts).omit({ id: true, createdAt: true });
+export type InsertVehicleCost = z.infer<typeof insertVehicleCostSchema>;
+export type VehicleCost = typeof vehicleCosts.$inferSelect;
 
 // Dados da Loja
 export const stores = pgTable("stores", {
@@ -416,16 +445,37 @@ export const insertVehicleDebtSchema = createInsertSchema(vehicleDebts).omit({ i
 export type InsertVehicleDebt = z.infer<typeof insertVehicleDebtSchema>;
 export type VehicleDebt = typeof vehicleDebts.$inferSelect;
 
+// Documentos do Veículo (PDFs, imagens de documentos)
+export const vehicleDocuments = pgTable("vehicle_documents", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  vehicleId: integer("vehicle_id").notNull().references(() => vehicles.id, { onDelete: "cascade" }),
+  documentUrl: text("document_url").notNull(),
+  documentName: varchar("document_name", { length: 255 }).notNull(),
+  documentType: varchar("document_type", { length: 50 }).notNull(), // 'pdf', 'image'
+  description: varchar("description", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const vehicleDocumentsRelations = relations(vehicleDocuments, ({ one }) => ({
+  vehicle: one(vehicles, { fields: [vehicleDocuments.vehicleId], references: [vehicles.id] }),
+}));
+
+export const insertVehicleDocumentSchema = createInsertSchema(vehicleDocuments).omit({ id: true, createdAt: true });
+export type InsertVehicleDocument = z.infer<typeof insertVehicleDocumentSchema>;
+export type VehicleDocument = typeof vehicleDocuments.$inferSelect;
+
 // Extended types with relations
 export type VehicleWithRelations = Vehicle & {
   brand: Brand;
   category: Category;
   images?: VehicleImage[];
+  documents?: VehicleDocument[];
 };
 
 export type SaleWithRelations = Sale & {
   customer: Customer;
   vehicle: VehicleWithRelations;
+  tradeInVehicle?: VehicleWithRelations | null;
 };
 
 export type ContractWithRelations = Contract & {

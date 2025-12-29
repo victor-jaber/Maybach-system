@@ -3,6 +3,8 @@ import {
   categories,
   vehicles,
   vehicleImages,
+  vehicleDocuments,
+  vehicleCosts,
   customers,
   sales,
   users,
@@ -21,6 +23,10 @@ import {
   type VehicleWithRelations,
   type VehicleImage,
   type InsertVehicleImage,
+  type VehicleDocument,
+  type InsertVehicleDocument,
+  type VehicleCost,
+  type InsertVehicleCost,
   type Customer,
   type InsertCustomer,
   type Sale,
@@ -99,6 +105,17 @@ export interface IStorage {
   updateVehicleImage(id: number, data: Partial<InsertVehicleImage>): Promise<VehicleImage | undefined>;
   deleteVehicleImage(id: number): Promise<boolean>;
   setVehiclePrimaryImage(vehicleId: number, imageId: number): Promise<void>;
+
+  // Vehicle Documents
+  getVehicleDocuments(vehicleId: number): Promise<VehicleDocument[]>;
+  addVehicleDocument(document: InsertVehicleDocument): Promise<VehicleDocument>;
+  deleteVehicleDocument(id: number): Promise<boolean>;
+
+  // Vehicle Costs
+  getVehicleCosts(vehicleId: number): Promise<VehicleCost[]>;
+  addVehicleCost(cost: InsertVehicleCost): Promise<VehicleCost>;
+  updateVehicleCost(id: number, data: Partial<InsertVehicleCost>): Promise<VehicleCost | undefined>;
+  deleteVehicleCost(id: number): Promise<boolean>;
 
   // Store
   getStore(): Promise<Store | undefined>;
@@ -334,6 +351,12 @@ export class DatabaseStorage implements IStorage {
             category: true,
           },
         },
+        tradeInVehicle: {
+          with: {
+            brand: true,
+            category: true,
+          },
+        },
       },
       orderBy: [desc(sales.saleDate)],
     });
@@ -351,6 +374,12 @@ export class DatabaseStorage implements IStorage {
             category: true,
           },
         },
+        tradeInVehicle: {
+          with: {
+            brand: true,
+            category: true,
+          },
+        },
       },
     });
     return result as SaleWithRelations | undefined;
@@ -360,6 +389,10 @@ export class DatabaseStorage implements IStorage {
     const [newSale] = await db.insert(sales).values(sale).returning();
     // Update vehicle status to sold
     await db.update(vehicles).set({ status: "sold" }).where(eq(vehicles.id, sale.vehicleId));
+    // If there's a trade-in vehicle, mark it as reserved for evaluation
+    if (sale.tradeInVehicleId) {
+      await db.update(vehicles).set({ status: "reserved" }).where(eq(vehicles.id, sale.tradeInVehicleId));
+    }
     return newSale;
   }
 
@@ -451,6 +484,41 @@ export class DatabaseStorage implements IStorage {
     await db.update(vehicleImages)
       .set({ isPrimary: true })
       .where(eq(vehicleImages.id, imageId));
+  }
+
+  // Vehicle Documents
+  async getVehicleDocuments(vehicleId: number): Promise<VehicleDocument[]> {
+    return db.select().from(vehicleDocuments).where(eq(vehicleDocuments.vehicleId, vehicleId)).orderBy(desc(vehicleDocuments.createdAt));
+  }
+
+  async addVehicleDocument(document: InsertVehicleDocument): Promise<VehicleDocument> {
+    const [newDocument] = await db.insert(vehicleDocuments).values(document).returning();
+    return newDocument;
+  }
+
+  async deleteVehicleDocument(id: number): Promise<boolean> {
+    await db.delete(vehicleDocuments).where(eq(vehicleDocuments.id, id));
+    return true;
+  }
+
+  // Vehicle Costs
+  async getVehicleCosts(vehicleId: number): Promise<VehicleCost[]> {
+    return db.select().from(vehicleCosts).where(eq(vehicleCosts.vehicleId, vehicleId)).orderBy(desc(vehicleCosts.createdAt));
+  }
+
+  async addVehicleCost(cost: InsertVehicleCost): Promise<VehicleCost> {
+    const [newCost] = await db.insert(vehicleCosts).values(cost).returning();
+    return newCost;
+  }
+
+  async updateVehicleCost(id: number, data: Partial<InsertVehicleCost>): Promise<VehicleCost | undefined> {
+    const [updated] = await db.update(vehicleCosts).set(data).where(eq(vehicleCosts.id, id)).returning();
+    return updated;
+  }
+
+  async deleteVehicleCost(id: number): Promise<boolean> {
+    await db.delete(vehicleCosts).where(eq(vehicleCosts.id, id));
+    return true;
   }
 
   // Store

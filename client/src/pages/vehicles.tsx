@@ -10,6 +10,10 @@ import {
   Trash2,
   Car,
   X,
+  FileText,
+  Upload,
+  File,
+  Image as ImageIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -55,11 +59,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatCurrency, formatCurrencyInput, parseCurrencyToNumber } from "@/lib/currency";
 import { VehicleMultiImageUploader } from "@/components/VehicleMultiImageUploader";
-import type { VehicleWithRelations, Brand, Category, VehicleImage } from "@shared/schema";
+import type { VehicleWithRelations, Brand, Category, VehicleImage, VehicleDocument } from "@shared/schema";
 
 const vehicleFormSchema = z.object({
   brandId: z.number({ required_error: "Selecione uma marca" }),
@@ -93,6 +98,12 @@ export default function VehiclesPage() {
   const [deletingVehicle, setDeletingVehicle] = useState<VehicleWithRelations | null>(null);
   const [localImages, setLocalImages] = useState<VehicleImage[]>([]);
   const [pendingImageUploads, setPendingImageUploads] = useState<{url: string, isPrimary: boolean}[]>([]);
+  const [newBrandName, setNewBrandName] = useState("");
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [isAddingBrand, setIsAddingBrand] = useState(false);
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [documents, setDocuments] = useState<VehicleDocument[]>([]);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
   const { toast } = useToast();
 
   const { data: vehicles, isLoading } = useQuery<VehicleWithRelations[]>({
@@ -119,6 +130,40 @@ export default function VehiclesPage() {
     },
   });
 
+  const createBrandMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const response = await apiRequest("POST", "/api/brands", { name });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/brands"] });
+      form.setValue("brandId", data.id);
+      setNewBrandName("");
+      setIsAddingBrand(false);
+      toast({ title: "Marca criada com sucesso!" });
+    },
+    onError: () => {
+      toast({ title: "Erro ao criar marca", variant: "destructive" });
+    },
+  });
+
+  const createCategoryMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const response = await apiRequest("POST", "/api/categories", { name });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      form.setValue("categoryId", data.id);
+      setNewCategoryName("");
+      setIsAddingCategory(false);
+      toast({ title: "Categoria criada com sucesso!" });
+    },
+    onError: () => {
+      toast({ title: "Erro ao criar categoria", variant: "destructive" });
+    },
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data: VehicleFormValues) => {
       const vehicle = await apiRequest("POST", "/api/vehicles", data);
@@ -139,6 +184,7 @@ export default function VehiclesPage() {
       form.reset();
       setLocalImages([]);
       setPendingImageUploads([]);
+      setDocuments([]);
       toast({ title: "Veículo cadastrado com sucesso!" });
     },
     onError: () => {
@@ -154,6 +200,7 @@ export default function VehiclesPage() {
       setIsDialogOpen(false);
       setEditingVehicle(null);
       form.reset();
+      setDocuments([]);
       toast({ title: "Veículo atualizado com sucesso!" });
     },
     onError: () => {
@@ -197,10 +244,23 @@ export default function VehiclesPage() {
     },
   });
 
+  const deleteDocumentMutation = useMutation({
+    mutationFn: ({ vehicleId, documentId }: { vehicleId: number; documentId: number }) =>
+      apiRequest("DELETE", `/api/vehicles/${vehicleId}/documents/${documentId}`),
+    onSuccess: () => {
+      toast({ title: "Documento excluído com sucesso!" });
+    },
+  });
+
   const handleOpenCreate = () => {
     setEditingVehicle(null);
     setLocalImages([]);
     setPendingImageUploads([]);
+    setDocuments([]);
+    setNewBrandName("");
+    setNewCategoryName("");
+    setIsAddingBrand(false);
+    setIsAddingCategory(false);
     form.reset({
       model: "",
       year: new Date().getFullYear(),
@@ -212,10 +272,14 @@ export default function VehiclesPage() {
     setIsDialogOpen(true);
   };
 
-  const handleOpenEdit = (vehicle: VehicleWithRelations) => {
+  const handleOpenEdit = async (vehicle: VehicleWithRelations) => {
     setEditingVehicle(vehicle);
     setLocalImages(vehicle.images || []);
     setPendingImageUploads([]);
+    setNewBrandName("");
+    setNewCategoryName("");
+    setIsAddingBrand(false);
+    setIsAddingCategory(false);
     form.reset({
       brandId: vehicle.brandId,
       categoryId: vehicle.categoryId,
@@ -234,6 +298,19 @@ export default function VehiclesPage() {
       imageUrl: vehicle.imageUrl || "",
       status: vehicle.status,
     });
+    
+    try {
+      const response = await fetch(`/api/vehicles/${vehicle.id}/documents`, {
+        credentials: "include",
+      });
+      if (response.ok) {
+        const docs = await response.json();
+        setDocuments(docs);
+      }
+    } catch (error) {
+      console.error("Error fetching documents:", error);
+    }
+    
     setIsDialogOpen(true);
   };
 
@@ -299,6 +376,60 @@ export default function VehiclesPage() {
           isPrimary: i === imageIndex,
         }));
       });
+    }
+  };
+
+  const handleDocumentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !editingVehicle) return;
+
+    setIsUploadingDoc(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const uploadResponse = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!uploadResponse.ok) throw new Error("Upload failed");
+      
+      const { url } = await uploadResponse.json();
+      
+      const documentType = file.type.includes("pdf") ? "pdf" : "image";
+      
+      const docResponse = await apiRequest("POST", `/api/vehicles/${editingVehicle.id}/documents`, {
+        documentUrl: url,
+        documentName: file.name,
+        documentType,
+        description: "",
+      });
+      
+      const newDoc = await docResponse.json();
+      setDocuments(prev => [newDoc, ...prev]);
+      toast({ title: "Documento adicionado com sucesso!" });
+    } catch (error) {
+      console.error("Error uploading document:", error);
+      toast({ title: "Erro ao enviar documento", variant: "destructive" });
+    } finally {
+      setIsUploadingDoc(false);
+      e.target.value = "";
+    }
+  };
+
+  const handleDeleteDocument = async (docId: number) => {
+    if (!editingVehicle) return;
+    
+    try {
+      await deleteDocumentMutation.mutateAsync({
+        vehicleId: editingVehicle.id,
+        documentId: docId,
+      });
+      setDocuments(prev => prev.filter(d => d.id !== docId));
+    } catch (error) {
+      toast({ title: "Erro ao excluir documento", variant: "destructive" });
     }
   };
 
@@ -395,7 +526,7 @@ export default function VehiclesPage() {
                     <div>
                       <p className="font-medium">{vehicle.model}</p>
                       <p className="text-sm text-muted-foreground">
-                        {vehicle.brand?.name} • {vehicle.category?.name}
+                        {vehicle.brand?.name} - {vehicle.category?.name}
                       </p>
                     </div>
                   </TableCell>
@@ -434,367 +565,565 @@ export default function VehiclesPage() {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingVehicle ? "Editar Veículo" : "Novo Veículo"}
             </DialogTitle>
           </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="brandId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Marca *</FormLabel>
-                      <Select
-                        onValueChange={(value) => field.onChange(parseInt(value))}
-                        value={field.value?.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger data-testid="select-brand">
-                            <SelectValue placeholder="Selecione a marca" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {brands?.map((brand) => (
-                            <SelectItem key={brand.id} value={brand.id.toString()}>
-                              {brand.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="categoryId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Categoria *</FormLabel>
-                      <Select
-                        onValueChange={(value) => field.onChange(parseInt(value))}
-                        value={field.value?.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger data-testid="select-category">
-                            <SelectValue placeholder="Selecione a categoria" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {categories?.map((category) => (
-                            <SelectItem key={category.id} value={category.id.toString()}>
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+          
+          <Tabs defaultValue="dados" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="dados" data-testid="tab-dados">Dados</TabsTrigger>
+              <TabsTrigger value="imagens" data-testid="tab-imagens">Imagens</TabsTrigger>
+              <TabsTrigger value="documentos" data-testid="tab-documentos">Documentos</TabsTrigger>
+            </TabsList>
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <TabsContent value="dados" className="space-y-6 mt-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="brandId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Marca *</FormLabel>
+                          {isAddingBrand ? (
+                            <div className="flex gap-2">
+                              <Input
+                                value={newBrandName}
+                                onChange={(e) => setNewBrandName(e.target.value)}
+                                placeholder="Nome da nova marca"
+                                data-testid="input-new-brand"
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => {
+                                  if (newBrandName.trim()) {
+                                    createBrandMutation.mutate(newBrandName.trim());
+                                  }
+                                }}
+                                disabled={createBrandMutation.isPending}
+                                data-testid="button-save-brand"
+                              >
+                                Salvar
+                              </Button>
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => {
+                                  setIsAddingBrand(false);
+                                  setNewBrandName("");
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex gap-2">
+                              <Select
+                                onValueChange={(value) => field.onChange(parseInt(value))}
+                                value={field.value?.toString()}
+                              >
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-brand" className="flex-1">
+                                    <SelectValue placeholder="Selecione a marca" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {brands?.map((brand) => (
+                                    <SelectItem key={brand.id} value={brand.id.toString()}>
+                                      {brand.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="outline"
+                                onClick={() => setIsAddingBrand(true)}
+                                data-testid="button-add-brand"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="categoryId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Categoria *</FormLabel>
+                          {isAddingCategory ? (
+                            <div className="flex gap-2">
+                              <Input
+                                value={newCategoryName}
+                                onChange={(e) => setNewCategoryName(e.target.value)}
+                                placeholder="Nome da nova categoria"
+                                data-testid="input-new-category"
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => {
+                                  if (newCategoryName.trim()) {
+                                    createCategoryMutation.mutate(newCategoryName.trim());
+                                  }
+                                }}
+                                disabled={createCategoryMutation.isPending}
+                                data-testid="button-save-category"
+                              >
+                                Salvar
+                              </Button>
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                onClick={() => {
+                                  setIsAddingCategory(false);
+                                  setNewCategoryName("");
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex gap-2">
+                              <Select
+                                onValueChange={(value) => field.onChange(parseInt(value))}
+                                value={field.value?.toString()}
+                              >
+                                <FormControl>
+                                  <SelectTrigger data-testid="select-category" className="flex-1">
+                                    <SelectValue placeholder="Selecione a categoria" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {categories?.map((category) => (
+                                    <SelectItem key={category.id} value={category.id.toString()}>
+                                      {category.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="outline"
+                                onClick={() => setIsAddingCategory(true)}
+                                data-testid="button-add-category"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="model"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Modelo *</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Ex: Civic EXL" data-testid="input-model" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="year"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Ano *</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                          data-testid="input-year"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="model"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Modelo *</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Ex: Civic EXL" data-testid="input-model" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="year"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Ano *</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value))}
+                              data-testid="input-year"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-              <div className="grid gap-4 sm:grid-cols-3">
-                <FormField
-                  control={form.control}
-                  name="color"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cor *</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Ex: Prata" data-testid="input-color" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="mileage"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Quilometragem *</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                          data-testid="input-mileage"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="price"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Preço *</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="R$ 0,00"
-                          data-testid="input-price"
-                          onChange={(e) => {
-                            const formatted = formatCurrencyInput(e.target.value);
-                            field.onChange(formatted);
-                          }}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <FormField
+                      control={form.control}
+                      name="color"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cor *</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Ex: Prata" data-testid="input-color" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="mileage"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Quilometragem *</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value))}
+                              data-testid="input-mileage"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="price"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Preço *</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              placeholder="R$ 0,00"
+                              data-testid="input-price"
+                              onChange={(e) => {
+                                const formatted = formatCurrencyInput(e.target.value);
+                                field.onChange(formatted);
+                              }}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-              <div className="grid gap-4 sm:grid-cols-3">
-                <FormField
-                  control={form.control}
-                  name="renavam"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Renavam</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="11 dígitos" maxLength={11} data-testid="input-renavam" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="plate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Placa</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Ex: ABC1D23" maxLength={7} className="uppercase" data-testid="input-plate" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="chassis"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Chassi</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="17 caracteres" maxLength={17} className="uppercase" data-testid="input-chassis" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <FormField
+                      control={form.control}
+                      name="renavam"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Renavam</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="11 dígitos" maxLength={11} data-testid="input-renavam" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="plate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Placa</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Ex: ABC1D23" maxLength={7} className="uppercase" data-testid="input-plate" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="chassis"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Chassi</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="17 caracteres" maxLength={17} className="uppercase" data-testid="input-chassis" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-              <div className="grid gap-4 sm:grid-cols-3">
-                <FormField
-                  control={form.control}
-                  name="fuel"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Combustível</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <FormField
+                      control={form.control}
+                      name="fuel"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Combustível</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-fuel">
+                                <SelectValue placeholder="Selecione" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Flex">Flex</SelectItem>
+                              <SelectItem value="Gasolina">Gasolina</SelectItem>
+                              <SelectItem value="Etanol">Etanol</SelectItem>
+                              <SelectItem value="Diesel">Diesel</SelectItem>
+                              <SelectItem value="Elétrico">Elétrico</SelectItem>
+                              <SelectItem value="Híbrido">Híbrido</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="transmission"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Câmbio</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-transmission">
+                                <SelectValue placeholder="Selecione" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Manual">Manual</SelectItem>
+                              <SelectItem value="Automático">Automático</SelectItem>
+                              <SelectItem value="CVT">CVT</SelectItem>
+                              <SelectItem value="Automatizado">Automatizado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="doors"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Portas</FormLabel>
+                          <Select
+                            onValueChange={(value) => field.onChange(parseInt(value))}
+                            value={field.value?.toString()}
+                          >
+                            <FormControl>
+                              <SelectTrigger data-testid="select-doors">
+                                <SelectValue placeholder="Selecione" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="2">2 portas</SelectItem>
+                              <SelectItem value="4">4 portas</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Status</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-status">
+                                <SelectValue placeholder="Selecione" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="available">Disponível</SelectItem>
+                              <SelectItem value="reserved">Reservado</SelectItem>
+                              <SelectItem value="sold">Vendido</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descrição</FormLabel>
                         <FormControl>
-                          <SelectTrigger data-testid="select-fuel">
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
+                          <Textarea
+                            {...field}
+                            placeholder="Observações sobre o veículo..."
+                            className="resize-none"
+                            rows={3}
+                            data-testid="textarea-description"
+                          />
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Flex">Flex</SelectItem>
-                          <SelectItem value="Gasolina">Gasolina</SelectItem>
-                          <SelectItem value="Etanol">Etanol</SelectItem>
-                          <SelectItem value="Diesel">Diesel</SelectItem>
-                          <SelectItem value="Elétrico">Elétrico</SelectItem>
-                          <SelectItem value="Híbrido">Híbrido</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="transmission"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Câmbio</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-transmission">
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="Manual">Manual</SelectItem>
-                          <SelectItem value="Automático">Automático</SelectItem>
-                          <SelectItem value="CVT">CVT</SelectItem>
-                          <SelectItem value="Automatizado">Automatizado</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="doors"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Portas</FormLabel>
-                      <Select
-                        onValueChange={(value) => field.onChange(parseInt(value))}
-                        value={field.value?.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger data-testid="select-doors">
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="2">2 portas</SelectItem>
-                          <SelectItem value="4">4 portas</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Imagens do Veículo</label>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Adicione uma imagem principal e fotos adicionais para a galeria
-                  </p>
-                  <VehicleMultiImageUploader
-                    vehicleId={editingVehicle?.id}
-                    images={localImages}
-                    onImageAdd={handleImageAdd}
-                    onImageRemove={handleImageRemove}
-                    onSetPrimary={handleSetPrimary}
-                    isLoading={addImageMutation.isPending || removeImageMutation.isPending}
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
+                </TabsContent>
+
+                <TabsContent value="imagens" className="space-y-6 mt-4">
+                  <div>
+                    <label className="text-sm font-medium">Imagens do Veículo</label>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Adicione uma imagem principal e fotos adicionais para a galeria (visível no catálogo)
+                    </p>
+                    <VehicleMultiImageUploader
+                      vehicleId={editingVehicle?.id}
+                      images={localImages}
+                      onImageAdd={handleImageAdd}
+                      onImageRemove={handleImageRemove}
+                      onSetPrimary={handleSetPrimary}
+                      isLoading={addImageMutation.isPending || removeImageMutation.isPending}
+                    />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="documentos" className="space-y-6 mt-4">
+                  <div>
+                    <label className="text-sm font-medium">Documentos do Veículo</label>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      Adicione documentos do veículo (CRLV, laudos, etc.) - apenas para uso interno
+                    </p>
+                    
+                    {editingVehicle ? (
+                      <>
+                        <div className="mb-4">
+                          <label
+                            htmlFor="document-upload"
+                            className="flex items-center justify-center gap-2 p-4 border-2 border-dashed rounded-lg cursor-pointer hover:border-primary/50 transition-colors"
+                          >
+                            <Upload className="h-5 w-5 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
+                              {isUploadingDoc ? "Enviando..." : "Clique para enviar documento (PDF ou imagem)"}
+                            </span>
+                          </label>
+                          <input
+                            id="document-upload"
+                            type="file"
+                            accept=".pdf,image/*"
+                            className="hidden"
+                            onChange={handleDocumentUpload}
+                            disabled={isUploadingDoc}
+                            data-testid="input-document-upload"
+                          />
+                        </div>
+
+                        {documents.length === 0 ? (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <FileText className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                            <p className="text-sm">Nenhum documento adicionado</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            {documents.map((doc) => (
+                              <div
+                                key={doc.id}
+                                className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+                              >
+                                <div className="flex items-center gap-3">
+                                  {doc.documentType === "pdf" ? (
+                                    <File className="h-5 w-5 text-red-500" />
+                                  ) : (
+                                    <ImageIcon className="h-5 w-5 text-blue-500" />
+                                  )}
+                                  <div>
+                                    <p className="text-sm font-medium">{doc.documentName}</p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {new Date(doc.createdAt!).toLocaleDateString("pt-BR")}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => window.open(doc.documentUrl, "_blank")}
+                                    data-testid={`button-view-doc-${doc.id}`}
+                                  >
+                                    Visualizar
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => handleDeleteDocument(doc.id)}
+                                    data-testid={`button-delete-doc-${doc.id}`}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground bg-muted/30 rounded-lg">
+                        <FileText className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                        <p className="text-sm">Salve o veículo primeiro para adicionar documentos</p>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsDialogOpen(false)}
+                    data-testid="button-cancel"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={createMutation.isPending || updateMutation.isPending}
+                    data-testid="button-save-vehicle"
+                  >
+                    {createMutation.isPending || updateMutation.isPending
+                      ? "Salvando..."
+                      : editingVehicle
+                      ? "Salvar Alterações"
+                      : "Cadastrar Veículo"}
+                  </Button>
                 </div>
-                <FormField
-                  control={form.control}
-                  name="status"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger data-testid="select-status">
-                            <SelectValue placeholder="Selecione" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="available">Disponível</SelectItem>
-                          <SelectItem value="reserved">Reservado</SelectItem>
-                          <SelectItem value="sold">Vendido</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descrição</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        placeholder="Observações sobre o veículo..."
-                        className="resize-none"
-                        rows={3}
-                        data-testid="textarea-description"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="flex justify-end gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                  data-testid="button-cancel"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={createMutation.isPending || updateMutation.isPending}
-                  data-testid="button-save-vehicle"
-                >
-                  {createMutation.isPending || updateMutation.isPending
-                    ? "Salvando..."
-                    : "Salvar"}
-                </Button>
-              </div>
-            </form>
-          </Form>
+              </form>
+            </Form>
+          </Tabs>
         </DialogContent>
       </Dialog>
 
       <AlertDialog open={!!deletingVehicle} onOpenChange={() => setDeletingVehicle(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o veículo "{deletingVehicle?.model}"?
-              Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir o veículo{" "}
+              <strong>{deletingVehicle?.model}</strong>? Esta ação não pode ser
+              desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
