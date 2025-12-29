@@ -249,20 +249,26 @@ export default function SalesPage() {
 
   const createMutation = useMutation({
     mutationFn: async (data: SaleFormValues) => {
+      const totalValueNum = parseCurrencyToNumber(data.totalValue || "0");
+      const downPaymentNum = data.downPayment ? parseCurrencyToNumber(data.downPayment) : null;
+      const financedValueNum = data.financedValue ? parseCurrencyToNumber(data.financedValue) : null;
+      const installmentValueNum = data.installmentValue ? parseCurrencyToNumber(data.installmentValue) : null;
+      const tradeInValueNum = data.hasTradeIn && data.tradeInValue ? parseCurrencyToNumber(data.tradeInValue) : null;
+
       const salePayload = {
         customerId: data.customerId,
         vehicleId: data.vehicleId,
         saleDate: new Date(data.saleDate),
-        totalValue: data.totalValue,
+        totalValue: totalValueNum,
         paymentType: data.remainingPaymentType === "financed" ? "financed" : 
                      data.remainingPaymentType === "credit_card" ? "credit_card" : "cash",
-        downPayment: data.downPayment || null,
-        financedValue: data.financedValue || null,
+        downPayment: downPaymentNum,
+        financedValue: financedValueNum,
         installments: data.installments || null,
-        installmentValue: data.installmentValue || null,
+        installmentValue: installmentValueNum,
         financingBank: data.financingBank || null,
         tradeInVehicleId: data.hasTradeIn ? data.tradeInVehicleId : null,
-        tradeInValue: data.hasTradeIn ? data.tradeInValue : null,
+        tradeInValue: tradeInValueNum,
         notes: data.notes || null,
       };
       const saleResponse = await apiRequest("POST", "/api/sales", salePayload);
@@ -270,20 +276,19 @@ export default function SalesPage() {
 
       try {
         const contractPayload = {
-          type: "sale",
+          contractType: "purchase_sale",
           customerId: data.customerId,
           vehicleId: data.vehicleId,
           saleId: sale.id,
-          totalValue: data.totalValue,
-          downPayment: data.downPayment || null,
-          financedValue: data.financedValue || null,
-          installments: data.installments || null,
-          installmentValue: data.installmentValue || null,
-          interestRate: null,
-          paymentMethod: data.remainingPaymentType,
+          valorVenda: totalValueNum,
+          entradaTotal: downPaymentNum,
+          entradaPaga: downPaymentNum,
+          entradaRestante: 0,
+          formaPagamentoRestante: data.remainingPaymentType,
+          quantidadeParcelas: data.installments || null,
+          valorParcela: installmentValueNum,
           tradeInVehicleId: data.hasTradeIn ? data.tradeInVehicleId : null,
-          tradeInValue: data.hasTradeIn ? data.tradeInValue : null,
-          notes: data.notes || null,
+          tradeInValue: tradeInValueNum,
           status: "pending",
         };
         await apiRequest("POST", "/api/contracts", contractPayload);
@@ -325,7 +330,11 @@ export default function SalesPage() {
 
   const createVehicleMutation = useMutation({
     mutationFn: async (data: QuickVehicleValues) => {
-      const response = await apiRequest("POST", "/api/vehicles", data);
+      const vehiclePayload = {
+        ...data,
+        price: parseCurrencyToNumber(data.price),
+      };
+      const response = await apiRequest("POST", "/api/vehicles", vehiclePayload);
       return response.json();
     },
     onSuccess: (data) => {
@@ -334,7 +343,7 @@ export default function SalesPage() {
         form.setValue("tradeInVehicleId", data.id);
       } else {
         form.setValue("vehicleId", data.id);
-        form.setValue("totalValue", String(data.price));
+        form.setValue("totalValue", formatCurrency(data.price));
       }
       setIsVehicleDialogOpen(false);
       vehicleForm.reset({ model: "", year: new Date().getFullYear(), color: "", mileage: 0, price: "", status: "reserved" });

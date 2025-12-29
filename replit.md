@@ -55,6 +55,18 @@ O sistema está funcional com as seguintes funcionalidades:
 O projeto usa o workflow "Start application" que executa `npm run dev` para iniciar o servidor Express com Vite.
 
 ## Recent Changes
+- 29/12/2024: Enhanced Sales Page with Inline Creation & Auto-Contracts
+  - Added inline customer creation popup with quick registration (name, CPF/CNPJ, phone, email)
+  - Added inline vehicle creation popup for both sale vehicles and trade-in vehicles
+  - Trade-in vehicles are automatically marked as "reserved" for evaluation
+  - Improved sale form with down payment, remaining value auto-calculation
+  - Multiple payment methods: cash, PIX, boleto, credit card, financing
+  - Automatic contract creation when a sale is registered
+  - Stock tab with vehicle costs management and profit calculation summary
+  - Contracts page converted to view-only (no manual creation)
+  - Contracts are now created automatically from sales
+  - Currency values properly converted to numbers before API calls
+
 - 26/12/2024: Electronic Signature PDF Auto-Generation & Email
   - Store signature pre-applied when generating contract PDFs
   - After customer signs, PDF regenerated with both signatures embedded
