@@ -70,10 +70,24 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatCurrency, formatCurrencyInput, parseCurrencyToNumber } from "@/lib/currency";
 import {
   formatCPFCNPJ,
+  cleanCPFCNPJ,
   validateCPFCNPJ,
+  formatRG,
+  cleanRG,
+  validateRG,
+  formatCNH,
+  validateCNH,
   formatPhone,
+  cleanPhone,
   validatePhone,
+  formatCEP,
+  cleanCEP,
+  validateCEP,
+  validateAge,
 } from "@/lib/br-formatters";
+import { useViaCep } from "@/hooks/use-viacep";
+import { useWatch } from "react-hook-form";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { SaleWithRelations, VehicleWithRelations, Customer, VehicleCost, Brand, Category } from "@shared/schema";
 
 const saleFormSchema = z.object({
@@ -95,7 +109,7 @@ const saleFormSchema = z.object({
 
 type SaleFormValues = z.infer<typeof saleFormSchema>;
 
-const quickCustomerSchema = z.object({
+const fullCustomerSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   cpfCnpj: z.string().min(1, "CPF/CNPJ é obrigatório").superRefine((val, ctx) => {
     const result = validateCPFCNPJ(val);
@@ -103,25 +117,66 @@ const quickCustomerSchema = z.object({
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: result.message || "CPF/CNPJ inválido" });
     }
   }),
-  phone: z.string().min(1, "Telefone é obrigatório").refine(validatePhone, "Telefone inválido"),
+  rg: z.string().optional().refine((val) => {
+    if (!val || val.trim() === "") return true;
+    return validateRG(val);
+  }, "RG inválido (7 a 9 dígitos)"),
+  cnh: z.string().optional().refine((val) => {
+    if (!val || val.trim() === "") return true;
+    return validateCNH(val);
+  }, "CNH inválida (9 a 11 dígitos)"),
+  birthDate: z.string().optional().refine((val) => {
+    if (!val || val.trim() === "") return true;
+    return validateAge(val, 18);
+  }, "Cliente deve ter pelo menos 18 anos"),
+  profession: z.string().optional(),
+  monthlyIncome: z.string().optional(),
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
+  phone: z.string().min(1, "Telefone é obrigatório").refine(validatePhone, "Telefone inválido"),
+  secondaryPhone: z.string().optional().refine((val) => {
+    if (!val || val.trim() === "") return true;
+    return validatePhone(val);
+  }, "Telefone inválido (10 ou 11 dígitos)"),
+  cep: z.string().optional().refine((val) => {
+    if (!val || val.trim() === "") return true;
+    return validateCEP(val);
+  }, "CEP inválido (8 dígitos)"),
+  street: z.string().optional(),
+  number: z.string().optional(),
+  complement: z.string().optional(),
+  neighborhood: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  notes: z.string().optional(),
 });
 
-type QuickCustomerValues = z.infer<typeof quickCustomerSchema>;
+type FullCustomerValues = z.infer<typeof fullCustomerSchema>;
 
-const quickVehicleSchema = z.object({
+const brazilianStates = [
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA",
+  "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN",
+  "RS", "RO", "RR", "SC", "SP", "SE", "TO"
+];
+
+const fullVehicleSchema = z.object({
   brandId: z.number({ required_error: "Selecione uma marca" }),
   categoryId: z.number({ required_error: "Selecione uma categoria" }),
   model: z.string().min(1, "Modelo é obrigatório"),
   year: z.number().min(1900).max(new Date().getFullYear() + 1),
   color: z.string().min(1, "Cor é obrigatória"),
-  mileage: z.number().min(0),
+  mileage: z.number().min(0, "Quilometragem inválida"),
   price: z.string().min(1, "Preço é obrigatório"),
-  plate: z.string().optional(),
+  renavam: z.string().max(11, "Renavam deve ter no máximo 11 dígitos").optional(),
+  plate: z.string().max(7, "Placa deve ter no máximo 7 caracteres").optional(),
+  chassis: z.string().max(17, "Chassi deve ter no máximo 17 caracteres").optional(),
+  fuel: z.string().optional(),
+  transmission: z.string().optional(),
+  doors: z.number().optional(),
+  description: z.string().optional(),
   status: z.string().default("reserved"),
 });
 
-type QuickVehicleValues = z.infer<typeof quickVehicleSchema>;
+type FullVehicleValues = z.infer<typeof fullVehicleSchema>;
 
 const costFormSchema = z.object({
   description: z.string().min(1, "Descrição é obrigatória"),
@@ -154,7 +209,10 @@ export default function SalesPage() {
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [isVehicleDialogOpen, setIsVehicleDialogOpen] = useState(false);
   const [isTradeInVehicle, setIsTradeInVehicle] = useState(false);
+  const [customerDialogTab, setCustomerDialogTab] = useState("personal");
+  const [vehicleDialogTab, setVehicleDialogTab] = useState("general");
   const { toast } = useToast();
+  const { loading: cepLoading, lookupCEP } = useViaCep();
 
   const { data: sales, isLoading: salesLoading } = useQuery<SaleWithRelations[]>({
     queryKey: ["/api/sales"],
@@ -204,19 +262,44 @@ export default function SalesPage() {
     },
   });
 
-  const customerForm = useForm<QuickCustomerValues>({
-    resolver: zodResolver(quickCustomerSchema),
-    defaultValues: { name: "", cpfCnpj: "", phone: "", email: "" },
+  const customerForm = useForm<FullCustomerValues>({
+    resolver: zodResolver(fullCustomerSchema),
+    defaultValues: {
+      name: "",
+      cpfCnpj: "",
+      rg: "",
+      cnh: "",
+      birthDate: "",
+      profession: "",
+      monthlyIncome: "",
+      email: "",
+      phone: "",
+      secondaryPhone: "",
+      cep: "",
+      street: "",
+      number: "",
+      complement: "",
+      neighborhood: "",
+      city: "",
+      state: "",
+      notes: "",
+    },
   });
 
-  const vehicleForm = useForm<QuickVehicleValues>({
-    resolver: zodResolver(quickVehicleSchema),
+  const vehicleForm = useForm<FullVehicleValues>({
+    resolver: zodResolver(fullVehicleSchema),
     defaultValues: {
       model: "",
       year: new Date().getFullYear(),
       color: "",
       mileage: 0,
       price: "",
+      renavam: "",
+      plate: "",
+      chassis: "",
+      fuel: "",
+      transmission: "",
+      description: "",
       status: "reserved",
     },
   });
@@ -240,6 +323,29 @@ export default function SalesPage() {
   };
 
   const remainingValue = calculateRemainingValue();
+
+  const customerCepValue = useWatch({ control: customerForm.control, name: "cep" });
+  const [lastLookedUpCep, setLastLookedUpCep] = useState("");
+
+  useEffect(() => {
+    const handleCepLookup = async () => {
+      const cleanedCep = customerCepValue && customerCepValue.trim() ? cleanCEP(customerCepValue) : "";
+      if (cleanedCep.length === 8 && cleanedCep !== lastLookedUpCep && !cepLoading) {
+        setLastLookedUpCep(cleanedCep);
+        const address = await lookupCEP(customerCepValue!);
+        if (address) {
+          customerForm.setValue("street", address.logradouro || "");
+          customerForm.setValue("neighborhood", address.bairro || "");
+          customerForm.setValue("city", address.localidade || "");
+          customerForm.setValue("state", address.uf || "");
+          if (address.complemento) {
+            customerForm.setValue("complement", address.complemento);
+          }
+        }
+      }
+    };
+    handleCepLookup();
+  }, [customerCepValue, lookupCEP, customerForm, lastLookedUpCep, cepLoading]);
 
   useEffect(() => {
     if (remainingPaymentType === "financed") {
@@ -312,8 +418,19 @@ export default function SalesPage() {
   });
 
   const createCustomerMutation = useMutation({
-    mutationFn: async (data: QuickCustomerValues) => {
-      const response = await apiRequest("POST", "/api/customers", data);
+    mutationFn: async (data: FullCustomerValues) => {
+      const payload = {
+        ...data,
+        cpfCnpj: cleanCPFCNPJ(data.cpfCnpj),
+        rg: data.rg && data.rg.trim() ? cleanRG(data.rg) : null,
+        cnh: data.cnh && data.cnh.trim() ? data.cnh.replace(/\D/g, "") : null,
+        phone: cleanPhone(data.phone),
+        secondaryPhone: data.secondaryPhone && data.secondaryPhone.trim() ? cleanPhone(data.secondaryPhone) : null,
+        cep: data.cep && data.cep.trim() ? cleanCEP(data.cep) : null,
+        birthDate: data.birthDate && data.birthDate.trim() ? new Date(data.birthDate) : null,
+        monthlyIncome: data.monthlyIncome && data.monthlyIncome.trim() && parseCurrencyToNumber(data.monthlyIncome) > 0 ? String(parseCurrencyToNumber(data.monthlyIncome)) : null,
+      };
+      const response = await apiRequest("POST", "/api/customers", payload);
       return response.json();
     },
     onSuccess: (data) => {
@@ -329,10 +446,18 @@ export default function SalesPage() {
   });
 
   const createVehicleMutation = useMutation({
-    mutationFn: async (data: QuickVehicleValues) => {
+    mutationFn: async (data: FullVehicleValues) => {
       const vehiclePayload = {
         ...data,
         price: parseCurrencyToNumber(data.price),
+        status: isTradeInVehicle ? "reserved" : "available",
+        doors: data.doors || null,
+        fuel: data.fuel && data.fuel.trim() ? data.fuel : null,
+        transmission: data.transmission && data.transmission.trim() ? data.transmission : null,
+        description: data.description && data.description.trim() ? data.description : null,
+        renavam: data.renavam && data.renavam.trim() ? data.renavam : null,
+        plate: data.plate && data.plate.trim() ? data.plate : null,
+        chassis: data.chassis && data.chassis.trim() ? data.chassis : null,
       };
       const response = await apiRequest("POST", "/api/vehicles", vehiclePayload);
       return response.json();
@@ -346,7 +471,10 @@ export default function SalesPage() {
         form.setValue("totalValue", formatCurrency(data.price));
       }
       setIsVehicleDialogOpen(false);
-      vehicleForm.reset({ model: "", year: new Date().getFullYear(), color: "", mileage: 0, price: "", status: "reserved" });
+      vehicleForm.reset({
+        model: "", year: new Date().getFullYear(), color: "", mileage: 0, price: "",
+        renavam: "", plate: "", chassis: "", fuel: "", transmission: "", description: "", status: "reserved",
+      });
       toast({ title: "Veículo criado com sucesso!" });
     },
     onError: () => {
@@ -458,11 +586,8 @@ export default function SalesPage() {
   const handleOpenVehicleDialog = (forTradeIn: boolean) => {
     setIsTradeInVehicle(forTradeIn);
     vehicleForm.reset({
-      model: "",
-      year: new Date().getFullYear(),
-      color: "",
-      mileage: 0,
-      price: "",
+      model: "", year: new Date().getFullYear(), color: "", mileage: 0, price: "",
+      renavam: "", plate: "", chassis: "", fuel: "", transmission: "", description: "",
       status: forTradeIn ? "reserved" : "available",
     });
     setIsVehicleDialogOpen(true);
@@ -1184,80 +1309,190 @@ export default function SalesPage() {
       </Dialog>
 
       <Dialog open={isCustomerDialogOpen} onOpenChange={setIsCustomerDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh]">
           <DialogHeader>
-            <DialogTitle>Cadastro Rápido de Cliente</DialogTitle>
+            <DialogTitle>Cadastro de Cliente</DialogTitle>
           </DialogHeader>
           <Form {...customerForm}>
             <form onSubmit={customerForm.handleSubmit((data) => createCustomerMutation.mutate(data))} className="space-y-4">
-              <FormField
-                control={customerForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome Completo *</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Nome do cliente" data-testid="input-quick-customer-name" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={customerForm.control}
-                name="cpfCnpj"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CPF/CNPJ *</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="000.000.000-00"
-                        data-testid="input-quick-customer-cpf"
-                        onChange={(e) => field.onChange(formatCPFCNPJ(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={customerForm.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Telefone *</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="(00) 00000-0000"
-                        data-testid="input-quick-customer-phone"
-                        onChange={(e) => field.onChange(formatPhone(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={customerForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>E-mail</FormLabel>
-                    <FormControl>
-                      <Input {...field} type="email" placeholder="email@exemplo.com" data-testid="input-quick-customer-email" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="flex justify-end gap-3">
-                <Button type="button" variant="outline" onClick={() => setIsCustomerDialogOpen(false)}>
-                  Cancelar
-                </Button>
+              <Tabs value={customerDialogTab} onValueChange={setCustomerDialogTab}>
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="personal">Dados Pessoais</TabsTrigger>
+                  <TabsTrigger value="contact">Contato</TabsTrigger>
+                  <TabsTrigger value="address">Endereço</TabsTrigger>
+                </TabsList>
+                <ScrollArea className="h-[400px] pr-4">
+                  <TabsContent value="personal" className="space-y-4 mt-4">
+                    <FormField control={customerForm.control} name="name" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome Completo *</FormLabel>
+                        <FormControl><Input {...field} placeholder="Nome do cliente" data-testid="input-customer-name" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField control={customerForm.control} name="cpfCnpj" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>CPF/CNPJ *</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="000.000.000-00" data-testid="input-customer-cpf" onChange={(e) => field.onChange(formatCPFCNPJ(e.target.value))} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={customerForm.control} name="rg" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>RG</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="00.000.000-0" data-testid="input-customer-rg" onChange={(e) => field.onChange(formatRG(e.target.value))} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField control={customerForm.control} name="cnh" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>CNH</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="00000000000" data-testid="input-customer-cnh" onChange={(e) => field.onChange(formatCNH(e.target.value))} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={customerForm.control} name="birthDate" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Data de Nascimento</FormLabel>
+                          <FormControl><Input {...field} type="date" data-testid="input-customer-birthdate" /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField control={customerForm.control} name="profession" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Profissão</FormLabel>
+                          <FormControl><Input {...field} placeholder="Ex: Empresário" data-testid="input-customer-profession" /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={customerForm.control} name="monthlyIncome" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Renda Mensal</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="R$ 0,00" data-testid="input-customer-income" onChange={(e) => field.onChange(formatCurrencyInput(e.target.value))} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="contact" className="space-y-4 mt-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField control={customerForm.control} name="phone" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Telefone *</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="(00) 00000-0000" data-testid="input-customer-phone" onChange={(e) => field.onChange(formatPhone(e.target.value))} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={customerForm.control} name="secondaryPhone" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Telefone Secundário</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="(00) 00000-0000" data-testid="input-customer-phone2" onChange={(e) => field.onChange(formatPhone(e.target.value))} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                    <FormField control={customerForm.control} name="email" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>E-mail</FormLabel>
+                        <FormControl><Input {...field} type="email" placeholder="email@exemplo.com" data-testid="input-customer-email" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={customerForm.control} name="notes" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Observações</FormLabel>
+                        <FormControl><Textarea {...field} placeholder="Observações sobre o cliente" data-testid="input-customer-notes" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </TabsContent>
+                  <TabsContent value="address" className="space-y-4 mt-4">
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <FormField control={customerForm.control} name="cep" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>CEP {cepLoading && "(Buscando...)"}</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="00000-000" data-testid="input-customer-cep" onChange={(e) => field.onChange(formatCEP(e.target.value))} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={customerForm.control} name="number" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Número</FormLabel>
+                          <FormControl><Input {...field} placeholder="123" data-testid="input-customer-number" /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={customerForm.control} name="complement" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Complemento</FormLabel>
+                          <FormControl><Input {...field} placeholder="Apto 101" data-testid="input-customer-complement" /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                    <FormField control={customerForm.control} name="street" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Rua</FormLabel>
+                        <FormControl><Input {...field} placeholder="Rua das Flores" data-testid="input-customer-street" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <FormField control={customerForm.control} name="neighborhood" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Bairro</FormLabel>
+                          <FormControl><Input {...field} placeholder="Centro" data-testid="input-customer-neighborhood" /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={customerForm.control} name="city" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cidade</FormLabel>
+                          <FormControl><Input {...field} placeholder="São Paulo" data-testid="input-customer-city" /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={customerForm.control} name="state" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Estado</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <FormControl>
+                              <SelectTrigger data-testid="select-customer-state"><SelectValue placeholder="UF" /></SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {brazilianStates.map((uf) => (<SelectItem key={uf} value={uf}>{uf}</SelectItem>))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                  </TabsContent>
+                </ScrollArea>
+              </Tabs>
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button type="button" variant="outline" onClick={() => setIsCustomerDialogOpen(false)}>Cancelar</Button>
                 <Button type="submit" disabled={createCustomerMutation.isPending}>
-                  {createCustomerMutation.isPending ? "Salvando..." : "Cadastrar"}
+                  {createCustomerMutation.isPending ? "Salvando..." : "Cadastrar Cliente"}
                 </Button>
               </div>
             </form>
@@ -1266,7 +1501,7 @@ export default function SalesPage() {
       </Dialog>
 
       <Dialog open={isVehicleDialogOpen} onOpenChange={setIsVehicleDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>
               {isTradeInVehicle ? "Cadastrar Veículo de Troca" : "Cadastrar Novo Veículo"}
@@ -1274,173 +1509,175 @@ export default function SalesPage() {
           </DialogHeader>
           <Form {...vehicleForm}>
             <form onSubmit={vehicleForm.handleSubmit((data) => createVehicleMutation.mutate(data))} className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  control={vehicleForm.control}
-                  name="brandId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Marca *</FormLabel>
-                      <Select
-                        onValueChange={(value) => field.onChange(parseInt(value))}
-                        value={field.value?.toString()}
-                      >
+              <Tabs value={vehicleDialogTab} onValueChange={setVehicleDialogTab}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="general">Dados Gerais</TabsTrigger>
+                  <TabsTrigger value="documents">Documentos</TabsTrigger>
+                </TabsList>
+                <ScrollArea className="h-[400px] pr-4">
+                  <TabsContent value="general" className="space-y-4 mt-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField control={vehicleForm.control} name="brandId" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Marca *</FormLabel>
+                          <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                            <FormControl><SelectTrigger data-testid="select-vehicle-brand"><SelectValue placeholder="Selecione a marca" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                              {brands?.map((brand) => (<SelectItem key={brand.id} value={brand.id.toString()}>{brand.name}</SelectItem>))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={vehicleForm.control} name="categoryId" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Categoria *</FormLabel>
+                          <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                            <FormControl><SelectTrigger data-testid="select-vehicle-category"><SelectValue placeholder="Selecione a categoria" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                              {categories?.map((category) => (<SelectItem key={category.id} value={category.id.toString()}>{category.name}</SelectItem>))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField control={vehicleForm.control} name="model" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Modelo *</FormLabel>
+                          <FormControl><Input {...field} placeholder="Ex: Civic LXS" data-testid="input-vehicle-model" /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={vehicleForm.control} name="year" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Ano *</FormLabel>
+                          <FormControl>
+                            <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} data-testid="input-vehicle-year" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <FormField control={vehicleForm.control} name="color" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Cor *</FormLabel>
+                          <FormControl><Input {...field} placeholder="Ex: Preto" data-testid="input-vehicle-color" /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={vehicleForm.control} name="mileage" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Quilometragem</FormLabel>
+                          <FormControl>
+                            <Input type="number" {...field} onChange={(e) => field.onChange(parseInt(e.target.value) || 0)} data-testid="input-vehicle-mileage" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={vehicleForm.control} name="doors" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Portas</FormLabel>
+                          <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                            <FormControl><SelectTrigger data-testid="select-vehicle-doors"><SelectValue placeholder="Qtd" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                              <SelectItem value="2">2</SelectItem>
+                              <SelectItem value="4">4</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField control={vehicleForm.control} name="fuel" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Combustível</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <FormControl><SelectTrigger data-testid="select-vehicle-fuel"><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                              <SelectItem value="flex">Flex</SelectItem>
+                              <SelectItem value="gasoline">Gasolina</SelectItem>
+                              <SelectItem value="ethanol">Etanol</SelectItem>
+                              <SelectItem value="diesel">Diesel</SelectItem>
+                              <SelectItem value="electric">Elétrico</SelectItem>
+                              <SelectItem value="hybrid">Híbrido</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={vehicleForm.control} name="transmission" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Câmbio</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value || ""}>
+                            <FormControl><SelectTrigger data-testid="select-vehicle-transmission"><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl>
+                            <SelectContent>
+                              <SelectItem value="manual">Manual</SelectItem>
+                              <SelectItem value="automatic">Automático</SelectItem>
+                              <SelectItem value="cvt">CVT</SelectItem>
+                              <SelectItem value="automated">Automatizado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                    <FormField control={vehicleForm.control} name="price" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{isTradeInVehicle ? "Valor de Avaliação *" : "Preço de Venda *"}</FormLabel>
                         <FormControl>
-                          <SelectTrigger data-testid="select-quick-brand">
-                            <SelectValue placeholder="Selecione a marca" />
-                          </SelectTrigger>
+                          <Input {...field} placeholder="R$ 0,00" data-testid="input-vehicle-price" onChange={(e) => field.onChange(formatCurrencyInput(e.target.value))} />
                         </FormControl>
-                        <SelectContent>
-                          {brands?.map((brand) => (
-                            <SelectItem key={brand.id} value={brand.id.toString()}>
-                              {brand.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={vehicleForm.control}
-                  name="categoryId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Categoria *</FormLabel>
-                      <Select
-                        onValueChange={(value) => field.onChange(parseInt(value))}
-                        value={field.value?.toString()}
-                      >
-                        <FormControl>
-                          <SelectTrigger data-testid="select-quick-category">
-                            <SelectValue placeholder="Selecione a categoria" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {categories?.map((category) => (
-                            <SelectItem key={category.id} value={category.id.toString()}>
-                              {category.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  control={vehicleForm.control}
-                  name="model"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Modelo *</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Ex: Civic LXS" data-testid="input-quick-model" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={vehicleForm.control}
-                  name="year"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Ano *</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                          data-testid="input-quick-year"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <FormField
-                  control={vehicleForm.control}
-                  name="color"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Cor *</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Ex: Preto" data-testid="input-quick-color" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={vehicleForm.control}
-                  name="mileage"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>KM</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                          data-testid="input-quick-mileage"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={vehicleForm.control}
-                  name="plate"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Placa</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="ABC1234" data-testid="input-quick-plate" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <FormField
-                control={vehicleForm.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{isTradeInVehicle ? "Valor de Avaliação *" : "Preço de Venda *"}</FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="R$ 0,00"
-                        data-testid="input-quick-price"
-                        onChange={(e) => {
-                          const formatted = formatCurrencyInput(e.target.value);
-                          field.onChange(formatted);
-                        }}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {isTradeInVehicle && (
-                <p className="text-sm text-muted-foreground">
-                  O veículo será cadastrado com status "Reservado" para avaliação.
-                </p>
-              )}
-              <div className="flex justify-end gap-3">
-                <Button type="button" variant="outline" onClick={() => setIsVehicleDialogOpen(false)}>
-                  Cancelar
-                </Button>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={vehicleForm.control} name="description" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descrição</FormLabel>
+                        <FormControl><Textarea {...field} placeholder="Detalhes adicionais do veículo" data-testid="input-vehicle-description" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </TabsContent>
+                  <TabsContent value="documents" className="space-y-4 mt-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FormField control={vehicleForm.control} name="plate" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Placa</FormLabel>
+                          <FormControl><Input {...field} placeholder="ABC1D23" maxLength={7} data-testid="input-vehicle-plate" /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                      <FormField control={vehicleForm.control} name="renavam" render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Renavam</FormLabel>
+                          <FormControl><Input {...field} placeholder="00000000000" maxLength={11} data-testid="input-vehicle-renavam" /></FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )} />
+                    </div>
+                    <FormField control={vehicleForm.control} name="chassis" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Chassi</FormLabel>
+                        <FormControl><Input {...field} placeholder="9BWZZZ377VT004251" maxLength={17} data-testid="input-vehicle-chassis" /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    {isTradeInVehicle && (
+                      <p className="text-sm text-muted-foreground p-3 bg-muted rounded-md">
+                        O veículo será cadastrado com status "Reservado" para avaliação.
+                      </p>
+                    )}
+                  </TabsContent>
+                </ScrollArea>
+              </Tabs>
+              <div className="flex justify-end gap-3 pt-4 border-t">
+                <Button type="button" variant="outline" onClick={() => setIsVehicleDialogOpen(false)}>Cancelar</Button>
                 <Button type="submit" disabled={createVehicleMutation.isPending}>
-                  {createVehicleMutation.isPending ? "Salvando..." : "Cadastrar"}
+                  {createVehicleMutation.isPending ? "Salvando..." : "Cadastrar Veículo"}
                 </Button>
               </div>
             </form>
