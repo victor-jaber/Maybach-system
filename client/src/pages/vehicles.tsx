@@ -64,6 +64,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatCurrency, formatCurrencyInput, parseCurrencyToNumber } from "@/lib/currency";
 import { VehicleMultiImageUploader } from "@/components/VehicleMultiImageUploader";
+import { useUpload } from "@/hooks/use-upload";
 import type { VehicleWithRelations, Brand, Category, VehicleImage, VehicleDocument } from "@shared/schema";
 
 const vehicleFormSchema = z.object({
@@ -103,8 +104,8 @@ export default function VehiclesPage() {
   const [isAddingBrand, setIsAddingBrand] = useState(false);
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [documents, setDocuments] = useState<VehicleDocument[]>([]);
-  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
   const { toast } = useToast();
+  const { uploadFile: uploadToStorage, isUploading: isUploadingDoc } = useUpload();
 
   const { data: vehicles, isLoading } = useQuery<VehicleWithRelations[]>({
     queryKey: ["/api/vehicles"],
@@ -300,9 +301,7 @@ export default function VehiclesPage() {
     });
     
     try {
-      const response = await fetch(`/api/vehicles/${vehicle.id}/documents`, {
-        credentials: "include",
-      });
+      const response = await apiRequest("GET", `/api/vehicles/${vehicle.id}/documents`);
       if (response.ok) {
         const docs = await response.json();
         setDocuments(docs);
@@ -383,25 +382,15 @@ export default function VehiclesPage() {
     const file = e.target.files?.[0];
     if (!file || !editingVehicle) return;
 
-    setIsUploadingDoc(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const uploadResponse = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-      });
-
-      if (!uploadResponse.ok) throw new Error("Upload failed");
+      const uploadResponse = await uploadToStorage(file);
       
-      const { url } = await uploadResponse.json();
+      if (!uploadResponse) throw new Error("Upload failed");
       
       const documentType = file.type.includes("pdf") ? "pdf" : "image";
       
       const docResponse = await apiRequest("POST", `/api/vehicles/${editingVehicle.id}/documents`, {
-        documentUrl: url,
+        documentUrl: uploadResponse.objectPath,
         documentName: file.name,
         documentType,
         description: "",
@@ -414,7 +403,6 @@ export default function VehiclesPage() {
       console.error("Error uploading document:", error);
       toast({ title: "Erro ao enviar documento", variant: "destructive" });
     } finally {
-      setIsUploadingDoc(false);
       e.target.value = "";
     }
   };

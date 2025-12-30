@@ -244,9 +244,7 @@ export default function SalesPage() {
     enabled: !!viewingVehicle,
     queryFn: async () => {
       if (!viewingVehicle) return [];
-      const response = await fetch(`/api/vehicles/${viewingVehicle.id}/costs`, {
-        credentials: "include",
-      });
+      const response = await apiRequest("GET", `/api/vehicles/${viewingVehicle.id}/costs`);
       if (!response.ok) throw new Error("Failed to fetch costs");
       return response.json();
     },
@@ -503,11 +501,9 @@ export default function SalesPage() {
   const createCostMutation = useMutation({
     mutationFn: async (data: CostFormValues) => {
       if (!viewingVehicle) throw new Error("No vehicle selected");
-      const response = await fetch(`/api/vehicles/${viewingVehicle.id}/costs`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ ...data, value: parseCurrencyToNumber(data.value) }),
+      const response = await apiRequest("POST", `/api/vehicles/${viewingVehicle.id}/costs`, {
+        ...data,
+        value: parseCurrencyToNumber(data.value),
       });
       if (!response.ok) throw new Error("Failed to create cost");
       return response.json();
@@ -526,16 +522,11 @@ export default function SalesPage() {
   const updateCostMutation = useMutation({
     mutationFn: async (data: CostFormValues & { id: number }) => {
       if (!viewingVehicle) throw new Error("No vehicle selected");
-      const response = await fetch(`/api/vehicles/${viewingVehicle.id}/costs/${data.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          description: data.description,
-          value: parseCurrencyToNumber(data.value),
-          date: data.date,
-          notes: data.notes,
-        }),
+      const response = await apiRequest("PATCH", `/api/vehicles/${viewingVehicle.id}/costs/${data.id}`, {
+        description: data.description,
+        value: parseCurrencyToNumber(data.value),
+        date: data.date,
+        notes: data.notes,
       });
       if (!response.ok) throw new Error("Failed to update cost");
       return response.json();
@@ -555,10 +546,7 @@ export default function SalesPage() {
   const deleteCostMutation = useMutation({
     mutationFn: async (id: number) => {
       if (!viewingVehicle) throw new Error("No vehicle selected");
-      const response = await fetch(`/api/vehicles/${viewingVehicle.id}/costs/${id}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
+      const response = await apiRequest("DELETE", `/api/vehicles/${viewingVehicle.id}/costs/${id}`);
       if (!response.ok) throw new Error("Failed to delete cost");
       return response.json();
     },
