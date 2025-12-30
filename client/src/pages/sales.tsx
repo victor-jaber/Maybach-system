@@ -664,12 +664,12 @@ export default function SalesPage() {
 
   const calculateTotalCosts = (costs: VehicleCost[] | undefined): number => {
     if (!costs) return 0;
-    return costs.reduce((sum, cost) => sum + parseCurrencyToNumber(String(cost.value)), 0);
+    return costs.reduce((sum, cost) => sum + (parseFloat(String(cost.value)) || 0), 0);
   };
 
   const calculateProfit = (vehicle: VehicleWithRelations, costs: VehicleCost[] | undefined): number => {
-    const purchasePrice = parseCurrencyToNumber(String(vehicle.purchasePrice || 0));
-    const salePrice = parseCurrencyToNumber(String(vehicle.price));
+    const purchasePrice = parseFloat(String(vehicle.purchasePrice || 0)) || 0;
+    const salePrice = parseFloat(String(vehicle.price)) || 0;
     const totalCosts = calculateTotalCosts(costs);
     return salePrice - purchasePrice - totalCosts;
   };
