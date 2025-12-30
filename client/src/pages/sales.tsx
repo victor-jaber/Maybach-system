@@ -849,8 +849,8 @@ export default function SalesPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredStock?.map((vehicle) => {
-                    const purchasePrice = parseCurrencyToNumber(String(vehicle.purchasePrice || 0));
-                    const salePrice = parseCurrencyToNumber(String(vehicle.price));
+                    const purchasePrice = parseFloat(String(vehicle.purchasePrice || 0)) || 0;
+                    const salePrice = parseFloat(String(vehicle.price)) || 0;
                     const estimatedProfit = salePrice - purchasePrice;
                     return (
                       <TableRow key={vehicle.id} data-testid={`row-stock-${vehicle.id}`}>
