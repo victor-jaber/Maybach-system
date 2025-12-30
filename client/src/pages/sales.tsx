@@ -49,6 +49,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -211,6 +212,10 @@ export default function SalesPage() {
   const [isTradeInVehicle, setIsTradeInVehicle] = useState(false);
   const [customerDialogTab, setCustomerDialogTab] = useState("personal");
   const [vehicleDialogTab, setVehicleDialogTab] = useState("general");
+  const [isBrandDialogOpen, setIsBrandDialogOpen] = useState(false);
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [newBrandName, setNewBrandName] = useState("");
+  const [newCategoryName, setNewCategoryName] = useState("");
   const { toast } = useToast();
   const { loading: cepLoading, lookupCEP } = useViaCep();
 
@@ -564,6 +569,40 @@ export default function SalesPage() {
     },
     onError: () => {
       toast({ title: "Erro ao excluir custo", variant: "destructive" });
+    },
+  });
+
+  const createBrandMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const response = await apiRequest("POST", "/api/brands", { name });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/brands"] });
+      vehicleForm.setValue("brandId", data.id);
+      setIsBrandDialogOpen(false);
+      setNewBrandName("");
+      toast({ title: "Marca criada com sucesso!" });
+    },
+    onError: () => {
+      toast({ title: "Erro ao criar marca", variant: "destructive" });
+    },
+  });
+
+  const createCategoryMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const response = await apiRequest("POST", "/api/categories", { name });
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/categories"] });
+      vehicleForm.setValue("categoryId", data.id);
+      setIsCategoryDialogOpen(false);
+      setNewCategoryName("");
+      toast({ title: "Categoria criada com sucesso!" });
+    },
+    onError: () => {
+      toast({ title: "Erro ao criar categoria", variant: "destructive" });
     },
   });
 
@@ -1520,24 +1559,30 @@ export default function SalesPage() {
                       <FormField control={vehicleForm.control} name="brandId" render={({ field }) => (
                         <FormItem>
                           <FormLabel>Marca *</FormLabel>
-                          <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
-                            <FormControl><SelectTrigger data-testid="select-vehicle-brand"><SelectValue placeholder="Selecione a marca" /></SelectTrigger></FormControl>
-                            <SelectContent>
-                              {brands?.map((brand) => (<SelectItem key={brand.id} value={brand.id.toString()}>{brand.name}</SelectItem>))}
-                            </SelectContent>
-                          </Select>
+                          <div className="flex gap-2">
+                            <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                              <FormControl><SelectTrigger data-testid="select-vehicle-brand" className="flex-1"><SelectValue placeholder="Selecione a marca" /></SelectTrigger></FormControl>
+                              <SelectContent>
+                                {brands?.map((brand) => (<SelectItem key={brand.id} value={brand.id.toString()}>{brand.name}</SelectItem>))}
+                              </SelectContent>
+                            </Select>
+                            <Button type="button" variant="outline" size="icon" onClick={() => setIsBrandDialogOpen(true)} data-testid="button-add-brand"><Plus className="h-4 w-4" /></Button>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )} />
                       <FormField control={vehicleForm.control} name="categoryId" render={({ field }) => (
                         <FormItem>
                           <FormLabel>Categoria *</FormLabel>
-                          <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
-                            <FormControl><SelectTrigger data-testid="select-vehicle-category"><SelectValue placeholder="Selecione a categoria" /></SelectTrigger></FormControl>
-                            <SelectContent>
-                              {categories?.map((category) => (<SelectItem key={category.id} value={category.id.toString()}>{category.name}</SelectItem>))}
-                            </SelectContent>
-                          </Select>
+                          <div className="flex gap-2">
+                            <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                              <FormControl><SelectTrigger data-testid="select-vehicle-category" className="flex-1"><SelectValue placeholder="Selecione a categoria" /></SelectTrigger></FormControl>
+                              <SelectContent>
+                                {categories?.map((category) => (<SelectItem key={category.id} value={category.id.toString()}>{category.name}</SelectItem>))}
+                              </SelectContent>
+                            </Select>
+                            <Button type="button" variant="outline" size="icon" onClick={() => setIsCategoryDialogOpen(true)} data-testid="button-add-category"><Plus className="h-4 w-4" /></Button>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       )} />
@@ -2033,6 +2078,72 @@ export default function SalesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={isBrandDialogOpen} onOpenChange={setIsBrandDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nova Marca</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-brand">Nome da Marca</Label>
+              <Input
+                id="new-brand"
+                value={newBrandName}
+                onChange={(e) => setNewBrandName(e.target.value)}
+                placeholder="Ex: Toyota, Honda, Ford..."
+                data-testid="input-new-brand"
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="outline" onClick={() => { setIsBrandDialogOpen(false); setNewBrandName(""); }}>
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                disabled={!newBrandName.trim() || createBrandMutation.isPending}
+                onClick={() => createBrandMutation.mutate(newBrandName.trim())}
+                data-testid="button-save-brand"
+              >
+                {createBrandMutation.isPending ? "Salvando..." : "Criar Marca"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isCategoryDialogOpen} onOpenChange={setIsCategoryDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nova Categoria</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="new-category">Nome da Categoria</Label>
+              <Input
+                id="new-category"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="Ex: SUV, Sedan, Hatch..."
+                data-testid="input-new-category"
+              />
+            </div>
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="outline" onClick={() => { setIsCategoryDialogOpen(false); setNewCategoryName(""); }}>
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                disabled={!newCategoryName.trim() || createCategoryMutation.isPending}
+                onClick={() => createCategoryMutation.mutate(newCategoryName.trim())}
+                data-testid="button-save-category"
+              >
+                {createCategoryMutation.isPending ? "Salvando..." : "Criar Categoria"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
