@@ -298,9 +298,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateVehicle(id: number, vehicle: Partial<InsertVehicle>): Promise<Vehicle | undefined> {
+    // Remove id from the update object to avoid "column id can only be updated to DEFAULT" error
+    const { id: _id, ...updateData } = vehicle as any;
     const [updated] = await db
       .update(vehicles)
-      .set({ ...vehicle, updatedAt: new Date() })
+      .set({ ...updateData, updatedAt: new Date() })
       .where(eq(vehicles.id, id))
       .returning();
     return updated;

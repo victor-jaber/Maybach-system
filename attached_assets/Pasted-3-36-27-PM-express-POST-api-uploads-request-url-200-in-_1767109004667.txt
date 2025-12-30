@@ -1,0 +1,27 @@
+3:36:27 PM [express] POST /api/uploads/request-url 200 in 120ms :: {"uploadURL":"https://storage.googleapis.com/replit-objstore-e2658b12-fa6e-4ee2-a93e-0e50e5ce95b1/.private/uploads/d6a1f8d4-b2b4-423c-b65b-6ea5c017786e?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=heimdall-production%40replit-user-deployments.iam.gserviceaccount.com%2F20251230%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20251230T153627Z&X-Goog-Expires=899&X-Goog-Signature=01ef920076094d2239edfc4849fe38ce4771a9e316e336d5eba4c567372f2f7b06ce8edab5a1109dc099276f53ef331e1340d886b3b82bc30e114531b3926693ecc0c2ddb8421489c7b6cbcc3e616ee932ca62567d8eeda03be09af7fb95eab3e986b011a89b1fd625a93d7cce02fa738718aabe1918114c4e40253d1fe38cbfa5f55b3f52641b454683bd9c5810ffc571c93822e914ff7c11a679dd4f24e62a1cab4ac56105a6221e018461e686aca9391fdeceed99a375169bb56573063fce7de5d24d0a6d01187bbdabbec3f597fe0f9a6d7bacee34337178bd8cb830739c7bd0dc6c5fad75fb72cb8f80bbcc727ad6afc2a360d57525bb293c3f582c2071&X-Goog-SignedHeaders=host","objectPath":"/objects/uploads/d6a1f8d4-b2b4-423c-b65b-6ea5c017786e","metadata":{"name":"contrato_2_Victor_Jaber.pdf","size":2277,"contentType":"application/pdf"}}
+3:36:28 PM [express] POST /api/vehicles/4/documents 200 in 21ms :: {"id":1,"vehicleId":4,"documentUrl":"/objects/uploads/d6a1f8d4-b2b4-423c-b65b-6ea5c017786e","documentName":"contrato_2_Victor_Jaber.pdf","documentType":"pdf","description":"","createdAt":"2025-12-30T15:36:28.694Z"}
+Error updating vehicle: error: column "id" can only be updated to DEFAULT
+    at /home/runner/workspace/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/node_modules/src/node-postgres/session.ts:104:19)
+    at async DatabaseStorage.updateVehicle (/home/runner/workspace/server/storage.ts:301:23)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:504:23) {
+  length: 178,
+  severity: 'ERROR',
+  code: '428C9',
+  detail: 'Column "id" is an identity column defined as GENERATED ALWAYS.',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'rewriteHandler.c',
+  line: '971',
+  routine: 'rewriteTargetListIU'
+}
+3:36:30 PM [express] PATCH /api/vehicles/4 500 in 19ms :: {"message":"Failed to update vehicle"}
