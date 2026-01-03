@@ -27,20 +27,22 @@ O Dockerfile está configurado para:
 2. Criar uma imagem de produção otimizada
 3. Expor a porta 5000
 
-## Criar Usuário Administrador
+## Primeiro Deploy - Passo a Passo
 
-Após o primeiro deploy, execute o seed para criar o usuário administrador:
+### 1. Criar as tabelas do banco de dados
 
-### Opção 1: Via Coolify Terminal
+Após o deploy, acesse o terminal do container e execute:
+
+```bash
+npx drizzle-kit push
+```
+
+### 2. Criar usuário administrador
+
+Depois de criar as tabelas, execute o seed:
 
 ```bash
 npx tsx scripts/seed-admin.ts
-```
-
-### Opção 2: Docker exec
-
-```bash
-docker exec -it <container_id> npx tsx scripts/seed-admin.ts
 ```
 
 ### Credenciais Padrão
@@ -51,14 +53,27 @@ Se não configurar as variáveis de ambiente do admin, as credenciais padrão se
 
 **IMPORTANTE: Altere a senha após o primeiro login!**
 
-## Migrações do Banco
+## Comandos Docker
 
-Antes de rodar o seed, certifique-se de que as tabelas estão criadas:
-
+### Acessar o terminal do container:
 ```bash
-npx drizzle-kit push
+docker exec -it <container_id> sh
+```
+
+### Executar comandos diretamente:
+```bash
+docker exec -it <container_id> npx drizzle-kit push
+docker exec -it <container_id> npx tsx scripts/seed-admin.ts
 ```
 
 ## Healthcheck
 
 A aplicação responde em `http://localhost:5000`
+
+## Troubleshooting
+
+### Erro "drizzle.config.json file does not exist"
+O Dockerfile foi atualizado para incluir `drizzle.config.ts`. Certifique-se de fazer um novo build da imagem.
+
+### Erro de conexão com banco
+Verifique se a variável `DATABASE_URL` está configurada corretamente e se o banco está acessível a partir do container.
