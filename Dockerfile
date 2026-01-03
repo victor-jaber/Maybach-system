@@ -21,6 +21,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/scripts ./scripts
 COPY --from=builder /app/drizzle.config.json ./drizzle.config.json
+COPY --from=builder /app/node_modules ./node_modules
 
 EXPOSE 5000
 
