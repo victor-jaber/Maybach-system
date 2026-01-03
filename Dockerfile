@@ -20,7 +20,7 @@ RUN npm ci --omit=dev && npm install tsx drizzle-kit
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/shared ./shared
 COPY --from=builder /app/scripts ./scripts
-COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
+COPY --from=builder /app/drizzle.config.json ./drizzle.config.json
 
 EXPOSE 5000
 

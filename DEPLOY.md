@@ -72,8 +72,8 @@ A aplicação responde em `http://localhost:5000`
 
 ## Troubleshooting
 
-### Erro "drizzle.config.json file does not exist"
-O Dockerfile foi atualizado para incluir `drizzle.config.ts`. Certifique-se de fazer um novo build da imagem.
+### Erro "Cannot find module 'drizzle-kit'"
+O arquivo `drizzle.config.json` foi criado para evitar problemas de importação. Certifique-se de fazer um novo build da imagem.
 
 ### Erro de conexão com banco
 Verifique se a variável `DATABASE_URL` está configurada corretamente e se o banco está acessível a partir do container.
