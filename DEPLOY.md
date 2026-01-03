@@ -72,8 +72,15 @@ A aplicação responde em `http://localhost:5000`
 
 ## Troubleshooting
 
-### Erro "please install required packages: 'drizzle-orm'"
-O Dockerfile foi atualizado para incluir a pasta `node_modules` do estágio de build, garantindo que todas as dependências necessárias para as migrações estejam presentes. Faça um novo build da imagem.
+### Erro "getaddrinfo EAI_AGAIN" ou problemas de DNS
+Se o Drizzle Kit não conseguir resolver o host do banco de dados (especialmente em bancos externos), tente passar a URL diretamente no comando ou verifique se o container tem acesso à rede externa:
+
+```bash
+DATABASE_URL="sua_url_aqui" npx drizzle-kit push
+```
+
+Certifique-se de que a variável `DATABASE_URL` no Coolify não contém espaços extras ou caracteres invisíveis.
+
 
 ### Erro de conexão com banco
 Verifique se a variável `DATABASE_URL` está configurada corretamente e se o banco está acessível a partir do container.
