@@ -72,8 +72,8 @@ A aplicação responde em `http://localhost:5000`
 
 ## Troubleshooting
 
-### Erro "Cannot find module 'drizzle-kit'"
-O arquivo `drizzle.config.json` foi criado para evitar problemas de importação. Certifique-se de fazer um novo build da imagem.
+### Erro "Either connection 'url' or 'host', 'database' are required"
+O Drizzle Kit no Docker precisa saber onde procurar a variável de ambiente. O arquivo `drizzle.config.json` foi atualizado para apontar para `process.env.DATABASE_URL`. Certifique-se de que a variável `DATABASE_URL` está definida no seu ambiente (Coolify/Docker).
 
 ### Erro de conexão com banco
 Verifique se a variável `DATABASE_URL` está configurada corretamente e se o banco está acessível a partir do container.
