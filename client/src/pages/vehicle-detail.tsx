@@ -156,7 +156,7 @@ export default function VehicleDetailPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                  <Calendar className="h-5 w-5 text-muted-foreground" />
+                  <Calendar className="h-5 w-5 text-muted-foreground fill-muted-foreground/10" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Ano</p>
@@ -166,7 +166,7 @@ export default function VehicleDetailPage() {
 
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                  <Gauge className="h-5 w-5 text-muted-foreground" />
+                  <Gauge className="h-5 w-5 text-muted-foreground fill-muted-foreground/10" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Quilometragem</p>
@@ -177,11 +177,18 @@ export default function VehicleDetailPage() {
               {vehicle.fuel && (
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                    <Fuel className="h-5 w-5 text-muted-foreground" />
+                    <Fuel className="h-5 w-5 text-muted-foreground fill-muted-foreground/10" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Combustível</p>
-                    <p className="font-medium" data-testid="text-vehicle-fuel">{vehicle.fuel}</p>
+                    <p className="font-medium capitalize" data-testid="text-vehicle-fuel">
+                      {vehicle.fuel === 'gasoline' ? 'Gasolina' : 
+                       vehicle.fuel === 'ethanol' ? 'Etanol' : 
+                       vehicle.fuel === 'diesel' ? 'Diesel' : 
+                       vehicle.fuel === 'electric' ? 'Elétrico' : 
+                       vehicle.fuel === 'hybrid' ? 'Híbrido' : 
+                       vehicle.fuel === 'flex' ? 'Flex' : vehicle.fuel}
+                    </p>
                   </div>
                 </div>
               )}
@@ -189,18 +196,21 @@ export default function VehicleDetailPage() {
               {vehicle.transmission && (
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                    <Settings className="h-5 w-5 text-muted-foreground" />
+                    <Settings className="h-5 w-5 text-muted-foreground fill-muted-foreground/10" />
                   </div>
                   <div>
                     <p className="text-sm text-muted-foreground">Câmbio</p>
-                    <p className="font-medium" data-testid="text-vehicle-transmission">{vehicle.transmission}</p>
+                    <p className="font-medium capitalize" data-testid="text-vehicle-transmission">
+                      {vehicle.transmission === 'automatic' ? 'Automático' : 
+                       vehicle.transmission === 'manual' ? 'Manual' : vehicle.transmission}
+                    </p>
                   </div>
                 </div>
               )}
 
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-                  <Palette className="h-5 w-5 text-muted-foreground" />
+                  <Palette className="h-5 w-5 text-muted-foreground fill-muted-foreground/10" />
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Cor</p>
@@ -236,7 +246,9 @@ export default function VehicleDetailPage() {
                   <div>
                     <p className="font-medium">Visite Nossa Loja</p>
                     <p className="text-sm text-muted-foreground">
-                      Av. Exemplo, 1234 - São Paulo, SP
+                      R BACAETAVA 191 CONJ 708<br />
+                      Vl Gertrudes, São Paulo - SP<br />
+                      CEP 04705-010
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Seg-Sex: 8h às 18h | Sáb: 8h às 14h

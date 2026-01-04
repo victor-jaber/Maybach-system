@@ -211,7 +211,7 @@ export default function LandingPage() {
                       </div>
                       <div className="flex items-center gap-3 text-sm text-muted-foreground mb-4">
                         <span className="flex items-center gap-1">
-                          <Gauge className="h-4 w-4" />
+                          <Gauge className="h-4 w-4 fill-muted-foreground/10" />
                           {formatMileage(vehicle.mileage)}
                         </span>
                         <span>{vehicle.year}</span>
@@ -262,8 +262,8 @@ export default function LandingPage() {
             
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               <div className="group p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5B9A4D] mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <Shield className="h-8 w-8 text-white" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5B9A4D] mb-6 group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(91,154,77,0.3)]">
+                  <Shield className="h-8 w-8 text-white fill-white/10" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-3">Garantia de Procedência</h3>
                 <p className="text-white/70 leading-relaxed">
@@ -272,8 +272,8 @@ export default function LandingPage() {
               </div>
               
               <div className="group p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5B9A4D] mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <CreditCard className="h-8 w-8 text-white" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5B9A4D] mb-6 group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(91,154,77,0.3)]">
+                  <CreditCard className="h-8 w-8 text-white fill-white/10" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-3">Financiamento Facilitado</h3>
                 <p className="text-white/70 leading-relaxed">
@@ -282,8 +282,8 @@ export default function LandingPage() {
               </div>
               
               <div className="group p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5B9A4D] mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <FileCheck className="h-8 w-8 text-white" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5B9A4D] mb-6 group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(91,154,77,0.3)]">
+                  <FileCheck className="h-8 w-8 text-white fill-white/10" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-3">Veículos Periciados</h3>
                 <p className="text-white/70 leading-relaxed">
@@ -292,8 +292,8 @@ export default function LandingPage() {
               </div>
               
               <div className="group p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5B9A4D] mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <Users className="h-8 w-8 text-white" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5B9A4D] mb-6 group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(91,154,77,0.3)]">
+                  <Users className="h-8 w-8 text-white fill-white/10" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-3">Atendimento Especializado</h3>
                 <p className="text-white/70 leading-relaxed">
@@ -302,8 +302,8 @@ export default function LandingPage() {
               </div>
               
               <div className="group p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5B9A4D] mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <Wrench className="h-8 w-8 text-white" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5B9A4D] mb-6 group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(91,154,77,0.3)]">
+                  <Wrench className="h-8 w-8 text-white fill-white/10" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-3">Pós-Venda Premium</h3>
                 <p className="text-white/70 leading-relaxed">
@@ -312,8 +312,8 @@ export default function LandingPage() {
               </div>
               
               <div className="group p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm hover:bg-white/10 transition-all duration-300">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5B9A4D] mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <Award className="h-8 w-8 text-white" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#5B9A4D] mb-6 group-hover:scale-110 transition-transform duration-300 shadow-[0_0_15px_rgba(91,154,77,0.3)]">
+                  <Award className="h-8 w-8 text-white fill-white/10" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-3">14 Anos de Tradição</h3>
                 <p className="text-white/70 leading-relaxed">
@@ -343,11 +343,11 @@ export default function LandingPage() {
             </div>
             
             <div className="relative">
-              <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-[#735C3F] via-[#C1A36A] to-[#5B9A4D] -translate-y-1/2 rounded-full" />
+              <div className="hidden lg:block absolute top-10 left-0 right-0 h-0.5 bg-gradient-to-r from-[#735C3F]/30 via-[#C1A36A]/30 to-[#5B9A4D]/30 -translate-y-1/2" />
               
               <div className="grid gap-8 lg:grid-cols-4 relative">
                 <div className="relative text-center">
-                  <div className="relative z-10 mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#735C3F] text-white text-2xl font-bold shadow-xl">
+                  <div className="relative z-10 mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#735C3F] text-white text-2xl font-bold shadow-xl ring-8 ring-card">
                     1
                   </div>
                   <h3 className="text-xl font-bold mb-2">Escolha</h3>
@@ -357,7 +357,7 @@ export default function LandingPage() {
                 </div>
                 
                 <div className="relative text-center">
-                  <div className="relative z-10 mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#8B7355] text-white text-2xl font-bold shadow-xl">
+                  <div className="relative z-10 mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#8B7355] text-white text-2xl font-bold shadow-xl ring-8 ring-card">
                     2
                   </div>
                   <h3 className="text-xl font-bold mb-2">Simulação</h3>
@@ -367,7 +367,7 @@ export default function LandingPage() {
                 </div>
                 
                 <div className="relative text-center">
-                  <div className="relative z-10 mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#C1A36A] text-white text-2xl font-bold shadow-xl">
+                  <div className="relative z-10 mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#C1A36A] text-white text-2xl font-bold shadow-xl ring-8 ring-card">
                     3
                   </div>
                   <h3 className="text-xl font-bold mb-2">Documentação</h3>
@@ -377,7 +377,7 @@ export default function LandingPage() {
                 </div>
                 
                 <div className="relative text-center">
-                  <div className="relative z-10 mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#5B9A4D] text-white text-2xl font-bold shadow-xl">
+                  <div className="relative z-10 mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#5B9A4D] text-white text-2xl font-bold shadow-xl ring-8 ring-card">
                     4
                   </div>
                   <h3 className="text-xl font-bold mb-2">Entrega</h3>
@@ -591,8 +591,9 @@ export default function LandingPage() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg">Endereço</h3>
-                      <p className="text-muted-foreground">Av. Principal, 1234 - Centro</p>
-                      <p className="text-muted-foreground">São Paulo - SP, 01234-000</p>
+                      <p className="text-muted-foreground">R BACAETAVA 191 CONJ 708</p>
+                      <p className="text-muted-foreground">Vl Gertrudes, São Paulo - SP</p>
+                      <p className="text-muted-foreground">CEP 04705-010</p>
                     </div>
                   </div>
                   
@@ -740,9 +741,9 @@ export default function LandingPage() {
             <div>
               <h4 className="font-semibold text-lg mb-4">Endereço</h4>
               <div className="text-white/60 space-y-2">
-                <p>Av. Principal, 1234</p>
-                <p>Centro - São Paulo/SP</p>
-                <p>CEP: 01234-000</p>
+                <p>R BACAETAVA 191 CONJ 708</p>
+                <p>Vl Gertrudes, São Paulo/SP</p>
+                <p>CEP: 04705-010</p>
               </div>
               <div className="mt-4 text-white/60">
                 <p className="font-medium text-white mb-1">Horário:</p>

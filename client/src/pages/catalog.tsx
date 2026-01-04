@@ -95,17 +95,24 @@ function VehicleCard({ vehicle }: { vehicle: VehicleWithRelations }) {
         </div>
         <div className="mb-4 grid grid-cols-3 gap-2 text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
-            <Calendar className="h-3.5 w-3.5" />
+            <Calendar className="h-3.5 w-3.5 fill-muted-foreground/10" />
             <span>{vehicle.year}</span>
           </div>
           <div className="flex items-center gap-1">
-            <Gauge className="h-3.5 w-3.5" />
+            <Gauge className="h-3.5 w-3.5 fill-muted-foreground/10" />
             <span>{formatMileage(vehicle.mileage)}</span>
           </div>
           {vehicle.fuel && (
             <div className="flex items-center gap-1">
-              <Fuel className="h-3.5 w-3.5" />
-              <span>{vehicle.fuel}</span>
+              <Fuel className="h-3.5 w-3.5 fill-muted-foreground/10" />
+              <span className="capitalize">
+                {vehicle.fuel === 'gasoline' ? 'Gasolina' : 
+                 vehicle.fuel === 'ethanol' ? 'Etanol' : 
+                 vehicle.fuel === 'diesel' ? 'Diesel' : 
+                 vehicle.fuel === 'electric' ? 'Elétrico' : 
+                 vehicle.fuel === 'hybrid' ? 'Híbrido' : 
+                 vehicle.fuel === 'flex' ? 'Flex' : vehicle.fuel}
+              </span>
             </div>
           )}
         </div>
