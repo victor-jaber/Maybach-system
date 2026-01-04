@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency } from "@/lib/currency";
 import type { VehicleWithRelations } from "@shared/schema";
 import logoImage from "@assets/maybach-logo.png";
+import heroImage from "@assets/generated_images/luxury_car_in_dark_showroom.png";
 import santanderLogo from "@assets/logo-specto-case-santander-01_1766547163533.png";
 import bradescoLogo from "@assets/logo-bradesco-hero_1766547163533.png";
 import bvLogo from "@assets/Banco_BV_Logo.svg_1766547163533.png";
@@ -74,16 +75,17 @@ export default function LandingPage() {
 
       <main>
         <section className="relative min-h-[90vh] flex items-center overflow-hidden">
-          <div className="absolute inset-0 bg-[#0D0D0C]" />
+          <div className="absolute inset-0 bg-[#0D0D0C]">
+            <img 
+              src={heroImage} 
+              alt="Luxury Car Background" 
+              className="w-full h-full object-cover opacity-60"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#0D0D0C] via-[#0D0D0C]/80 to-transparent" />
+          </div>
           
           <div className="absolute right-0 top-0 bottom-0 w-1/2 hidden lg:block">
-            <div className="absolute inset-0 bg-[#0D0D0C]" />
-            <div 
-              className="absolute inset-0"
-              style={{
-                background: `linear-gradient(to right, #0D0D0C 0%, transparent 30%)`
-              }}
-            />
+            <div className="absolute inset-0 bg-gradient-to-l from-transparent via-[#0D0D0C]/30 to-[#0D0D0C]" />
           </div>
           
           <div className="absolute left-0 top-1/2 -translate-y-1/2 w-px h-[60%] bg-gradient-to-b from-transparent via-[#C1A36A]/30 to-transparent hidden lg:block ml-8" />
