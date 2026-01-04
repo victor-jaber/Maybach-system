@@ -115,7 +115,7 @@ export default function LandingPage() {
                   </Link>
                 </Button>
                 <Button size="lg" variant="ghost" className="text-white/80 hover:text-white hover:bg-white/5" asChild data-testid="button-whatsapp-hero">
-                  <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer">
+                  <a href="https://wa.me/551144734700" target="_blank" rel="noopener noreferrer">
                     <MessageCircle className="mr-2 h-5 w-5" />
                     Fale Conosco
                   </a>
@@ -405,13 +405,13 @@ export default function LandingPage() {
               </div>
               <div className="flex flex-wrap items-center gap-4">
                 <Button size="lg" variant="outline" className="bg-white text-[#735C3F] border-white" asChild data-testid="button-simulate-whatsapp">
-                  <a href="https://wa.me/5511999999999?text=Olá! Gostaria de simular um financiamento." target="_blank" rel="noopener noreferrer">
+                  <a href="https://wa.me/551144734700?text=Olá! Gostaria de simular um financiamento." target="_blank" rel="noopener noreferrer">
                     <MessageCircle className="mr-2 h-5 w-5" />
                     Simular pelo WhatsApp
                   </a>
                 </Button>
                 <Button size="lg" className="bg-[#5B9A4D] text-white" asChild data-testid="button-call-now">
-                  <a href="tel:+551199999999">
+                  <a href="tel:+551144734700">
                     <Phone className="mr-2 h-5 w-5" />
                     Ligar Agora
                   </a>
@@ -609,8 +609,7 @@ export default function LandingPage() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg">Telefone / WhatsApp</h3>
-                      <p className="text-muted-foreground">(11) 99999-9999</p>
-                      <p className="text-muted-foreground">(11) 3333-3333</p>
+                      <p className="text-muted-foreground">(11) 4473-4700</p>
                     </div>
                   </div>
                   
@@ -638,7 +637,7 @@ export default function LandingPage() {
                 
                 <div className="mt-8 flex gap-4">
                   <Button size="lg" className="bg-[#5B9A4D] text-white" asChild data-testid="button-contact-whatsapp-section">
-                    <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer">
+                    <a href="https://wa.me/551144734700" target="_blank" rel="noopener noreferrer">
                       <MessageCircle className="mr-2 h-4 w-4" />
                       WhatsApp
                     </a>
@@ -683,7 +682,7 @@ export default function LandingPage() {
                 </Link>
               </Button>
               <Button size="lg" variant="outline" className="bg-white/5 border-white/20 text-white" asChild data-testid="button-contact-whatsapp">
-                <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer">
+                <a href="https://wa.me/551144734700" target="_blank" rel="noopener noreferrer">
                   <MessageCircle className="mr-2 h-5 w-5" />
                   Fale Conosco
                 </a>
@@ -709,7 +708,7 @@ export default function LandingPage() {
                 <a href="#" className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors" data-testid="link-facebook">
                   <Facebook className="h-5 w-5" />
                 </a>
-                <a href="https://wa.me/5511999999999" className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors" data-testid="link-whatsapp-footer">
+                <a href="https://wa.me/551144734700" className="h-10 w-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors" data-testid="link-whatsapp-footer">
                   <MessageCircle className="h-5 w-5" />
                 </a>
               </div>
@@ -731,11 +730,7 @@ export default function LandingPage() {
               <ul className="space-y-3 text-white/60">
                 <li className="flex items-center gap-2">
                   <Phone className="h-4 w-4" />
-                  (11) 99999-9999
-                </li>
-                <li className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  (11) 3333-3333
+                  (11) 4473-4700
                 </li>
                 <li className="flex items-center gap-2">
                   <Mail className="h-4 w-4" />
