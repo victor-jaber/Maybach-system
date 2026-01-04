@@ -528,16 +528,16 @@ export default function LandingPage() {
                 Parceiros de Confiança
               </h3>
               <div className="flex flex-wrap items-center justify-center gap-10 md:gap-16">
-                <div className="flex items-center justify-center h-10 grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100">
+                <div className="flex items-center justify-center h-14 grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100">
                   <img src={santanderLogo} alt="Santander" className="h-full w-auto object-contain" />
                 </div>
-                <div className="flex items-center justify-center h-10 grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100">
+                <div className="flex items-center justify-center h-14 grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100">
                   <img src={bradescoLogo} alt="Bradesco" className="h-full w-auto object-contain" />
                 </div>
-                <div className="flex items-center justify-center h-10 grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100">
+                <div className="flex items-center justify-center h-14 grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100">
                   <img src={bvLogo} alt="BV Financeira" className="h-full w-auto object-contain" />
                 </div>
-                <div className="flex items-center justify-center h-8 grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100">
+                <div className="flex items-center justify-center h-12 grayscale hover:grayscale-0 transition-all opacity-70 hover:opacity-100">
                   <img src={c6Logo} alt="C6 Bank" className="h-full w-auto object-contain" />
                 </div>
               </div>
@@ -545,12 +545,12 @@ export default function LandingPage() {
             
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               <div className="text-center p-6 rounded-xl bg-card">
-                <CheckCircle className="h-10 w-10 text-[#5B9A4D] mx-auto mb-3" />
+                <Shield className="h-10 w-10 text-[#5B9A4D] mx-auto mb-3" />
                 <div className="text-2xl font-bold">100%</div>
                 <div className="text-sm text-muted-foreground">Documentação em Dia</div>
               </div>
               <div className="text-center p-6 rounded-xl bg-card">
-                <Shield className="h-10 w-10 text-[#5B9A4D] mx-auto mb-3" />
+                <Award className="h-10 w-10 text-[#5B9A4D] mx-auto mb-3" />
                 <div className="text-2xl font-bold">Garantia</div>
                 <div className="text-sm text-muted-foreground">Motor e Câmbio</div>
               </div>
@@ -560,7 +560,11 @@ export default function LandingPage() {
                 <div className="text-sm text-muted-foreground">Em Todo Brasil</div>
               </div>
               <div className="text-center p-6 rounded-xl bg-card">
-                <Star className="h-10 w-10 text-[#5B9A4D] mx-auto mb-3" />
+                <div className="flex justify-center mb-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#4285F4] text-white">
+                    <span className="font-bold text-lg">G</span>
+                  </div>
+                </div>
                 <div className="text-2xl font-bold">4.9/5</div>
                 <div className="text-sm text-muted-foreground">Google Reviews</div>
               </div>
@@ -593,8 +597,8 @@ export default function LandingPage() {
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg">Endereço</h3>
-                      <p className="text-muted-foreground">R BACAETAVA 191 CONJ 708</p>
-                      <p className="text-muted-foreground">Vl Gertrudes, São Paulo - SP</p>
+                      <p className="text-muted-foreground">Rua Bacaetava, 191 - Conjunto 708</p>
+                      <p className="text-muted-foreground">Vila Gertrudes, São Paulo - SP</p>
                       <p className="text-muted-foreground">CEP 04705-010</p>
                     </div>
                   </div>
@@ -651,7 +655,7 @@ export default function LandingPage() {
               <div className="relative">
                 <div className="aspect-square rounded-2xl overflow-hidden bg-muted">
                   <iframe 
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3657.1975986698856!2d-46.6556756!3d-23.5504817!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjPCsDMzJzAxLjciUyA0NsKwMzknMjAuNCJX!5e0!3m2!1spt-BR!2sbr!4v1234567890"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3656.2415176161834!2d-46.69741032386926!3d-23.621258664161963!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce50c2656360c1%3A0xe677f305f8892f3e!2sR.%20Bacaetava%2C%20191%20-%20Vila%20Gertrudes%2C%20S%C3%A3o%20Paulo%20-%20SP%2C%2004705-010!5e0!3m2!1spt-BR!2sbr!4v1704380000000!5m2!1spt-BR!2sbr"
                     className="w-full h-full border-0"
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
@@ -742,16 +746,20 @@ export default function LandingPage() {
             
             <div>
               <h4 className="font-semibold text-lg mb-4">Endereço</h4>
-              <div className="text-white/60 space-y-2">
-                <p>R BACAETAVA 191 CONJ 708</p>
-                <p>Vl Gertrudes, São Paulo/SP</p>
-                <p>CEP: 04705-010</p>
-              </div>
-              <div className="mt-4 text-white/60">
-                <p className="font-medium text-white mb-1">Horário:</p>
-                <p>Seg-Sex: 8h às 18h</p>
-                <p>Sábado: 8h às 14h</p>
-              </div>
+              <ul className="space-y-3 text-white/60">
+                <li className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  Rua Bacaetava, 191 - Conjunto 708
+                </li>
+                <li className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  Vila Gertrudes, São Paulo/SP
+                </li>
+                <li className="flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  CEP: 04705-010
+                </li>
+              </ul>
             </div>
           </div>
           
