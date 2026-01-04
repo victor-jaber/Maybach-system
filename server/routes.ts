@@ -501,8 +501,15 @@ export async function registerRoutes(
     try {
       const id = parseInt(req.params.id);
       // Sanitize price if present
-      if (req.body.price && typeof req.body.price === "string") {
-        req.body.price = req.body.price
+      if (req.body.price !== undefined && req.body.price !== null) {
+        req.body.price = String(req.body.price)
+          .replace(/R\$\s*/g, "")
+          .replace(/\./g, "")
+          .replace(",", ".")
+          .trim();
+      }
+      if (req.body.purchasePrice !== undefined && req.body.purchasePrice !== null) {
+        req.body.purchasePrice = String(req.body.purchasePrice)
           .replace(/R\$\s*/g, "")
           .replace(/\./g, "")
           .replace(",", ".")

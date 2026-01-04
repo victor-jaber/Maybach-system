@@ -288,7 +288,7 @@ export default function VehiclesPage() {
       year: vehicle.year,
       color: vehicle.color,
       mileage: vehicle.mileage,
-      price: vehicle.price as string,
+      price: formatCurrencyInput(String(vehicle.price)),
       renavam: vehicle.renavam || "",
       plate: vehicle.plate || "",
       chassis: vehicle.chassis || "",
