@@ -48,9 +48,7 @@ export async function sendSignatureEmail(
     return false;
   }
 
-  const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-    ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-    : process.env.BASE_URL || "http://localhost:5000";
+  const baseUrl = process.env.PUBLIC_URL || process.env.BASE_URL || (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : (process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS.split(',')[0]}` : "https://maybach.cloud"));
 
   const signatureUrl = `${baseUrl}/assinar/${token}`;
   
