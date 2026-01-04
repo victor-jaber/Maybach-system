@@ -393,12 +393,12 @@ export default function SalesPage() {
           entradaTotal: downPaymentNum !== null ? String(downPaymentNum) : "0",
           entradaPaga: downPaymentNum !== null ? String(downPaymentNum) : "0",
           entradaRestante: "0",
-          formaPagamentoRestante: data.remainingPaymentType,
+          formaPagamentoRestante: data.remainingPaymentType === "financed" ? "parcelado" : "avista",
           quantidadeParcelas: data.installments || null,
           valorParcela: installmentValueNum !== null ? String(installmentValueNum) : null,
           tradeInVehicleId: data.hasTradeIn ? data.tradeInVehicleId : null,
           tradeInValue: tradeInValueNum !== null ? String(tradeInValueNum) : null,
-          status: "pending",
+          status: "generated",
         };
         await apiRequest("POST", "/api/contracts", contractPayload);
       } catch (err) {
