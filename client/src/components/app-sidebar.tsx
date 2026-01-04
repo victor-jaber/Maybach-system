@@ -41,6 +41,11 @@ const mainNavItems = [
     icon: Car,
   },
   {
+    title: "Clientes",
+    url: "/admin/customers",
+    icon: Users,
+  },
+  {
     title: "Vendas e Compras",
     url: "/admin/sales",
     icon: ShoppingCart,
@@ -69,11 +74,6 @@ const mainNavItems = [
 ];
 
 const configNavItems = [
-  {
-    title: "Clientes",
-    url: "/admin/customers",
-    icon: Users,
-  },
   {
     title: "Usuários",
     url: "/admin/users",
