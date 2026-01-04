@@ -55,6 +55,14 @@ O sistema está funcional com as seguintes funcionalidades:
 O projeto usa o workflow "Start application" que executa `npm run dev` para iniciar o servidor Express com Vite.
 
 ## Recent Changes
+- 04/01/2026: Correção de Contratos - Sincronização com Vendas
+  - Corrigido cálculo de entrada total (entrada + valor de troca)
+  - Corrigido valor restante (valor da venda - entrada total)
+  - Adicionados campos de financiamento no contrato (banco, parcelas)
+  - Veículo de troca agora aparece corretamente no contrato
+  - Página de contratos exibe todos os valores: venda, entrada, restante, troca
+  - PDF usa endpoint POST `/api/contracts/:id/generate-pdf`
+
 - 29/12/2024: Enhanced Sales Page with Inline Creation & Auto-Contracts
   - Added inline customer creation popup with quick registration (name, CPF/CNPJ, phone, email)
   - Added inline vehicle creation popup for both sale vehicles and trade-in vehicles

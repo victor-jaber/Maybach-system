@@ -384,18 +384,26 @@ export default function SalesPage() {
       const sale = await saleResponse.json();
 
       try {
+        // Calculate entry total: downPayment + tradeInValue
+        const entradaTotalNum = (downPaymentNum || 0) + (tradeInValueNum || 0);
+        // Calculate remaining value after entry
+        const remainingValueNum = Math.max(0, totalValueNum - entradaTotalNum);
+        
         const contractPayload = {
           contractType: "purchase_sale",
           customerId: data.customerId,
           vehicleId: data.vehicleId,
           saleId: sale.id,
           valorVenda: String(totalValueNum),
-          entradaTotal: downPaymentNum !== null ? String(downPaymentNum) : "0",
-          entradaPaga: downPaymentNum !== null ? String(downPaymentNum) : "0",
-          entradaRestante: "0",
+          entradaTotal: String(entradaTotalNum),
+          entradaPaga: String(entradaTotalNum),
+          entradaRestante: String(remainingValueNum),
           formaPagamentoRestante: data.remainingPaymentType === "financed" ? "parcelado" : "avista",
           quantidadeParcelas: data.installments || null,
           valorParcela: installmentValueNum !== null ? String(installmentValueNum) : null,
+          valorFinanciado: financedValueNum !== null ? String(financedValueNum) : null,
+          bancoFinanciamento: data.financingBank || null,
+          parcelasFinanciamento: data.installments || null,
           tradeInVehicleId: data.hasTradeIn ? data.tradeInVehicleId : null,
           tradeInValue: tradeInValueNum !== null ? String(tradeInValueNum) : null,
           status: "generated",

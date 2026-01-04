@@ -372,21 +372,39 @@ export default function ContractsPage() {
                     </Badge>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Valor</span>
+                    <span className="text-muted-foreground">Valor Total da Venda</span>
                     <span className="font-medium">
-                      {formatCurrency(viewingContract.valorVenda || viewingContract.entradaTotal || 0)}
+                      {formatCurrency(viewingContract.valorVenda || 0)}
                     </span>
                   </div>
-                  {viewingContract.entradaPaga && (
+                  {viewingContract.entradaTotal && Number(viewingContract.entradaTotal) > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Entrada Paga</span>
-                      <span className="font-medium">{formatCurrency(viewingContract.entradaPaga)}</span>
+                      <span className="text-muted-foreground">Entrada Total</span>
+                      <span className="font-medium text-green-600 dark:text-green-400">{formatCurrency(viewingContract.entradaTotal)}</span>
                     </div>
                   )}
                   {viewingContract.entradaRestante && Number(viewingContract.entradaRestante) > 0 && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Entrada Restante</span>
+                      <span className="text-muted-foreground">Valor Restante</span>
                       <span className="font-medium text-orange-600 dark:text-orange-400">{formatCurrency(viewingContract.entradaRestante)}</span>
+                    </div>
+                  )}
+                  {viewingContract.valorFinanciado && Number(viewingContract.valorFinanciado) > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Valor Financiado</span>
+                      <span className="font-medium">{formatCurrency(viewingContract.valorFinanciado)}</span>
+                    </div>
+                  )}
+                  {viewingContract.bancoFinanciamento && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Banco</span>
+                      <span className="font-medium">{viewingContract.bancoFinanciamento}</span>
+                    </div>
+                  )}
+                  {viewingContract.quantidadeParcelas && viewingContract.quantidadeParcelas > 0 && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Parcelas</span>
+                      <span className="font-medium">{viewingContract.quantidadeParcelas}x de {formatCurrency(viewingContract.valorParcela || 0)}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
@@ -402,24 +420,50 @@ export default function ContractsPage() {
                 </CardContent>
               </Card>
 
-              {viewingContract.tradeInVehicle && (
+              {(viewingContract.tradeInVehicle || viewingContract.tradeInValue) && (
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm text-muted-foreground">Veículo de Troca</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Veículo</span>
-                      <span className="font-medium">
-                        {viewingContract.tradeInVehicle.brand?.name} {viewingContract.tradeInVehicle.model}
-                      </span>
-                    </div>
-                    {viewingContract.tradeInValue && (
+                    {viewingContract.tradeInVehicle && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Veículo</span>
+                          <span className="font-medium">
+                            {viewingContract.tradeInVehicle.brand?.name} {viewingContract.tradeInVehicle.model}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Ano</span>
+                          <span className="font-medium">{viewingContract.tradeInVehicle.year}</span>
+                        </div>
+                        {viewingContract.tradeInVehicle.plate && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Placa</span>
+                            <span className="font-medium">{viewingContract.tradeInVehicle.plate}</span>
+                          </div>
+                        )}
+                        {viewingContract.tradeInVehicle.color && (
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Cor</span>
+                            <span className="font-medium">{viewingContract.tradeInVehicle.color}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {viewingContract.tradeInValue && Number(viewingContract.tradeInValue) > 0 && (
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Valor</span>
+                        <span className="text-muted-foreground">Valor da Troca</span>
                         <span className="font-medium text-green-600 dark:text-green-400">
                           {formatCurrency(viewingContract.tradeInValue)}
                         </span>
+                      </div>
+                    )}
+                    {viewingContract.tradeInNotes && (
+                      <div className="pt-2 border-t">
+                        <span className="text-muted-foreground text-sm">Observações:</span>
+                        <p className="text-sm mt-1">{viewingContract.tradeInNotes}</p>
                       </div>
                     )}
                   </CardContent>
