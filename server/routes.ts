@@ -794,6 +794,18 @@ export async function registerRoutes(
 
   app.post("/api/sales", isAuthenticated, async (req, res) => {
     try {
+      // Sanitizar valores monetários
+      const moneyFields = ["totalValue", "downPayment", "financedValue", "installmentValue", "tradeInValue"];
+      moneyFields.forEach(field => {
+        if (req.body[field] !== undefined && req.body[field] !== null) {
+          req.body[field] = String(req.body[field])
+            .replace(/R\$\s*/g, "")
+            .replace(/\./g, "")
+            .replace(",", ".")
+            .trim();
+        }
+      });
+
       const parsed = insertSaleApiSchema.safeParse(req.body);
       if (!parsed.success) {
         return res.status(400).json({ message: "Invalid data", errors: parsed.error.errors });
