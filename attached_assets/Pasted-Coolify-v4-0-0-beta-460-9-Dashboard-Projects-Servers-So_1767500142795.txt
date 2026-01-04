@@ -1,0 +1,149 @@
+Coolify
+v4.0.0-beta.460
+
+/
+9+
+
+Dashboard
+Projects
+Servers
+Sources
+Destinations
+S3 Storages
+Shared Variables
+Notifications
+Keys & Tokens
+Tags
+Terminal
+Profile
+Teams
+Settings
+Sponsor us
+Feedback
+Logout
+Logs
+MayBach Cars
+
+production
+
+maybach-system (localhost)
+
+Running
+(unknown)
+
+Configuration
+Deployments
+Logs
+Terminal
+
+Links
+ 
+Advanced
+ Redeploy
+Restart
+Stop
+Logs
+Server: localhost
+Lines:
+
+
+
+
+
+
+
+
+
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.cjs
+Error seeding admin user: error: relation "users" does not exist
+at /app/dist/index.cjs:64:13330
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+at async /app/dist/index.cjs:124:112530
+at async ak (/app/dist/index.cjs:199:2421)
+at async cP (/app/dist/index.cjs:1254:3848)
+at async /app/dist/index.cjs:1254:35816 {
+length: 104,
+severity: 'ERROR',
+code: '42P01',
+detail: undefined,
+hint: undefined,
+position: '88',
+internalPosition: undefined,
+internalQuery: undefined,
+where: undefined,
+schema: undefined,
+table: undefined,
+column: undefined,
+dataType: undefined,
+constraint: undefined,
+file: 'parse_relation.c',
+line: '1449',
+10:50:27 PM [express] serving on port 5000
+10:51:31 PM [express] GET /api/vehicles/public 500 in 28ms :: {"message":"Failed to fetch vehicles"}
+10:52:50 PM [express] GET /api/vehicles/public 200 in 30ms :: []
+10:53:00 PM [express] POST /api/auth/login 200 in 138ms :: {"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjRiNTMwMDgyLTQ1NGEtNGM0OS1hN2IzLThiODZkNjE2YjFhYSIsImVtYWlsIjoiYWRtaW5AbWF5YmFjaC5jb20iLCJuYW1lIjoiQWRtaW5pc3RyYWRvciIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2NzQ4MDc4MCwiZXhwIjoxNzY4MDg1NTgwfQ.HiUjOnvIH8v9663LPuNd6tacK4K1eKAaK0IvCwdY06E","user":{"id":"4b530082-454a-4c49-a7b3-8b86d616b1aa","email":"admin@maybach.com","name":"Administrador","role":"admin"}}
+10:53:00 PM [express] GET /api/vehicles 200 in 47ms :: []
+10:53:00 PM [express] GET /api/sales 200 in 42ms :: []
+10:53:00 PM [express] GET /api/customers 200 in 88ms :: []
+10:53:02 PM [express] GET /api/brands 200 in 8ms :: []
+10:53:02 PM [express] GET /api/categories 200 in 6ms :: []
+10:53:04 PM [express] GET /api/store 200 in 5ms
+10:53:13 PM [express] POST /api/auth/login 401 in 2ms :: {"message":"Email ou senha inválidos"}
+10:53:14 PM [express] POST /api/auth/login 401 in 2ms :: {"message":"Email ou senha inválidos"}
+10:53:14 PM [express] POST /api/auth/login 401 in 4ms :: {"message":"Email ou senha inválidos"}
+10:53:14 PM [express] POST /api/auth/login 401 in 2ms :: {"message":"Email ou senha inválidos"}
+10:53:15 PM [express] GET /api/vehicles/public 304 in 4ms :: []
+4:01:07 AM [express] GET /api/vehicles/public 304 in 74ms :: []
+4:01:21 AM [express] POST /api/auth/login 200 in 140ms :: {"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjRiNTMwMDgyLTQ1NGEtNGM0OS1hN2IzLThiODZkNjE2YjFhYSIsImVtYWlsIjoiYWRtaW5AbWF5YmFjaC5jb20iLCJuYW1lIjoiQWRtaW5pc3RyYWRvciIsInJvbGUiOiJhZG1pbiIsImlhdCI6MTc2NzQ5OTI4MSwiZXhwIjoxNzY4MTA0MDgxfQ.Dnn55JyxT-t3UEy2c-J4H-bL681JglOmeh1_K5k5vvo","user":{"id":"4b530082-454a-4c49-a7b3-8b86d616b1aa","email":"admin@maybach.com","name":"Administrador","role":"admin"}}
+4:01:21 AM [express] GET /api/vehicles 304 in 20ms :: []
+4:01:21 AM [express] GET /api/sales 304 in 21ms :: []
+4:01:21 AM [express] GET /api/customers 304 in 40ms :: []
+4:01:39 AM [express] GET /api/brands 304 in 20ms :: []
+4:01:39 AM [express] GET /api/categories 304 in 22ms :: []
+4:01:41 AM [express] GET /api/store 304 in 7ms
+4:02:42 AM [express] GET /api/auth/user 200 in 4ms :: {"id":"4b530082-454a-4c49-a7b3-8b86d616b1aa","email":"admin@maybach.com","name":"Administrador","role":"admin","iat":1767499281,"exp":1768104081}
+4:02:42 AM [express] GET /api/vehicles/public 304 in 25ms :: []
+4:07:39 AM [express] POST /api/store 200 in 75ms :: {"id":1,"razaoSocial":"MAYBACH NEGOCIOS DE VEICULOS LTDA","nomeFantasia":"MAYBACH","cnpj":"62714152000103","inscricaoEstadual":"155.772.103.110","email":"maybachveiculos@gmail.com","phone":"1144734700","cep":"04705010","street":"Rua Bacaetava","number":"191","complement":"Conj 708","neighborhood":"Vila Gertrudes","city":"São Paulo","state":"SP","representanteLegal":"Erick Souza Mariano","cpfRepresentante":"13344970011","logoUrl":"","createdAt":"2026-01-04T04:07:39.972Z","updatedAt":"2026-01-04T04:07:39.972Z"}
+4:07:40 AM [express] GET /api/store 200 in 4ms :: {"id":1,"razaoSocial":"MAYBACH NEGOCIOS DE VEICULOS LTDA","nomeFantasia":"MAYBACH","cnpj":"62714152000103","inscricaoEstadual":"155.772.103.110","email":"maybachveiculos@gmail.com","phone":"1144734700","cep":"04705010","street":"Rua Bacaetava","number":"191","complement":"Conj 708","neighborhood":"Vila Gertrudes","city":"São Paulo","state":"SP","representanteLegal":"Erick Souza Mariano","cpfRepresentante":"13344970011","logoUrl":"","createdAt":"2026-01-04T04:07:39.972Z","updatedAt":"2026-01-04T04:07:39.972Z"}
+4:07:41 AM [express] GET /api/contracts 200 in 29ms :: []
+4:07:44 AM [express] GET /api/vehicles 304 in 6ms :: []
+4:07:44 AM [express] GET /api/categories 304 in 4ms :: []
+4:07:44 AM [express] GET /api/brands 304 in 16ms :: []
+4:07:49 AM [express] GET /api/customers 304 in 9ms :: []
+4:07:49 AM [express] GET /api/sales 304 in 20ms :: []
+4:08:40 AM [express] POST /api/customers 201 in 29ms :: {"id":1,"name":"Victor Jaber","cpfCnpj":"45322541837","rg":"599137782","cnh":"23981239819","birthDate":"2005-12-19T00:00:00.000Z","profession":"Empresário","monthlyIncome":"32000.00","email":"victorjaber19@gmail.com","phone":"11955580660","secondaryPhone":null,"cep":"04209000","street":"Rua do Manifesto","number":"198","complement":"ap 93","neighborhood":"Ipiranga","city":"São Paulo","state":"SP","notes":"","createdAt":"2026-01-04T04:08:40.891Z","updatedAt":"2026-01-04T04:08:40.891Z"}
+4:08:40 AM [express] GET /api/customers 200 in 6ms :: [{"id":1,"name":"Victor Jaber","cpfCnpj":"45322541837","rg":"599137782","cnh":"23981239819","birthDate":"2005-12-19T00:00:00.000Z","profession":"Empresário","monthlyIncome":"32000.00","email":"victorjaber19@gmail.com","phone":"11955580660","secondaryPhone":null,"cep":"04209000","street":"Rua do Manifesto","number":"198","complement":"ap 93","neighborhood":"Ipiranga","city":"São Paulo","state":"SP","notes":"","createdAt":"2026-01-04T04:08:40.891Z","updatedAt":"2026-01-04T04:08:40.891Z"}]
+4:08:52 AM [express] POST /api/brands 201 in 28ms :: {"id":1,"name":"BMW","createdAt":"2026-01-04T04:08:52.886Z"}
+4:08:52 AM [express] GET /api/brands 200 in 4ms :: [{"id":1,"name":"BMW","createdAt":"2026-01-04T04:08:52.886Z"}]
+4:09:01 AM [express] POST /api/categories 201 in 70ms :: {"id":1,"name":"Sedan","createdAt":"2026-01-04T04:09:01.686Z"}
+4:09:01 AM [express] GET /api/categories 200 in 3ms :: [{"id":1,"name":"Sedan","createdAt":"2026-01-04T04:09:01.686Z"}]
+4:09:46 AM [express] POST /api/vehicles 400 in 14ms :: {"message":"Invalid data","errors":[{"code":"invalid_type","expected":"string","received":"number","path":["price"],"message":"Expected string, received number"}]}
+4:09:56 AM [express] POST /api/vehicles 400 in 3ms :: {"message":"Invalid data","errors":[{"code":"invalid_type","expected":"string","received":"number","path":["price"],"message":"Expected string, received number"}]}
+4:10:54 AM [express] POST /api/vehicles 400 in 2ms :: {"message":"Invalid data","errors":[{"code":"invalid_type","expected":"string","received":"number","path":["price"],"message":"Expected string, received number"}]}
+routine: 'parserOpenTable'
+}
+Error fetching public vehicles: error: relation "vehicles" does not exist
+at /app/dist/index.cjs:64:13330
+at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+at async /app/dist/index.cjs:124:112530
+at async bh.getAvailableVehicles (/app/dist/index.cjs:124:116556)
+at async /app/dist/index.cjs:1254:5991 {
+length: 108,
+severity: 'ERROR',
+code: '42P01',
+detail: undefined,
+hint: undefined,
+position: '603',
+internalPosition: undefined,
+internalQuery: undefined,
+where: undefined,
+schema: undefined,
+table: undefined,
+column: undefined,
+dataType: undefined,
+constraint: undefined,
+file: 'parse_relation.c',
+line: '1449',
+routine: 'parserOpenTable'
+}

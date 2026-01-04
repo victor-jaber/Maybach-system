@@ -471,8 +471,15 @@ export async function registerRoutes(
   app.post("/api/vehicles", isAuthenticated, async (req, res) => {
     try {
       // Sanitize price: remove R$, dots (thousand separators), and convert comma to period
-      if (req.body.price && typeof req.body.price === "string") {
-        req.body.price = req.body.price
+      if (req.body.price !== undefined && req.body.price !== null) {
+        req.body.price = String(req.body.price)
+          .replace(/R\$\s*/g, "")
+          .replace(/\./g, "")
+          .replace(",", ".")
+          .trim();
+      }
+      if (req.body.purchasePrice !== undefined && req.body.purchasePrice !== null) {
+        req.body.purchasePrice = String(req.body.purchasePrice)
           .replace(/R\$\s*/g, "")
           .replace(/\./g, "")
           .replace(",", ".")

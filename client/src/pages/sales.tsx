@@ -462,7 +462,10 @@ export default function SalesPage() {
         plate: data.plate && data.plate.trim() ? data.plate : null,
         chassis: data.chassis && data.chassis.trim() ? data.chassis : null,
       };
-      const response = await apiRequest("POST", "/api/vehicles", vehiclePayload);
+      const response = await apiRequest("POST", "/api/vehicles", {
+        ...vehiclePayload,
+        price: String(vehiclePayload.price)
+      });
       return response.json();
     },
     onSuccess: (data) => {
