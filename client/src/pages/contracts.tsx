@@ -404,7 +404,9 @@ export default function ContractsPage() {
                   {viewingContract.quantidadeParcelas && viewingContract.quantidadeParcelas > 0 && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Parcelas</span>
-                      <span className="font-medium">{viewingContract.quantidadeParcelas}x de {formatCurrency(viewingContract.valorParcela || 0)}</span>
+                      <span className="font-medium">
+                        {viewingContract.quantidadeParcelas}x de {formatCurrency(viewingContract.valorParcela || (Number(viewingContract.entradaRestante) / viewingContract.quantidadeParcelas) || 0)}
+                      </span>
                     </div>
                   )}
                   <div className="flex justify-between">

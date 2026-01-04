@@ -1478,9 +1478,7 @@ export async function registerRoutes(
         res.json({ message: "Email de assinatura enviado com sucesso", emailSent: true });
       } else {
         // Email not configured but signature record created
-        const baseUrl = process.env.REPLIT_DEV_DOMAIN 
-          ? `https://${process.env.REPLIT_DEV_DOMAIN}`
-          : process.env.BASE_URL || "http://localhost:5000";
+        const baseUrl = process.env.PUBLIC_URL || process.env.BASE_URL || (process.env.REPLIT_DEV_DOMAIN ? `https://${process.env.REPLIT_DEV_DOMAIN}` : "http://localhost:5000");
         const signatureUrl = `${baseUrl}/assinar/${token}`;
         
         res.json({ 
