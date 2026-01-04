@@ -67,7 +67,7 @@ export default function LandingPage() {
               <Link href="/catalog">Ver Catálogo</Link>
             </Button>
             <Button variant="ghost" size="sm" asChild data-testid="button-login" className="text-muted-foreground">
-              <Link href="/login">Admin</Link>
+              <Link href="/login">Painel</Link>
             </Button>
           </div>
         </div>
