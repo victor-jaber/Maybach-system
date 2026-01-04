@@ -309,23 +309,13 @@ async function generateSignedPdfBuffer(
     email: z.string().email("Email inválido").optional(),
     password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").optional(),
   });
+
   export async function registerRoutes(
+    httpServer: Server,
     app: Express
   ): Promise<Server> {
-export async function registerRoutes(
-  httpServer: Server,
-  app: Express
-): Promise<Server> {
-    app: Express
-  ): Promise<Server> {
-  // Setup JWT authentication routes
-  registerAuthRoutes(app);
-  
-  // Setup object storage routes for file uploads
-  registerObjectStorageRoutes(app);
-  
-  // Seed default admin user
-  await seedAdminUser();
+    registerAuthRoutes(app);
+    registerObjectStorageRoutes(app);
   // Brands
   app.get("/api/brands", async (req, res) => {
     try {
