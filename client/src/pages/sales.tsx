@@ -438,7 +438,7 @@ export default function SalesPage() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
-      form.setValue("customerId", data.id);
+      form.setValue("customerId", data.id, { shouldValidate: true });
       setIsCustomerDialogOpen(false);
       customerForm.reset();
       toast({ title: "Cliente criado com sucesso!" });
@@ -468,10 +468,10 @@ export default function SalesPage() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
       if (isTradeInVehicle) {
-        form.setValue("tradeInVehicleId", data.id);
+        form.setValue("tradeInVehicleId", data.id, { shouldValidate: true });
       } else {
-        form.setValue("vehicleId", data.id);
-        form.setValue("totalValue", formatCurrency(data.price));
+        form.setValue("vehicleId", data.id, { shouldValidate: true });
+        form.setValue("totalValue", formatCurrency(data.price), { shouldValidate: true });
       }
       setIsVehicleDialogOpen(false);
       vehicleForm.reset({
