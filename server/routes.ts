@@ -81,10 +81,8 @@ async function generateSignedPdfBuffer(
   };
 
   // Prepare contract data for template rendering
-const prepareContractDataForTemplate = (contract: any, store: any): ContractData => {
+  const prepareContractDataForTemplate = (contract: any, store: any): ContractData => {
     // Format numeric values coming from DB (decimal/string)
-    const valorVenda = contract.valorVenda ? parseFloat(contract.valorVenda.toString()) : 0;
-const prepareContractDataForTemplate = (contract: any, store: any): ContractData => {
     const valorVenda = contract.valorVenda ? parseFloat(contract.valorVenda.toString()) : 0;
     const entradaTotal = contract.entradaTotal ? parseFloat(contract.entradaTotal.toString()) : 0;
     const entradaPaga = contract.entradaPaga ? parseFloat(contract.entradaPaga.toString()) : 0;
@@ -153,14 +151,12 @@ const prepareContractDataForTemplate = (contract: any, store: any): ContractData
       tradeInObservacoes: contract.tradeInNotes || undefined,
     };
   };
-async function generateSignedPdfBuffer(
-    contract: any,
-    store: any,
-    signatureInfo: SignatureInfo
-  ): Promise<{ buffer: Buffer; fileName: string }> {
-    let contractFileName = "contrato";
+
+  const contractDataPrepared = prepareContractDataForTemplate(contract, store);
+  let contractText = "";
+  let contractFileName = "contrato";
     
-    switch (contract.contractType) {
+  switch (contract.contractType) {
       case "entry_complement":
         contractText = getEntryComplementContract(contractDataPrepared);
         contractFileName = "complemento_entrada";
@@ -304,12 +300,17 @@ async function generateSignedPdfBuffer(
 }
 
 export async function registerRoutes(
+  httpServer: Server,
   app: Express
 ): Promise<Server> {
   registerAuthRoutes(app);
   registerObjectStorageRoutes(app);
-  registerObjectStorageRoutes(app);
-  registerObjectStorageRoutes(app);
+
+  await seedAdminUser();
+
+  // Brands
+  app.get("/api/brands", async (req, res) => {
+    try {
       const brands = await storage.getBrands();
       res.json(brands);
     } catch (error) {
