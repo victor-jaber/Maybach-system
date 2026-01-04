@@ -464,7 +464,7 @@ export default function SalesPage() {
       };
       const response = await apiRequest("POST", "/api/vehicles", {
         ...vehiclePayload,
-        price: String(vehiclePayload.price)
+        price: vehiclePayload.price !== undefined && vehiclePayload.price !== null ? String(vehiclePayload.price) : ""
       });
       return response.json();
     },
