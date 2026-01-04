@@ -165,7 +165,7 @@ CLÁUSULA SEGUNDA - DO VALOR E COMPOSIÇÃO DA ENTRADA
 
 2.4. O valor restante da entrada, objeto principal deste contrato, corresponde a ${data.entradaRestante}, que será pago conforme as condições estabelecidas na Cláusula Terceira.
 
-${data.tradeInPlaca && data.tradeInValor ? `
+${data.tradeInPlaca && (data.tradeInValorNumerico > 0 || data.tradeInValor) ? `
 CLÁUSULA COMPLEMENTAR - DO VEÍCULO DADO EM TROCA
 
 C.1. Como parte do pagamento da entrada, o COMPRADOR entrega à VENDEDORA, em regime de dação em pagamento, o seguinte veículo:

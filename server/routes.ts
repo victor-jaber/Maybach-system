@@ -81,10 +81,10 @@ async function generateSignedPdfBuffer(
   };
 
   // Prepare contract data for template rendering
-  const prepareContractDataForTemplate = (contract: any, store: any): ContractData => {
+const prepareContractDataForTemplate = (contract: any, store: any): ContractData => {
     // Format numeric values coming from DB (decimal/string)
     const valorVenda = contract.valorVenda ? parseFloat(contract.valorVenda.toString()) : 0;
-  const prepareContractDataForTemplate = (contract: any, store: any): ContractData => {
+const prepareContractDataForTemplate = (contract: any, store: any): ContractData => {
     const valorVenda = contract.valorVenda ? parseFloat(contract.valorVenda.toString()) : 0;
     const entradaTotal = contract.entradaTotal ? parseFloat(contract.entradaTotal.toString()) : 0;
     const entradaPaga = contract.entradaPaga ? parseFloat(contract.entradaPaga.toString()) : 0;
@@ -153,7 +153,7 @@ async function generateSignedPdfBuffer(
       tradeInObservacoes: contract.tradeInNotes || undefined,
     };
   };
-  async function generateSignedPdfBuffer(
+async function generateSignedPdfBuffer(
     contract: any,
     store: any,
     signatureInfo: SignatureInfo
@@ -298,27 +298,18 @@ async function generateSignedPdfBuffer(
         }
       }
 
-      }
-
       doc.end();
     });
   }
+}
 
-  const updateAdminUserSchema = z.object({
-    name: z.string().min(1, "Nome é obrigatório").optional(),
-    email: z.string().email("Email inválido").optional(),
-    password: z.string().min(6, "Senha deve ter pelo menos 6 caracteres").optional(),
-  });
-
-  export async function registerRoutes(
-    httpServer: Server,
-    app: Express
-  ): Promise<Server> {
-    registerAuthRoutes(app);
-    registerObjectStorageRoutes(app);
-  // Brands
-  app.get("/api/brands", async (req, res) => {
-    try {
+export async function registerRoutes(
+  app: Express
+): Promise<Server> {
+  registerAuthRoutes(app);
+  registerObjectStorageRoutes(app);
+  registerObjectStorageRoutes(app);
+  registerObjectStorageRoutes(app);
       const brands = await storage.getBrands();
       res.json(brands);
     } catch (error) {
