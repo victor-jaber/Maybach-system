@@ -141,7 +141,8 @@ export default function ContractsPage() {
   const downloadPDF = async (contractId: number) => {
     setDownloadingPDF(contractId);
     try {
-      const response = await fetch(`/api/contracts/${contractId}/pdf`, {
+      const response = await fetch(`/api/contracts/${contractId}/generate-pdf`, {
+        method: "POST",
         headers: {
           Authorization: `Bearer ${getAuthToken()}`,
         },

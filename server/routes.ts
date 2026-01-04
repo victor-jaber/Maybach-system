@@ -1134,7 +1134,7 @@ export async function registerRoutes(
       const { buffer: pdfBuffer, fileName } = await generateSignedPdfBuffer(contract, store, signatureInfoData);
       
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename=${fileName}`);
+      res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
       res.send(pdfBuffer);
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -1182,7 +1182,7 @@ export async function registerRoutes(
       const { buffer: pdfBuffer, fileName } = await generateSignedPdfBuffer(contract, store, signatureInfoData);
       
       res.setHeader("Content-Type", "application/pdf");
-      res.setHeader("Content-Disposition", `attachment; filename=assinado_${fileName}`);
+      res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
       res.send(pdfBuffer);
     } catch (error) {
       console.error("Error generating signed PDF:", error);
