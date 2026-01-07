@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { Upload, X, Loader2, Image as ImageIcon, Star, StarOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useUpload } from "@/hooks/use-upload";
 import type { VehicleImage } from "@shared/schema";
 
 interface VehicleMultiImageUploaderProps {
@@ -74,6 +75,7 @@ export function VehicleMultiImageUploader({
   const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { uploadFile } = useUpload();
 
   const sortedImages = [...images].sort((a, b) => {
     if (a.isPrimary && !b.isPrimary) return -1;
@@ -106,32 +108,13 @@ export function VehicleMultiImageUploader({
 
         const compressedFile = await compressImage(file);
         
-        const metadataResponse = await fetch("/api/uploads/request-url", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: compressedFile.name,
-            size: compressedFile.size,
-            contentType: compressedFile.type,
-          }),
-        });
-
-        if (!metadataResponse.ok) {
-          throw new Error("Erro ao obter URL de upload");
-        }
-
-        const { uploadURL, objectPath } = await metadataResponse.json();
-
-        const uploadResponse = await fetch(uploadURL, {
-          method: "PUT",
-          body: compressedFile,
-          headers: { "Content-Type": compressedFile.type },
-        });
-
-        if (!uploadResponse.ok) {
+        const result = await uploadFile(compressedFile);
+        
+        if (!result) {
           throw new Error("Erro ao fazer upload da imagem");
         }
 
+        const objectPath = result.objectPath || result.url || "";
         const isPrimary = images.length === 0 && i === 0;
         onImageAdd(objectPath, isPrimary);
       }
@@ -149,7 +132,7 @@ export function VehicleMultiImageUploader({
         inputRef.current.value = "";
       }
     }
-  }, [images.length, onImageAdd, toast]);
+  }, [images.length, onImageAdd, toast, uploadFile]);
 
   const handleClick = useCallback(() => {
     inputRef.current?.click();

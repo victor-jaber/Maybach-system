@@ -8,9 +8,12 @@ interface UploadMetadata {
 }
 
 interface UploadResponse {
-  uploadURL: string;
+  uploadURL?: string;
   objectPath: string;
-  metadata: UploadMetadata;
+  metadata?: UploadMetadata;
+  useDirectUpload?: boolean;
+  directUploadUrl?: string;
+  url?: string;
 }
 
 interface UseUploadOptions {
@@ -105,7 +108,30 @@ export function useUpload(options: UseUploadOptions = {}) {
   );
 
   /**
-   * Upload a file using the presigned URL flow.
+   * Upload a file directly to server (for non-Replit environments).
+   */
+  const uploadDirectly = useCallback(
+    async (file: File, uploadUrl: string): Promise<UploadResponse> => {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(uploadUrl, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Erro ao enviar arquivo");
+      }
+
+      return response.json();
+    },
+    []
+  );
+
+  /**
+   * Upload a file using the appropriate flow (presigned URL or direct upload).
    *
    * @param file - The file to upload
    * @returns The upload response containing the object path
@@ -117,19 +143,31 @@ export function useUpload(options: UseUploadOptions = {}) {
       setProgress(0);
 
       try {
-        // Step 1: Request presigned URL (send metadata as JSON)
+        // Step 1: Check which upload method to use
         setProgress(10);
-        const uploadResponse = await requestUploadUrl(file);
+        const initialResponse = await requestUploadUrl(file);
 
-        // Step 2: Upload file directly to presigned URL
+        // Step 2: Use appropriate upload method
         setProgress(30);
-        await uploadToPresignedUrl(file, uploadResponse.uploadURL);
-
-        setProgress(100);
-        options.onSuccess?.(uploadResponse);
-        return uploadResponse;
+        
+        if (initialResponse.useDirectUpload && initialResponse.directUploadUrl) {
+          // Direct upload to server (non-Replit environment)
+          const directResult = await uploadDirectly(file, initialResponse.directUploadUrl);
+          setProgress(100);
+          const finalResponse = { ...initialResponse, ...directResult };
+          options.onSuccess?.(finalResponse);
+          return finalResponse;
+        } else if (initialResponse.uploadURL) {
+          // Presigned URL upload (Replit environment)
+          await uploadToPresignedUrl(file, initialResponse.uploadURL);
+          setProgress(100);
+          options.onSuccess?.(initialResponse);
+          return initialResponse;
+        } else {
+          throw new Error("Nenhum método de upload disponível");
+        }
       } catch (err) {
-        const error = err instanceof Error ? err : new Error("Upload failed");
+        const error = err instanceof Error ? err : new Error("Falha no upload");
         setError(error);
         options.onError?.(error);
         return null;
@@ -137,21 +175,30 @@ export function useUpload(options: UseUploadOptions = {}) {
         setIsUploading(false);
       }
     },
-    [requestUploadUrl, uploadToPresignedUrl, options]
+    [requestUploadUrl, uploadToPresignedUrl, uploadDirectly, options]
   );
 
   /**
+   * Check if we're in a Replit environment (has Object Storage).
+   */
+  const checkEnvironment = useCallback(async (): Promise<boolean> => {
+    try {
+      const response = await fetch("/api/uploads/request-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "test.tmp", size: 0, contentType: "text/plain" }),
+      });
+      const data = await response.json();
+      return !data.useDirectUpload;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  /**
    * Get upload parameters for Uppy's AWS S3 plugin.
-   *
-   * IMPORTANT: This function receives the UppyFile object from Uppy.
-   * Use file.name, file.size, file.type to request per-file presigned URLs.
-   *
-   * Use this with the ObjectUploader component:
-   * ```tsx
-   * <ObjectUploader onGetUploadParameters={getUploadParameters}>
-   *   Upload
-   * </ObjectUploader>
-   * ```
+   * Only works in Replit environments with Object Storage.
+   * For non-Replit environments, use uploadFile() instead.
    */
   const getUploadParameters = useCallback(
     async (
@@ -161,12 +208,9 @@ export function useUpload(options: UseUploadOptions = {}) {
       url: string;
       headers?: Record<string, string>;
     }> => {
-      // Use the actual file properties to request a per-file presigned URL
       const response = await fetch("/api/uploads/request-url", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: file.name,
           size: file.size,
@@ -175,10 +219,15 @@ export function useUpload(options: UseUploadOptions = {}) {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to get upload URL");
+        throw new Error("Falha ao obter URL de upload");
       }
 
       const data = await response.json();
+      
+      if (data.useDirectUpload || !data.uploadURL) {
+        throw new Error("Uppy não suportado neste ambiente. Use o método uploadFile().");
+      }
+      
       return {
         method: "PUT",
         url: data.uploadURL,
@@ -191,6 +240,7 @@ export function useUpload(options: UseUploadOptions = {}) {
   return {
     uploadFile,
     getUploadParameters,
+    checkEnvironment,
     isUploading,
     error,
     progress,

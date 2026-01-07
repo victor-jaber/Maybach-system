@@ -55,6 +55,17 @@ O sistema está funcional com as seguintes funcionalidades:
 O projeto usa o workflow "Start application" que executa `npm run dev` para iniciar o servidor Express com Vite.
 
 ## Recent Changes
+- 07/01/2026: Upload Híbrido de Imagens (Replit + Produção Externa)
+  - Implementado sistema de upload que funciona em ambos os ambientes
+  - Em Replit: usa Object Storage com URLs presignadas
+  - Em produção externa (Coolify/VPS/Docker): usa sistema de arquivos local (pasta ./uploads)
+  - server/file-upload.ts: serviço de armazenamento local
+  - Endpoint /api/uploads/direct para upload direto em ambientes externos
+  - Endpoint /api/files/:fileName para servir arquivos locais
+  - VehicleMultiImageUploader refatorado para usar hook useUpload
+  - Hook useUpload detecta ambiente automaticamente e usa método apropriado
+  - IMPORTANTE: Configure volume persistente para ./uploads em Docker
+
 - 04/01/2026: Correção de Contratos - Sincronização com Vendas
   - Corrigido cálculo de entrada total (entrada + valor de troca)
   - Corrigido valor restante (valor da venda - entrada total)
