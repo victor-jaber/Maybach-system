@@ -1,39 +1,24 @@
 import type { Express } from "express";
+import multer from "multer";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import { saveFile, getFile, isReplitEnvironment } from "../../file-upload";
+
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB max
+});
 
 /**
  * Register object storage routes for file uploads.
- *
- * This provides example routes for the presigned URL upload flow:
- * 1. POST /api/uploads/request-url - Get a presigned URL for uploading
- * 2. The client then uploads directly to the presigned URL
- *
- * IMPORTANT: These are example routes. Customize based on your use case:
- * - Add authentication middleware for protected uploads
- * - Add file metadata storage (save to database after upload)
- * - Add ACL policies for access control
+ * Supports both Replit Object Storage and local file system fallback.
  */
 export function registerObjectStorageRoutes(app: Express): void {
   const objectStorageService = new ObjectStorageService();
 
   /**
-   * Request a presigned URL for file upload.
-   *
-   * Request body (JSON):
-   * {
-   *   "name": "filename.jpg",
-   *   "size": 12345,
-   *   "contentType": "image/jpeg"
-   * }
-   *
-   * Response:
-   * {
-   *   "uploadURL": "https://storage.googleapis.com/...",
-   *   "objectPath": "/objects/uploads/uuid"
-   * }
-   *
-   * IMPORTANT: The client should NOT send the file to this endpoint.
-   * Send JSON metadata only, then upload the file directly to uploadURL.
+   * Request a presigned URL for file upload (Replit only).
+   * In non-Replit environments, returns useDirectUpload: true to signal
+   * that the client should use the direct upload endpoint instead.
    */
   app.post("/api/uploads/request-url", async (req, res) => {
     try {
@@ -41,43 +26,84 @@ export function registerObjectStorageRoutes(app: Express): void {
 
       if (!name) {
         return res.status(400).json({
-          error: "Missing required field: name",
+          error: "Campo obrigatório ausente: name",
         });
       }
 
-      // Check if PRIVATE_OBJECT_DIR is set
-      if (!process.env.PRIVATE_OBJECT_DIR) {
-        console.error("PRIVATE_OBJECT_DIR environment variable is not set");
-        return res.status(500).json({ 
-          error: "Object storage not configured. Please set up Object Storage in the Replit tools panel." 
+      // Check if we're in Replit environment
+      if (!isReplitEnvironment()) {
+        // Return signal to use direct upload instead
+        return res.json({
+          useDirectUpload: true,
+          directUploadUrl: "/api/uploads/direct",
+          metadata: { name, size, contentType },
         });
       }
 
       const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-
-      // Extract object path from the presigned URL for later reference
       const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
 
       res.json({
         uploadURL,
         objectPath,
-        // Echo back the metadata for client convenience
+        useDirectUpload: false,
         metadata: { name, size, contentType },
       });
     } catch (error: any) {
       console.error("Error generating upload URL:", error);
-      const errorMessage = error?.message || "Failed to generate upload URL";
+      const errorMessage = error?.message || "Falha ao gerar URL de upload";
       res.status(500).json({ error: errorMessage });
     }
   });
 
   /**
-   * Serve uploaded objects.
-   *
-   * GET /objects/:objectPath(*)
-   *
-   * This serves files from object storage. For public files, no auth needed.
-   * For protected files, add authentication middleware and ACL checks.
+   * Direct file upload endpoint for non-Replit environments.
+   * Saves files to local file system.
+   */
+  app.post("/api/uploads/direct", upload.single("file"), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "Nenhum arquivo enviado" });
+      }
+
+      const result = await saveFile(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype
+      );
+
+      res.json({
+        objectPath: result.url,
+        fileName: result.fileName,
+        url: result.url,
+      });
+    } catch (error: any) {
+      console.error("Error uploading file:", error);
+      res.status(500).json({ error: "Falha ao salvar arquivo" });
+    }
+  });
+
+  /**
+   * Serve files from local storage (non-Replit environments).
+   */
+  app.get("/api/files/:fileName", async (req, res) => {
+    try {
+      const result = await getFile(req.params.fileName);
+      if (!result) {
+        return res.status(404).json({ error: "Arquivo não encontrado" });
+      }
+
+      res.setHeader("Content-Type", result.contentType);
+      res.setHeader("Cache-Control", "public, max-age=31536000");
+      res.send(result.buffer);
+    } catch (error) {
+      console.error("Error serving file:", error);
+      res.status(500).json({ error: "Falha ao servir arquivo" });
+    }
+  });
+
+  /**
+   * Serve uploaded objects from Replit Object Storage.
    */
   app.get("/objects/:objectPath(*)", async (req, res) => {
     try {
@@ -86,9 +112,9 @@ export function registerObjectStorageRoutes(app: Express): void {
     } catch (error) {
       console.error("Error serving object:", error);
       if (error instanceof ObjectNotFoundError) {
-        return res.status(404).json({ error: "Object not found" });
+        return res.status(404).json({ error: "Objeto não encontrado" });
       }
-      return res.status(500).json({ error: "Failed to serve object" });
+      return res.status(500).json({ error: "Falha ao servir objeto" });
     }
   });
 }
