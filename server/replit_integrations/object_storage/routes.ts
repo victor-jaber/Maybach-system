@@ -45,6 +45,14 @@ export function registerObjectStorageRoutes(app: Express): void {
         });
       }
 
+      // Check if PRIVATE_OBJECT_DIR is set
+      if (!process.env.PRIVATE_OBJECT_DIR) {
+        console.error("PRIVATE_OBJECT_DIR environment variable is not set");
+        return res.status(500).json({ 
+          error: "Object storage not configured. Please set up Object Storage in the Replit tools panel." 
+        });
+      }
+
       const uploadURL = await objectStorageService.getObjectEntityUploadURL();
 
       // Extract object path from the presigned URL for later reference
@@ -56,9 +64,10 @@ export function registerObjectStorageRoutes(app: Express): void {
         // Echo back the metadata for client convenience
         metadata: { name, size, contentType },
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating upload URL:", error);
-      res.status(500).json({ error: "Failed to generate upload URL" });
+      const errorMessage = error?.message || "Failed to generate upload URL";
+      res.status(500).json({ error: errorMessage });
     }
   });
 
