@@ -217,7 +217,7 @@ async function generateSignedPdfBuffer(
         if (isStoreSignature && signatureInfo.storeSigned) {
           // Store signature - render digital signature
           doc.fontSize(10).font("Helvetica-Bold").text("ASSINADO DIGITALMENTE", { align: "center" });
-          doc.fontSize(9).font("Helvetica").text(`${store?.razaoSocial || "MayBack Cars"}`, { align: "center" });
+          doc.fontSize(9).font("Helvetica").text(`${store?.razaoSocial || "MayBach Cars"}`, { align: "center" });
           doc.fontSize(8).font("Helvetica").text(`CNPJ: ${formatCNPJ(store?.cnpj)}`, { align: "center" });
           const roleMatch = nextLine.match(/(VENDEDORA|CONSIGNATÁRIA|RECEBEDOR|COMPRADORA)/);
           const role = roleMatch ? roleMatch[1] : "VENDEDORA";

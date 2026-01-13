@@ -1,4 +1,4 @@
-# MayBack Cars - Sistema de Gestão para Concessionárias
+# MayBach Cars - Sistema de Gestão para Concessionárias
 
 ## Overview
 Sistema web completo para administração de lojas de veículos, desenvolvido com React, Express e PostgreSQL. Inclui área pública para catálogo de veículos e área administrativa para gestão completa de estoque, clientes, vendas, contratos e consulta de débitos.

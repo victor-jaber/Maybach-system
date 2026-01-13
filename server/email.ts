@@ -67,7 +67,7 @@ export async function sendSignatureEmail(
   const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER;
 
   const mailOptions = {
-    from: `"MayBack Cars" <${fromEmail}>`,
+    from: `"MayBach Cars" <${fromEmail}>`,
     to: customerEmail,
     subject: `Contrato de ${contractTypeName} - Assinatura Digital`,
     html: `
@@ -90,7 +90,7 @@ export async function sendSignatureEmail(
 <body>
   <div class="container">
     <div class="header">
-      <h1>MayBack Cars</h1>
+      <h1>MayBach Cars</h1>
     </div>
     <div class="content">
       <p>Prezado(a) <strong>${contract.customer.name}</strong>,</p>
@@ -118,7 +118,7 @@ export async function sendSignatureEmail(
       <p>Se você não solicitou este contrato, por favor desconsidere este email.</p>
     </div>
     <div class="footer">
-      <p>MayBack Cars - Qualidade e Confiança</p>
+      <p>MayBach Cars - Qualidade e Confiança</p>
       <p>Este é um email automático, não responda.</p>
     </div>
   </div>
@@ -140,7 +140,7 @@ Importante: Para validar sua identidade, você precisará informar os últimos 3
 
 Este link é válido por 48 horas.
 
-MayBack Cars
+MayBach Cars
     `,
   };
 
@@ -180,7 +180,7 @@ export async function sendSignedContractEmail(
   const fromEmail = process.env.SMTP_FROM || process.env.SMTP_USER;
 
   const mailOptions = {
-    from: `"MayBack Cars" <${fromEmail}>`,
+    from: `"MayBach Cars" <${fromEmail}>`,
     to: customerEmail,
     subject: `Contrato Assinado - ${contractTypeName} - ${vehicleDescription}`,
     attachments: [
@@ -210,7 +210,7 @@ export async function sendSignedContractEmail(
 <body>
   <div class="container">
     <div class="header">
-      <h1>MayBack Cars</h1>
+      <h1>MayBach Cars</h1>
     </div>
     <div class="content">
       <div class="success-box">
@@ -233,10 +233,10 @@ export async function sendSignedContractEmail(
       
       <p>Guarde este documento para futuras referências.</p>
       
-      <p>Obrigado por escolher a MayBack Cars!</p>
+      <p>Obrigado por escolher a MayBach Cars!</p>
     </div>
     <div class="footer">
-      <p>MayBack Cars - Qualidade e Confiança</p>
+      <p>MayBach Cars - Qualidade e Confiança</p>
       <p>Este é um email automático, não responda.</p>
     </div>
   </div>
@@ -259,7 +259,7 @@ Em anexo você encontra uma cópia do contrato assinado para seus registros.
 
 Guarde este documento para futuras referências.
 
-Obrigado por escolher a MayBack Cars!
+Obrigado por escolher a MayBach Cars!
     `,
   };
 

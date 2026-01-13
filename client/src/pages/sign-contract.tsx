@@ -177,7 +177,7 @@ export default function SignContractPage() {
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-sm text-muted-foreground">
-              Entre em contato com a MayBack Cars para solicitar um novo link de assinatura.
+              Entre em contato com a MayBach Cars para solicitar um novo link de assinatura.
             </p>
           </CardContent>
         </Card>
@@ -207,7 +207,7 @@ export default function SignContractPage() {
             </div>
             <Separator />
             <div className="text-center text-sm text-muted-foreground">
-              <p>MayBack Cars - Qualidade e Confiança</p>
+              <p>MayBach Cars - Qualidade e Confiança</p>
             </div>
           </CardContent>
         </Card>
@@ -403,7 +403,7 @@ export default function SignContractPage() {
                 </div>
                 <div className="space-y-2">
                   <h4 className="font-semibold text-sm text-muted-foreground">VENDEDOR</h4>
-                  <p className="font-medium">{store?.nomeFantasia || store?.razaoSocial || "MayBack Cars"}</p>
+                  <p className="font-medium">{store?.nomeFantasia || store?.razaoSocial || "MayBach Cars"}</p>
                   <p className="text-sm text-muted-foreground">{store?.cnpj}</p>
                   {store?.email && (
                     <p className="text-sm text-muted-foreground">{store?.email}</p>
